@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Clock, Archive, FolderOpen, Plus } from "lucide-react";
+import { Clock, Archive, FolderOpen, Plus, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -12,6 +12,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import type { Project } from "@shared/schema";
 import { format } from "date-fns";
@@ -45,6 +52,8 @@ const statusLabels: Record<string, string> = {
 export function LeftSidebar({ selectedProjectId, onSelectProject, onNewProject }: LeftSidebarProps) {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [stageFilter, setStageFilter] = useState<string>("all");
 
   const { data: recentProjects, isLoading: recentLoading } = useQuery<Project[]>({
     queryKey: ["/api/projects/recent"],
@@ -55,11 +64,14 @@ export function LeftSidebar({ selectedProjectId, onSelectProject, onNewProject }
     enabled: historyOpen,
   });
 
-  const filteredProjects = allProjects?.filter(
-    (project) =>
+  const filteredProjects = allProjects?.filter((project) => {
+    const matchesSearch =
       project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.clientName?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+      project.clientName?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "all" || project.status === statusFilter;
+    const matchesStage = stageFilter === "all" || project.currentStage === parseInt(stageFilter, 10);
+    return matchesSearch && matchesStatus && matchesStage;
+  });
 
   return (
     <div className="flex flex-col h-full bg-sidebar border-r border-sidebar-border">
@@ -160,14 +172,45 @@ export function LeftSidebar({ selectedProjectId, onSelectProject, onNewProject }
               <DialogTitle>Project Archive</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <Input
-                placeholder="Search projects..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="sticky top-0"
-                data-testid="input-search-projects"
-              />
-              <ScrollArea className="h-[60vh]">
+              <div className="flex gap-3 flex-wrap">
+                <Input
+                  placeholder="Search projects..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 min-w-[200px]"
+                  data-testid="input-search-projects"
+                />
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[150px]" data-testid="select-status-filter">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="estimate_generated">Estimated</SelectItem>
+                    <SelectItem value="assets_ready">Assets Ready</SelectItem>
+                    <SelectItem value="email_sent">Sent</SelectItem>
+                    <SelectItem value="accepted">Accepted</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={stageFilter} onValueChange={setStageFilter}>
+                  <SelectTrigger className="w-[130px]" data-testid="select-stage-filter">
+                    <SelectValue placeholder="Stage" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Stages</SelectItem>
+                    <SelectItem value="1">Stage 1</SelectItem>
+                    <SelectItem value="2">Stage 2</SelectItem>
+                    <SelectItem value="3">Stage 3</SelectItem>
+                    <SelectItem value="4">Stage 4</SelectItem>
+                    <SelectItem value="5">Stage 5</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <ScrollArea className="h-[55vh]">
                 {allLoading ? (
                   <div className="grid grid-cols-2 gap-4">
                     {Array.from({ length: 6 }).map((_, i) => (

@@ -3,6 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertProjectSchema, insertMessageSchema, type ServiceStatus } from "@shared/schema";
 import { aiService } from "./ai-service";
+import { generateProposalPdf, generateInternalReportPdf } from "./pdf-service";
+import { sendProposalEmail } from "./email-service";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -272,13 +274,22 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Project not found" });
       }
 
+      const { recipientEmail } = req.body;
+
       // Generate email content
       let emailContent: string;
       try {
         emailContent = await aiService.generateEmail(project);
       } catch (err) {
         console.error("AI email generation failed, using fallback:", err);
-        emailContent = `Subject: Project Proposal: ${project.title}\n\nDear ${project.clientName || "Team"},\n\nPlease find attached our proposal for ${project.title}.\n\nBest regards,\nISI Agent`;
+        emailContent = `Dear ${project.clientName || "Team"},\n\nThank you for the opportunity to discuss your project. I'm excited to share our proposal for ${project.title}.\n\nPlease find the attached proposal with detailed information about our recommended approach, timeline, and investment.\n\nI'd love to schedule a call to walk you through the proposal and answer any questions.\n\nBest regards,\nISI Agent`;
+      }
+
+      // Attempt to send email via Resend
+      const emailResult = await sendProposalEmail(project, emailContent, recipientEmail);
+      
+      if (!emailResult.success) {
+        console.warn("Email send failed, but continuing with stage advancement:", emailResult.error);
       }
 
       // Advance to stage 3
@@ -289,7 +300,11 @@ export async function registerRoutes(
         status: "email_sent",
       });
 
-      res.json(updated);
+      res.json({
+        ...updated,
+        emailSent: emailResult.success,
+        emailMessageId: emailResult.messageId,
+      });
     } catch (error) {
       console.error("Error sending email:", error);
       res.status(500).json({ error: "Failed to send email" });
@@ -421,6 +436,146 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching knowledge entries:", error);
       res.status(500).json({ error: "Failed to fetch knowledge entries" });
+    }
+  });
+
+  // PDF Generation - Proposal
+  app.get("/api/projects/:id/proposal.pdf", async (req, res) => {
+    try {
+      const project = await storage.getProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+
+      const pdfBuffer = await generateProposalPdf(project);
+      
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${project.title.replace(/[^a-z0-9]/gi, '_')}_proposal.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error("Error generating proposal PDF:", error);
+      res.status(500).json({ error: "Failed to generate proposal PDF" });
+    }
+  });
+
+  // PDF Generation - Internal Report
+  app.get("/api/projects/:id/internal-report.pdf", async (req, res) => {
+    try {
+      const project = await storage.getProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+
+      const pdfBuffer = await generateInternalReportPdf(project);
+      
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${project.title.replace(/[^a-z0-9]/gi, '_')}_internal_report.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error("Error generating internal report PDF:", error);
+      res.status(500).json({ error: "Failed to generate internal report PDF" });
+    }
+  });
+
+  // Data Export - JSON
+  app.get("/api/projects/:id/export/json", async (req, res) => {
+    try {
+      const project = await storage.getProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+
+      const messages = await storage.getMessages(project.id);
+      const exportData = {
+        project,
+        messages,
+        exportedAt: new Date().toISOString(),
+      };
+
+      res.setHeader("Content-Type", "application/json");
+      res.setHeader("Content-Disposition", `attachment; filename="${project.title.replace(/[^a-z0-9]/gi, '_')}_export.json"`);
+      res.json(exportData);
+    } catch (error) {
+      console.error("Error exporting project:", error);
+      res.status(500).json({ error: "Failed to export project" });
+    }
+  });
+
+  // Data Export - CSV (estimates summary)
+  app.get("/api/projects/:id/export/csv", async (req, res) => {
+    try {
+      const project = await storage.getProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+
+      const scenarioA = project.scenarioA as any;
+      const scenarioB = project.scenarioB as any;
+      const roiAnalysis = project.roiAnalysis as any;
+
+      const csvRows = [
+        ["Field", "Scenario A", "Scenario B"],
+        ["Name", scenarioA?.name || "", scenarioB?.name || ""],
+        ["Total Cost", scenarioA?.totalCost || "", scenarioB?.totalCost || ""],
+        ["Timeline", scenarioA?.timeline || "", scenarioB?.timeline || ""],
+        ["Hours", scenarioA?.totalHours || "", scenarioB?.totalHours || ""],
+        ["Hourly Rate", scenarioA?.hourlyRate || "", scenarioB?.hourlyRate || ""],
+        ["Recommended", scenarioA?.recommended ? "Yes" : "No", scenarioB?.recommended ? "Yes" : "No"],
+        [],
+        ["ROI Metric", "Value"],
+        ["Cost of Doing Nothing", roiAnalysis?.costOfDoingNothing || ""],
+        ["Manual Operational Cost", roiAnalysis?.manualOperationalCost || ""],
+        ["Projected Savings", roiAnalysis?.projectedSavings || ""],
+        ["Payback Period (months)", roiAnalysis?.paybackPeriodMonths || ""],
+        ["3-Year ROI (%)", roiAnalysis?.threeYearROI || ""],
+      ];
+
+      const csvContent = csvRows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", `attachment; filename="${project.title.replace(/[^a-z0-9]/gi, '_')}_estimates.csv"`);
+      res.send(csvContent);
+    } catch (error) {
+      console.error("Error exporting CSV:", error);
+      res.status(500).json({ error: "Failed to export CSV" });
+    }
+  });
+
+  // Search Projects
+  app.get("/api/projects/search/:query", async (req, res) => {
+    try {
+      const { query } = req.params;
+      const { status, stage } = req.query;
+      
+      let projects = await storage.getProjects();
+      
+      // Text search
+      if (query && query !== "*") {
+        const lowerQuery = query.toLowerCase();
+        projects = projects.filter(p => 
+          p.title.toLowerCase().includes(lowerQuery) ||
+          (p.clientName && p.clientName.toLowerCase().includes(lowerQuery)) ||
+          (p.rawInput && p.rawInput.toLowerCase().includes(lowerQuery))
+        );
+      }
+
+      // Filter by status
+      if (status && typeof status === "string") {
+        projects = projects.filter(p => p.status === status);
+      }
+
+      // Filter by stage
+      if (stage && typeof stage === "string") {
+        const stageNum = parseInt(stage, 10);
+        if (!isNaN(stageNum)) {
+          projects = projects.filter(p => p.currentStage === stageNum);
+        }
+      }
+
+      res.json(projects);
+    } catch (error) {
+      console.error("Error searching projects:", error);
+      res.status(500).json({ error: "Failed to search projects" });
     }
   });
 

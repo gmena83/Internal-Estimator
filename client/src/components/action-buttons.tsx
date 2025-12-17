@@ -8,9 +8,17 @@ import {
   Presentation,
   Code2,
   Loader2,
-  Download
+  Download,
+  FileJson,
+  FileSpreadsheet
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Project } from "@shared/schema";
@@ -271,6 +279,67 @@ export function ActionButtons({ project, currentStage, isLoading }: ActionButton
           <ClipboardList className="h-4 w-4 mr-2" />
           View PM Breakdown
         </Button>
+      )}
+
+      {project && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" data-testid="button-export">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <a 
+                href={`/api/projects/${project.id}/export/json`} 
+                download
+                className="flex items-center gap-2"
+                data-testid="button-export-json"
+              >
+                <FileJson className="h-4 w-4" />
+                Export as JSON
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a 
+                href={`/api/projects/${project.id}/export/csv`}
+                download
+                className="flex items-center gap-2"
+                data-testid="button-export-csv"
+              >
+                <FileSpreadsheet className="h-4 w-4" />
+                Export Estimates (CSV)
+              </a>
+            </DropdownMenuItem>
+            {project.proposalPdfUrl && (
+              <DropdownMenuItem asChild>
+                <a 
+                  href={project.proposalPdfUrl}
+                  download
+                  className="flex items-center gap-2"
+                  data-testid="button-export-proposal-pdf"
+                >
+                  <FileText className="h-4 w-4" />
+                  Download Proposal PDF
+                </a>
+              </DropdownMenuItem>
+            )}
+            {project.internalReportPdfUrl && (
+              <DropdownMenuItem asChild>
+                <a 
+                  href={project.internalReportPdfUrl}
+                  download
+                  className="flex items-center gap-2"
+                  data-testid="button-export-report-pdf"
+                >
+                  <FileText className="h-4 w-4" />
+                  Download Internal Report
+                </a>
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
     </div>
   );
