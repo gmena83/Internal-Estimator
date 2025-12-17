@@ -29,6 +29,9 @@ export const projects = pgTable("projects", {
   vibecodeGuideA: text("vibecode_guide_a"), // Manual A (High-Code)
   vibecodeGuideB: text("vibecode_guide_b"), // Manual B (No-Code)
   pmBreakdown: jsonb("pm_breakdown"), // Project management tasks
+  attachments: jsonb("attachments").$type<Attachment[]>(), // Uploaded meeting notes, documents
+  clientEmail: text("client_email"), // Client email for communication
+  marketResearch: jsonb("market_research"), // Perplexity deep research results
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

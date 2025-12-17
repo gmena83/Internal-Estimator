@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { MessageSquare, FileText, Presentation, Code2, ClipboardList } from "lucide-react";
+import { MessageSquare, FileText, Presentation, Code2, ClipboardList, Paperclip, Download, FileIcon, Image } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,7 +10,8 @@ import { MarkdownViewer } from "@/components/markdown-viewer";
 import { ActionButtons } from "@/components/action-buttons";
 import { ScenarioComparison } from "@/components/scenario-comparison";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Project, Scenario, ROIAnalysis } from "@shared/schema";
+import type { Project, Scenario, ROIAnalysis, Attachment } from "@shared/schema";
+import { Button } from "@/components/ui/button";
 
 interface MainWorkspaceProps {
   projectId: string | null;
@@ -103,10 +104,16 @@ export function MainWorkspace({ projectId }: MainWorkspaceProps) {
                   <span className="hidden sm:inline">Guides</span>
                 </TabsTrigger>
               )}
-              {project?.pmBreakdown && (
+              {!!project?.pmBreakdown && (
                 <TabsTrigger value="pm" className="gap-2" data-testid="tab-pm">
                   <ClipboardList className="h-4 w-4" />
                   <span className="hidden sm:inline">PM</span>
+                </TabsTrigger>
+              )}
+              {((project?.attachments as Attachment[] | null)?.length ?? 0) > 0 && (
+                <TabsTrigger value="docs" className="gap-2" data-testid="tab-docs">
+                  <Paperclip className="h-4 w-4" />
+                  <span className="hidden sm:inline">Docs</span>
                 </TabsTrigger>
               )}
             </TabsList>
@@ -164,6 +171,12 @@ export function MainWorkspace({ projectId }: MainWorkspaceProps) {
           <TabsContent value="pm" className="h-full m-0 overflow-auto data-[state=inactive]:hidden">
             <div className="p-6">
               <PMBreakdownView breakdown={project?.pmBreakdown as any} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="docs" className="h-full m-0 overflow-auto data-[state=inactive]:hidden">
+            <div className="p-6">
+              <DocumentsView attachments={(project?.attachments as Attachment[]) || []} />
             </div>
           </TabsContent>
         </Tabs>
@@ -269,6 +282,70 @@ function PMBreakdownView({ breakdown }: { breakdown: any }) {
           )}
         </Card>
       ))}
+    </div>
+  );
+}
+
+function DocumentsView({ attachments }: { attachments: Attachment[] }) {
+  if (!attachments || attachments.length === 0) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        <Paperclip className="h-12 w-12 mx-auto mb-4 opacity-50" />
+        <p>No documents uploaded yet.</p>
+      </div>
+    );
+  }
+
+  const getFileIcon = (mimeType: string) => {
+    if (mimeType.startsWith("image/")) {
+      return <Image className="h-8 w-8" />;
+    }
+    return <FileIcon className="h-8 w-8" />;
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold flex items-center gap-2">
+        <Paperclip className="h-5 w-5" />
+        Project Documents ({attachments.length})
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {attachments.map((attachment) => (
+          <Card key={attachment.id} className="p-4" data-testid={`doc-${attachment.id}`}>
+            <div className="flex items-start gap-3">
+              <div className="text-muted-foreground">
+                {getFileIcon(attachment.mimeType)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate" title={attachment.originalName}>
+                  {attachment.originalName}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {formatFileSize(attachment.size)}
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 flex gap-2">
+              <Button variant="outline" size="sm" asChild className="flex-1">
+                <a href={attachment.url} target="_blank" rel="noopener noreferrer">
+                  View
+                </a>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <a href={attachment.url} download={attachment.originalName}>
+                  <Download className="h-4 w-4" />
+                </a>
+              </Button>
+            </div>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

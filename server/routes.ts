@@ -222,7 +222,7 @@ export async function registerRoutes(
         return res.status(400).json({ error: "No files uploaded" });
       }
 
-      const attachments: Attachment[] = files.map((file) => ({
+      const newAttachments: Attachment[] = files.map((file) => ({
         id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         filename: file.filename,
         originalName: file.originalname,
@@ -231,10 +231,32 @@ export async function registerRoutes(
         url: `/uploads/${req.params.id}/${file.filename}`,
       }));
 
-      res.json({ attachments });
+      // Merge with existing attachments and save to project
+      const existingAttachments = (project.attachments as Attachment[]) || [];
+      const allAttachments = [...existingAttachments, ...newAttachments];
+      
+      await storage.updateProject(req.params.id, {
+        attachments: allAttachments,
+      });
+
+      res.json({ attachments: allAttachments });
     } catch (error) {
       console.error("Error uploading files:", error);
       res.status(500).json({ error: "Failed to upload files" });
+    }
+  });
+
+  // Get project attachments
+  app.get("/api/projects/:id/attachments", async (req, res) => {
+    try {
+      const project = await storage.getProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+      res.json({ attachments: project.attachments || [] });
+    } catch (error) {
+      console.error("Error fetching attachments:", error);
+      res.status(500).json({ error: "Failed to fetch attachments" });
     }
   });
 
@@ -315,6 +337,29 @@ export async function registerRoutes(
     }
   });
 
+  // Update client email
+  app.post("/api/projects/:id/update-client-email", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email || typeof email !== 'string' || !email.includes('@')) {
+        return res.status(400).json({ error: "Valid email address is required" });
+      }
+      
+      const updated = await storage.updateProject(req.params.id, {
+        clientEmail: email,
+      });
+      
+      if (!updated) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+      
+      res.json({ project: updated, success: true });
+    } catch (error) {
+      console.error("Error updating client email:", error);
+      res.status(500).json({ error: "Failed to update client email" });
+    }
+  });
+
   // Stage Actions - Select Scenario
   app.post("/api/projects/:id/select-scenario", async (req, res) => {
     try {
@@ -367,6 +412,16 @@ export async function registerRoutes(
       }
 
       const { recipientEmail } = req.body;
+      
+      // Validate that we have a client email before proceeding
+      const emailToUse = recipientEmail || project.clientEmail;
+      if (!emailToUse) {
+        return res.status(400).json({ 
+          error: "Client email is required",
+          missingField: "clientEmail",
+          message: "Please provide the client's email address before sending the proposal."
+        });
+      }
 
       // Generate email content
       let emailContent: string;
@@ -378,7 +433,7 @@ export async function registerRoutes(
       }
 
       // Attempt to send email via Resend
-      const emailResult = await sendProposalEmail(project, emailContent, recipientEmail);
+      const emailResult = await sendProposalEmail(project, emailContent, emailToUse);
       
       if (!emailResult.success) {
         console.warn("Email send failed, but continuing with stage advancement:", emailResult.error);

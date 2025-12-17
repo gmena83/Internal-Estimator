@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { 
   FileCheck2, 
@@ -10,9 +11,20 @@ import {
   Loader2,
   Download,
   FileJson,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Mail
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +43,53 @@ interface ActionButtonsProps {
 
 export function ActionButtons({ project, currentStage, isLoading }: ActionButtonsProps) {
   const { toast } = useToast();
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [clientEmail, setClientEmail] = useState(project?.clientEmail || "");
+  const [shouldSendAfterUpdate, setShouldSendAfterUpdate] = useState(false);
+
+  const updateClientEmail = useMutation({
+    mutationFn: async (email: string) => {
+      await apiRequest("POST", `/api/projects/${project?.id}/update-client-email`, { email });
+      return email;
+    },
+    onSuccess: async (savedEmail: string) => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/projects", project?.id] });
+      
+      if (shouldSendAfterUpdate) {
+        toast({
+          title: "Email Updated",
+          description: "Client email saved. Sending proposal...",
+        });
+        setShouldSendAfterUpdate(false);
+        try {
+          await sendEmailWithRecipient.mutateAsync(savedEmail);
+          setEmailDialogOpen(false);
+        } catch {
+          setEmailDialogOpen(false);
+        }
+      } else {
+        setEmailDialogOpen(false);
+        toast({
+          title: "Email Updated",
+          description: "Client email saved.",
+        });
+      }
+    },
+    onError: (error) => {
+      setShouldSendAfterUpdate(false);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update client email",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleOpenEmailDialog = () => {
+    setClientEmail(project?.clientEmail || "");
+    setShouldSendAfterUpdate(true);
+    setEmailDialogOpen(true);
+  };
 
   const approveEstimate = useMutation({
     mutationFn: async () => {
@@ -93,9 +152,9 @@ export function ActionButtons({ project, currentStage, isLoading }: ActionButton
     },
   });
 
-  const sendEmail = useMutation({
-    mutationFn: async () => {
-      return await apiRequest("POST", `/api/projects/${project?.id}/send-email`);
+  const sendEmailWithRecipient = useMutation({
+    mutationFn: async (recipientEmail: string) => {
+      return await apiRequest("POST", `/api/projects/${project?.id}/send-email`, { recipientEmail });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/projects", project?.id] });
@@ -110,6 +169,35 @@ export function ActionButtons({ project, currentStage, isLoading }: ActionButton
         description: error.message || "Failed to send email",
         variant: "destructive",
       });
+    },
+  });
+
+  const sendEmail = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", `/api/projects/${project?.id}/send-email`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", project?.id] });
+      toast({
+        title: "Email Sent",
+        description: "Proposal sent to client successfully!",
+      });
+    },
+    onError: (error: Error & { missingField?: string }) => {
+      // Check if the error is specifically about missing client email
+      if (error.message?.includes("Client email is required") || error.missingField === "clientEmail") {
+        handleOpenEmailDialog();
+        toast({
+          title: "Client Email Required",
+          description: "Please provide the client's email address to send the proposal.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to send email",
+          variant: "destructive",
+        });
+      }
     },
   });
 
@@ -162,6 +250,8 @@ export function ActionButtons({ project, currentStage, isLoading }: ActionButton
     regenerateEstimate.isPending || 
     generateAssets.isPending || 
     sendEmail.isPending || 
+    sendEmailWithRecipient.isPending ||
+    updateClientEmail.isPending ||
     generateVibeGuide.isPending || 
     generatePMBreakdown.isPending;
 
@@ -222,7 +312,7 @@ export function ActionButtons({ project, currentStage, isLoading }: ActionButton
             disabled={isPending}
             data-testid="button-send-email"
           >
-            {sendEmail.isPending ? (
+            {(sendEmail.isPending || sendEmailWithRecipient.isPending) ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
               <Send className="h-4 w-4 mr-2" />
@@ -278,11 +368,29 @@ export function ActionButtons({ project, currentStage, isLoading }: ActionButton
         </>
       )}
 
-      {currentStage === 5 && !!project.pmBreakdown && (
-        <Button variant="glass" data-testid="button-view-pm-breakdown">
-          <ClipboardList className="h-4 w-4 mr-2" />
-          View PM Breakdown
-        </Button>
+      {currentStage === 5 && (
+        <>
+          {!project.pmBreakdown ? (
+            <Button
+              variant="glass-primary"
+              onClick={() => generatePMBreakdown.mutate()}
+              disabled={isPending}
+              data-testid="button-generate-pm-final"
+            >
+              {generatePMBreakdown.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <ClipboardList className="h-4 w-4 mr-2" />
+              )}
+              Generate PM Breakdown
+            </Button>
+          ) : (
+            <Button variant="glass" disabled className="bg-green-500/20 border-green-500/50 text-green-600" data-testid="button-pm-completed">
+              <FileCheck2 className="h-4 w-4 mr-2" />
+              PM Breakdown Complete
+            </Button>
+          )}
+        </>
       )}
 
       {project && (
@@ -345,6 +453,48 @@ export function ActionButtons({ project, currentStage, isLoading }: ActionButton
           </DropdownMenuContent>
         </DropdownMenu>
       )}
+
+      <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Client Email Required
+            </DialogTitle>
+            <DialogDescription>
+              Please provide the client's email address to send the proposal.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="client-email">Email Address</Label>
+              <Input
+                id="client-email"
+                type="email"
+                placeholder="client@example.com"
+                value={clientEmail}
+                onChange={(e) => setClientEmail(e.target.value)}
+                data-testid="input-client-email"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEmailDialogOpen(false)} data-testid="button-cancel-email">
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => updateClientEmail.mutate(clientEmail)}
+              disabled={!clientEmail || !clientEmail.includes('@') || updateClientEmail.isPending}
+              data-testid="button-save-email"
+            >
+              {updateClientEmail.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : null}
+              Save & Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
