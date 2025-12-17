@@ -31,7 +31,7 @@ export default function Home() {
       </div>
 
       <div className="w-72 flex-shrink-0">
-        <RightSidebar />
+        <RightSidebar projectId={selectedProjectId} />
       </div>
 
       <NewProjectDialog
