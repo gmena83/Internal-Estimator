@@ -1,3 +1,6 @@
+import { logApiUsage } from "./usage-tracker";
+import { storage } from "./storage";
+
 export interface MarketResearchResult {
   competitorPricing: {
     averagePrice: string;
@@ -26,7 +29,8 @@ const hasPerplexityKey = !!process.env.PERPLEXITY_API_KEY;
 
 export async function conductMarketResearch(
   projectType: string,
-  projectDescription: string
+  projectDescription: string,
+  projectId?: string
 ): Promise<MarketResearchResult | null> {
   if (!hasPerplexityKey) {
     console.log("Perplexity API key not configured, skipping market research");
@@ -85,6 +89,26 @@ Be specific with numbers and cite your sources.`;
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || "";
     const citations = data.citations || [];
+    
+    const inputTokens = data.usage?.prompt_tokens || 0;
+    const outputTokens = data.usage?.completion_tokens || 0;
+
+    if (projectId) {
+      await logApiUsage({
+        projectId,
+        provider: "perplexity",
+        model: "llama-3.1-sonar-large-128k-online",
+        inputTokens,
+        outputTokens,
+        operation: "market_research",
+      });
+      
+      await storage.updateApiHealth({
+        service: "perplexity",
+        status: "online",
+        latencyMs: Date.now() - Date.now(),
+      });
+    }
 
     // Parse the response into structured format
     return parseMarketResearchResponse(content, citations);

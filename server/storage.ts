@@ -137,7 +137,7 @@ export class DatabaseStorage implements IStorage {
 
   // API Health
   async getApiHealth(): Promise<ApiHealthLog[]> {
-    const services = ['gemini', 'claude', 'openai', 'pdf_co', 'resend', 'gamma', 'nano_banana'];
+    const services = ['gemini', 'claude', 'openai', 'perplexity', 'pdf_co', 'resend', 'gamma', 'nano_banana'];
     const results: ApiHealthLog[] = [];
     
     for (const service of services) {

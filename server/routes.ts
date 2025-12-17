@@ -512,6 +512,22 @@ export async function registerRoutes(
     }
   });
 
+  // Project API Usage Stats
+  app.get("/api/projects/:id/usage", async (req, res) => {
+    try {
+      const project = await storage.getProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+      
+      const usageStats = await storage.getProjectApiUsageStats(req.params.id);
+      res.json(usageStats);
+    } catch (error) {
+      console.error("Error fetching project usage:", error);
+      res.status(500).json({ error: "Failed to fetch project usage stats" });
+    }
+  });
+
   // Knowledge Base - Search
   app.get("/api/knowledge", async (req, res) => {
     try {
@@ -679,6 +695,7 @@ function getServiceDisplayName(service: string): string {
     gemini: "Gemini",
     claude: "Claude",
     openai: "OpenAI",
+    perplexity: "Perplexity",
     pdf_co: "PDF.co",
     resend: "Resend",
     gamma: "Gamma",

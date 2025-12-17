@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import type { Project, Scenario, ROIAnalysis } from "@shared/schema";
 import { loadPricingMatrix, getPricingContext, estimateCostFromMatrix } from "./pricing-matrix";
 import { conductMarketResearch, formatMarketResearchMarkdown, type MarketResearchResult } from "./perplexity-service";
+import { logApiUsage } from "./usage-tracker";
 
 // Check if AI integrations are available
 const hasGeminiIntegration = !!(process.env.AI_INTEGRATIONS_GEMINI_API_KEY && process.env.AI_INTEGRATIONS_GEMINI_BASE_URL);
@@ -85,6 +86,16 @@ Return ONLY the JSON object, no additional text.`,
           await trackHealth("gemini", startTime);
 
           const text = response.text || "";
+          
+          await logApiUsage({
+            projectId,
+            provider: "gemini",
+            model: "gemini-2.5-flash",
+            inputText: rawInput,
+            outputText: text,
+            operation: "input_processing",
+          });
+          
           try {
             // Try to extract JSON from the response
             const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -309,6 +320,16 @@ Return ONLY the JSON object.`,
           await trackHealth("gemini", startTime);
 
           const text = response.text || "";
+          
+          await logApiUsage({
+            projectId: project.id,
+            provider: "gemini",
+            model: "gemini-2.5-flash",
+            inputText: project.rawInput || "",
+            outputText: text,
+            operation: "estimate",
+          });
+          
           try {
             const jsonMatch = text.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
@@ -337,7 +358,7 @@ Return ONLY the JSON object.`,
       try {
         const projectType = parsedData?.mission || project.title || "software development";
         const projectDesc = project.rawInput || project.title || "";
-        marketResearch = await conductMarketResearch(projectType, projectDesc);
+        marketResearch = await conductMarketResearch(projectType, projectDesc, project.id);
         if (marketResearch) {
           console.log("Market research completed successfully");
         }
