@@ -1,10 +1,56 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 import { storage } from "./storage";
-import { insertProjectSchema, insertMessageSchema, type ServiceStatus } from "@shared/schema";
+import { insertProjectSchema, insertMessageSchema, type ServiceStatus, type Attachment } from "@shared/schema";
 import { aiService } from "./ai-service";
 import { generateProposalPdf, generateInternalReportPdf } from "./pdf-service";
 import { sendProposalEmail } from "./email-service";
+
+// Configure multer for file uploads
+const uploadsDir = path.join(process.cwd(), "uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      const projectDir = path.join(uploadsDir, req.params.id);
+      if (!fs.existsSync(projectDir)) {
+        fs.mkdirSync(projectDir, { recursive: true });
+      }
+      cb(null, projectDir);
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      const ext = path.extname(file.originalname);
+      cb(null, `${uniqueSuffix}${ext}`);
+    },
+  }),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      "image/png",
+      "image/jpeg",
+      "image/gif",
+      "image/webp",
+      "application/pdf",
+      "text/markdown",
+      "text/plain",
+      "text/x-markdown",
+    ];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Invalid file type"));
+    }
+  },
+});
 
 export async function registerRoutes(
   httpServer: Server,
@@ -153,6 +199,45 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error creating message:", error);
       res.status(500).json({ error: "Failed to create message" });
+    }
+  });
+
+  // File Upload - Upload attachments for a project
+  app.post("/api/projects/:id/upload", upload.array("files", 10), async (req, res) => {
+    try {
+      const project = await storage.getProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+
+      const files = req.files as Express.Multer.File[];
+      if (!files || files.length === 0) {
+        return res.status(400).json({ error: "No files uploaded" });
+      }
+
+      const attachments: Attachment[] = files.map((file) => ({
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        filename: file.filename,
+        originalName: file.originalname,
+        mimeType: file.mimetype,
+        size: file.size,
+        url: `/uploads/${req.params.id}/${file.filename}`,
+      }));
+
+      res.json({ attachments });
+    } catch (error) {
+      console.error("Error uploading files:", error);
+      res.status(500).json({ error: "Failed to upload files" });
+    }
+  });
+
+  // Serve uploaded files
+  app.use("/uploads", (req, res, next) => {
+    const filePath = path.join(uploadsDir, req.path);
+    if (fs.existsSync(filePath)) {
+      res.sendFile(filePath);
+    } else {
+      res.status(404).json({ error: "File not found" });
     }
   });
 

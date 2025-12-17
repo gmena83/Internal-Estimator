@@ -170,7 +170,7 @@ export function ActionButtons({ project, currentStage, isLoading }: ActionButton
       {currentStage === 1 && project.estimateMarkdown && (
         <>
           <Button
-            variant="outline"
+            variant="glass"
             onClick={() => regenerateEstimate.mutate()}
             disabled={isPending}
             data-testid="button-regenerate"
@@ -183,6 +183,7 @@ export function ActionButtons({ project, currentStage, isLoading }: ActionButton
             Regenerate
           </Button>
           <Button
+            variant="glass-primary"
             onClick={() => approveEstimate.mutate()}
             disabled={isPending}
             data-testid="button-approve"
@@ -200,7 +201,7 @@ export function ActionButtons({ project, currentStage, isLoading }: ActionButton
       {currentStage === 2 && (
         <>
           {project.proposalPdfUrl && (
-            <Button variant="outline" asChild data-testid="button-download-proposal">
+            <Button variant="glass" asChild data-testid="button-download-proposal">
               <a href={project.proposalPdfUrl} target="_blank" rel="noopener noreferrer">
                 <Download className="h-4 w-4 mr-2" />
                 Download Proposal
@@ -208,7 +209,7 @@ export function ActionButtons({ project, currentStage, isLoading }: ActionButton
             </Button>
           )}
           {project.presentationUrl && (
-            <Button variant="outline" asChild data-testid="button-view-presentation">
+            <Button variant="glass" asChild data-testid="button-view-presentation">
               <a href={project.presentationUrl} target="_blank" rel="noopener noreferrer">
                 <Presentation className="h-4 w-4 mr-2" />
                 View Presentation
@@ -216,6 +217,7 @@ export function ActionButtons({ project, currentStage, isLoading }: ActionButton
             </Button>
           )}
           <Button
+            variant="glass-primary"
             onClick={() => sendEmail.mutate()}
             disabled={isPending}
             data-testid="button-send-email"
@@ -232,6 +234,7 @@ export function ActionButtons({ project, currentStage, isLoading }: ActionButton
 
       {currentStage === 3 && (
         <Button
+          variant="glass-primary"
           onClick={() => generateVibeGuide.mutate()}
           disabled={isPending}
           data-testid="button-generate-vibe-guide"
@@ -248,18 +251,19 @@ export function ActionButtons({ project, currentStage, isLoading }: ActionButton
       {currentStage === 4 && (
         <>
           {project.vibecodeGuideA && (
-            <Button variant="outline" data-testid="button-view-guide-a">
+            <Button variant="glass" data-testid="button-view-guide-a">
               <FileText className="h-4 w-4 mr-2" />
               Manual A (High-Code)
             </Button>
           )}
           {project.vibecodeGuideB && (
-            <Button variant="outline" data-testid="button-view-guide-b">
+            <Button variant="glass" data-testid="button-view-guide-b">
               <FileText className="h-4 w-4 mr-2" />
               Manual B (No-Code)
             </Button>
           )}
           <Button
+            variant="glass-primary"
             onClick={() => generatePMBreakdown.mutate()}
             disabled={isPending}
             data-testid="button-generate-pm"
@@ -274,8 +278,8 @@ export function ActionButtons({ project, currentStage, isLoading }: ActionButton
         </>
       )}
 
-      {currentStage === 5 && project.pmBreakdown && (
-        <Button variant="outline" data-testid="button-view-pm-breakdown">
+      {currentStage === 5 && !!project.pmBreakdown && (
+        <Button variant="glass" data-testid="button-view-pm-breakdown">
           <ClipboardList className="h-4 w-4 mr-2" />
           View PM Breakdown
         </Button>

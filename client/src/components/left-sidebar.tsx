@@ -85,6 +85,7 @@ export function LeftSidebar({ selectedProjectId, onSelectProject, onNewProject }
           </div>
         </div>
         <Button
+          variant="glass-primary"
           onClick={onNewProject}
           className="w-full"
           data-testid="button-new-project"
@@ -159,7 +160,7 @@ export function LeftSidebar({ selectedProjectId, onSelectProject, onNewProject }
         <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
           <DialogTrigger asChild>
             <Button
-              variant="outline"
+              variant="glass"
               className="w-full"
               data-testid="button-history"
             >

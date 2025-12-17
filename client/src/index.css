@@ -175,6 +175,112 @@
   }
 }
 
+/* Glass morphism styles */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.dark .glass {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Button transition animations */
+.btn-animate {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+.btn-animate:hover {
+  transform: translateY(-1px);
+}
+
+.btn-animate:active {
+  transform: translateY(0px) scale(0.98);
+}
+
+/* Glass button variant */
+.btn-glass {
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .btn-glass {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.btn-glass:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.dark .btn-glass:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn-glass:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Primary glass variant */
+.btn-glass-primary {
+  background: linear-gradient(135deg, rgba(34, 149, 211, 0.25) 0%, rgba(34, 149, 211, 0.15) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(34, 149, 211, 0.3);
+  color: hsl(var(--primary-foreground));
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .btn-glass-primary {
+  background: linear-gradient(135deg, rgba(56, 172, 234, 0.2) 0%, rgba(56, 172, 234, 0.1) 100%);
+  border: 1px solid rgba(56, 172, 234, 0.25);
+}
+
+.btn-glass-primary:hover {
+  background: linear-gradient(135deg, rgba(34, 149, 211, 0.4) 0%, rgba(34, 149, 211, 0.25) 100%);
+  border-color: rgba(34, 149, 211, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(34, 149, 211, 0.2);
+}
+
+.dark .btn-glass-primary:hover {
+  background: linear-gradient(135deg, rgba(56, 172, 234, 0.35) 0%, rgba(56, 172, 234, 0.2) 100%);
+  border-color: rgba(56, 172, 234, 0.4);
+  box-shadow: 0 4px 16px rgba(56, 172, 234, 0.15);
+}
+
+.btn-glass-primary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Smooth fade-in animation for attachments */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-slide-in {
+  animation: fadeSlideIn 0.2s ease-out forwards;
+}
+
 /**
  * Using the elevate system.
  * Automatic contrast adjustment.

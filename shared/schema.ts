@@ -40,8 +40,19 @@ export const messages = pgTable("messages", {
   role: text("role").notNull(), // 'user' or 'assistant'
   content: text("content").notNull(),
   stage: integer("stage"), // Which stage this message relates to
+  attachments: jsonb("attachments").$type<Attachment[]>(), // File attachments
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+// Attachment type for reference documents
+export type Attachment = {
+  id: string;
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  url: string;
+};
 
 // Knowledge base entries - for RAG system
 export const knowledgeEntries = pgTable("knowledge_entries", {
