@@ -37,6 +37,8 @@ export async function conductMarketResearch(
     return null;
   }
 
+  const startTime = Date.now();
+  
   try {
     const prompt = `Research the following for a ${projectType} project:
 
@@ -83,9 +85,15 @@ Be specific with numbers and cite your sources.`;
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Perplexity API error:", errorText);
+      await storage.updateApiHealth({
+        service: "perplexity",
+        status: "error",
+        latencyMs: Date.now() - startTime,
+      });
       return null;
     }
 
+    const latencyMs = Date.now() - startTime;
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || "";
     const citations = data.citations || [];
@@ -102,18 +110,23 @@ Be specific with numbers and cite your sources.`;
         outputTokens,
         operation: "market_research",
       });
-      
-      await storage.updateApiHealth({
-        service: "perplexity",
-        status: "online",
-        latencyMs: Date.now() - Date.now(),
-      });
     }
+    
+    await storage.updateApiHealth({
+      service: "perplexity",
+      status: "online",
+      latencyMs,
+    });
 
     // Parse the response into structured format
     return parseMarketResearchResponse(content, citations);
   } catch (error) {
     console.error("Error conducting market research:", error);
+    await storage.updateApiHealth({
+      service: "perplexity",
+      status: "error",
+      latencyMs: Date.now() - startTime,
+    });
     return null;
   }
 }
