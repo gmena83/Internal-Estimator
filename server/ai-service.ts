@@ -3,6 +3,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 import { storage } from "./storage";
 import type { Project, Scenario, ROIAnalysis } from "@shared/schema";
+import { loadPricingMatrix, getPricingContext, estimateCostFromMatrix } from "./pricing-matrix";
+import { conductMarketResearch, formatMarketResearchMarkdown, type MarketResearchResult } from "./perplexity-service";
 
 // Check if AI integrations are available
 const hasGeminiIntegration = !!(process.env.AI_INTEGRATIONS_GEMINI_API_KEY && process.env.AI_INTEGRATIONS_GEMINI_BASE_URL);
@@ -216,12 +218,17 @@ Be helpful, professional, and concise. Guide users through the estimate and prop
     try {
       if (gemini) {
         try {
+          // Get pricing context from matrix
+          const pricingContext = getPricingContext();
+          
           const context = `
 Project Title: ${project.title}
 Mission: ${parsedData?.mission || "Software development project"}
 Objectives: ${JSON.stringify(parsedData?.objectives || [])}
 Constraints: ${JSON.stringify(parsedData?.constraints || [])}
 Raw Input: ${project.rawInput || "No additional context provided"}
+
+${pricingContext}
           `;
 
           // Use Gemini for complex reasoning on scenarios
@@ -325,8 +332,21 @@ Return ONLY the JSON object.`,
         scenarios = createDefaultScenarios(project);
       }
 
-      // Generate markdown summary
-      const markdown = generateEstimateMarkdown(project, scenarios);
+      // Conduct market research using Perplexity (if available)
+      let marketResearch: MarketResearchResult | null = null;
+      try {
+        const projectType = parsedData?.mission || project.title || "software development";
+        const projectDesc = project.rawInput || project.title || "";
+        marketResearch = await conductMarketResearch(projectType, projectDesc);
+        if (marketResearch) {
+          console.log("Market research completed successfully");
+        }
+      } catch (researchError) {
+        console.error("Market research failed:", researchError);
+      }
+
+      // Generate markdown summary with market research
+      const markdown = generateEstimateMarkdown(project, scenarios, marketResearch);
 
       // Update project - always persist the result
       await storage.updateProject(project.id, {
@@ -334,7 +354,7 @@ Return ONLY the JSON object.`,
         scenarioA: scenarios.scenarioA,
         scenarioB: scenarios.scenarioB,
         roiAnalysis: scenarios.roiAnalysis,
-        parsedData: { ...parsedData, lastUpdated: new Date().toISOString() },
+        parsedData: { ...parsedData, marketResearch, lastUpdated: new Date().toISOString() },
         status: "estimate_generated",
       });
 
@@ -349,7 +369,7 @@ Return ONLY the JSON object.`,
       console.error("Error generating estimate:", error);
       // Still generate with defaults
       scenarios = createDefaultScenarios(project);
-      const markdown = generateEstimateMarkdown(project, scenarios);
+      const markdown = generateEstimateMarkdown(project, scenarios, null);
       
       await storage.updateProject(project.id, {
         estimateMarkdown: markdown,
@@ -600,9 +620,10 @@ function createDefaultScenarios(project: Project): {
   };
 }
 
-function generateEstimateMarkdown(project: Project, scenarios: any): string {
+function generateEstimateMarkdown(project: Project, scenarios: any, marketResearch: MarketResearchResult | null): string {
   const { scenarioA, scenarioB, roiAnalysis } = scenarios;
   const parsedData = project.parsedData as any || {};
+  const marketResearchMarkdown = formatMarketResearchMarkdown(marketResearch);
 
   return `# Project Estimate: ${project.title}
 
@@ -665,6 +686,8 @@ ${scenarioB?.features?.map((f: string) => `- ${f}`).join("\n") || "- No-code sol
 | 3-Year ROI | ${roiAnalysis?.threeYearROI || 400}% |
 
 ---
+
+${marketResearchMarkdown}
 
 ## Recommendation
 
