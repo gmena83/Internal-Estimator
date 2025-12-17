@@ -1,0 +1,142 @@
+Role: You are an Expert AI Systems Architect and Product Manager. Objective: Create a comprehensive Product Requirement Document (PRD) and Technical Architecture Plan for an AI Agent named "ISI". Input Data: Use the logic, prompts, and data structures found in the provided file Cotizador Proyectos Internos 1.6.json as the foundational logic for the agent's reasoning.
+
+Project Overview
+ISI is an autonomous Business Development & Project Architecture Agent. It acts as the bridge between a client's raw request and the final deal closure, followed by the technical execution planning. ISI must evolve from a linear automation script into a stateful application with a specific UI and Memory System.
+
+1. User Interface (UI) Specifications
+Design the interface layout with a "Command Center" aesthetic.
+
+Left Sidebar (Project History):
+
+Must display the Last 5 Active Projects for quick context switching.
+
+"History" Button: Opens a modal with a searchable archive of all past projects.
+
+Context Awareness: Clicking a project loads its entire state (chats, files, estimates) into the main window.
+
+Main Window (The Workspace):
+
+Chat/Input Interface: A chat-based interface where I paste client emails or notes.
+
+Markdown Viewer: All initial outputs must render in clean Markdown for review.
+
+Action Buttons: "Approve & PDF", "Regenerate", "Send Email", "Generate Execution Plan".
+
+Right Sidebar (API & System Health Dashboard):
+
+Real-time tracking of the following integrations:
+
+Perplexity: Deep Research status.
+
+Gemini 2.5/3: Reasoning & Logic usage.
+
+PDF.co: Document rendering status.
+
+Resend: Email delivery status and tracking (Opened/Clicked).
+
+Gamma: Presentation generation status.
+
+Nano Banana: Image generation status.
+
+2. The "ISI" Brain (Memory & Learning)
+ISI must not just execute; it must learn. Implement a RAG (Retrieval-Augmented Generation) system.
+
+Knowledge Base:
+
+Ingestion: Every time I manually approve a project estimate or strategy, ISI must index that data into a Vector Database.
+
+Content to Index: The "Dual Scenario" financial logic, specific tech stacks chosen, hourly rates used, and the "Vibecoding" prompts generated.
+
+Inference: Before generating a new estimate, ISI must query its database: "How did we price similar projects in the past? What tech stack did we use for this industry?" to calibrate its new output.
+
+3. Workflow & Logic Engine
+The agent must execute the following 5 sequential stages. Use the provided JSON to extract the specific prompts and logic for each stage.
+
+Stage 1: The "Dual Scenario" Estimate (Markdown)
+Trigger: User inputs raw text (email/meeting notes).
+
+Process:
+
+Clean & Parse: Use the Regex logic from JSON step_19 to clean headers.
+
+Analyze: Use Gemini (JSON step_1) to extract Mission, Objectives, and Constraints.
+
+Research: Trigger Perplexity (JSON step_18) to find technical challenges and ROI benchmarks.
+
+Financial Logic: Trigger Gemini (JSON step_8) to generate the "Dual Scenario" comparison:
+
+Scenario A (High-Tech/Custom): Full code ownership, higher cost.
+
+Scenario B (No-Code/MVP): Fast validation, lower cost.
+
+ROI Calculation: Calculate the "Cost of Doing Nothing" (manual operational cost).
+
+Output: Render a Markdown report showing the Comparison Table, ROI Analysis, and Strategic Recommendation.
+
+Stage 2: Production Assets (PDF & Presentation)
+Trigger: Manual approval of Stage 1.
+
+Process:
+
+Proposal PDF: Convert the Markdown to HTML using the CSS styling found in JSON step_22 (Font: Inter, Colors: #0A3A5A primary, #00B8D4 accent). Send to PDF.co.
+
+Internal Report PDF: A separate PDF containing the "Internal Estimates" (margins, hours, contractor rates).
+
+Visuals: Use Nano Banana to generate a cover image for the project based on the client's industry.
+
+Presentation: Send structured data to Gamma API to generate a slide deck summarizing the budget and timeline.
+
+Output: Downloadable links for 2 PDFs and 1 Gamma Presentation URL.
+
+Stage 3: Client Communication & Tracking
+Trigger: Manual approval of Stage 2.
+
+Process:
+
+Compose an email using the persuasive tone from JSON step_16.
+
+Send via Resend API.
+
+Tracking: The Right Sidebar must update to show when the client opens the email or clicks the proposal link.
+
+Stage 4: The "Vibecoding" Execution Guide
+Trigger: Client accepts the proposal (Manual status update).
+
+Process:
+
+Use Claude 3.7 Sonnet logic (JSON step_15).
+
+Goal: Generate a "Cheat Sheet" for developers.
+
+Requirement: Separate "Manual A (High-Code)" and "Manual B (No-Code)".
+
+Key Feature: Include exact "Vibecode Prompts"—prompts written in English that I can copy-paste into Cursor, Windsurf, or Replit to auto-generate the code.
+
+Stage 5: Project Management Breakdown
+Trigger: Manual request ("Generate PM Tracks").
+
+Process:
+
+Take the approved path (A or B) and break it down.
+
+Output: A Markdown list of Phases, Tasks, Sub-tasks, and Checklists.
+
+Detail: Include estimated hours per task and dependencies.
+
+4. Technical Constraints & Security
+Files: All generated files must be backed up to the specific Google Drive folders as defined in JSON step_13.
+
+Financials: Log the final approved numbers into the Google Sheet (JSON step_11) for long-term analytics.
+
+Privacy: Ensure client names and specific data are sanitized before adding to the general Knowledge Base (RAG).
+
+5. Development Plan Request
+Based on the requirements above and the logic inside Cotizador Proyectos Internos 1.6.json, generate:
+
+System Architecture Diagram (describing how the Agents, APIs, and Memory interact).
+
+The Master System Prompt for ISI (The instructions that define its personality and rules).
+
+API Schema Definitions for the new integrations (Gamma, Nano Banana).
+
+A Step-by-Step Implementation Guide to build this in Google Antigravity.

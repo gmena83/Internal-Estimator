@@ -1,0 +1,1357 @@
+﻿{
+  "name": "Cotizador Proyectos Internos 1.6",
+  "type": "SHARED",
+  "summary": "",
+  "description": "",
+  "tags": [],
+  "author": "",
+  "categories": [],
+  "pieces": [
+    "@activepieces/piece-gmail",
+    "@activepieces/piece-google-gemini",
+    "@activepieces/piece-google-drive",
+    "@activepieces/piece-perplexity-ai",
+    "@activepieces/piece-google-docs",
+    "@activepieces/piece-openai",
+    "@activepieces/piece-pdf-co",
+    "@activepieces/piece-claude",
+    "@activepieces/piece-google-sheets"
+  ],
+  "status": "PUBLISHED",
+  "blogUrl": "",
+  "metadata": null,
+  "flows": [
+    {
+      "displayName": "Cotizador Proyectos Internos 1.6",
+      "trigger": {
+        "name": "trigger",
+        "valid": true,
+        "displayName": "New Email",
+        "type": "PIECE_TRIGGER",
+        "settings": {
+          "propertySettings": {
+            "to": {
+              "type": "MANUAL"
+            },
+            "auth": {
+              "type": "MANUAL"
+            },
+            "from": {
+              "type": "MANUAL"
+            },
+            "label": {
+              "type": "MANUAL"
+            },
+            "subject": {
+              "type": "MANUAL"
+            },
+            "category": {
+              "type": "MANUAL"
+            }
+          },
+          "pieceName": "@activepieces/piece-gmail",
+          "pieceVersion": "0.9.6",
+          "input": {
+            "auth": "{{connections['ZmDXwnO8mF1J2LvgSfuEV']}}",
+            "label": {
+              "id": "Label_5317570565620210805",
+              "name": "Otter",
+              "type": "user"
+            },
+            "category": null
+          },
+          "sampleData": {},
+          "triggerName": "gmail_new_email_received"
+        },
+        "nextAction": {
+          "name": "step_19",
+          "skip": false,
+          "type": "CODE",
+          "valid": true,
+          "settings": {
+            "input": {
+              "rawBody": "{{trigger['message']['text']}}",
+              "rawDate": "{{trigger['message']['date']}}",
+              "rawSubject": "{{trigger['message']['subject']}}"
+            },
+            "sampleData": {},
+            "sourceCode": {
+              "code": "export const code = async (inputs) => {\n  const subject = inputs.rawSubject || \"\";\n  const body = inputs.rawBody || \"\";\n\n  // --- A. LIMPIEZA DEL TÍTULO ---\n  let cleanTitle = subject.replace(/^(Fwd|Re|RV|Rv):\\s*/i, \"\").trim(); \n  if (cleanTitle.includes(\"|\")) {\n    cleanTitle = cleanTitle.split(\"|\")[1].trim();\n  }\n\n  // --- B. EXTRACCIÓN DE FECHA ORIGINAL ---\n  // Buscamos la fecha en los encabezados del forward para usarla como referencia base\n  let extractedDate = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }); // Default: Hoy\n  \n  // Patrón 1: \"Date: Wed, 20 Nov 2024 10:00:00\" (Estándar de correo)\n  const dateHeaderMatch = body.match(/^Date:\\s*(.+)$/m);\n  \n  // Patrón 2: \"El vie, 18 oct 2024 a las...\" (Gmail Español)\n  const dateTextMatchEs = body.match(/^El\\s+(.+?)\\sa las/m);\n  \n  // Patrón 3: \"On Mon, Oct 21, 2024 at...\" (Gmail Inglés)\n  const dateTextMatchEn = body.match(/^On\\s+(.+?)\\sat\\s/m);\n\n  if (dateHeaderMatch) {\n    extractedDate = dateHeaderMatch[1].trim();\n  } else if (dateTextMatchEs) {\n    extractedDate = dateTextMatchEs[1].trim();\n  } else if (dateTextMatchEn) {\n    extractedDate = dateTextMatchEn[1].trim();\n  }\n\n  // --- C. LIMPIEZA DEL TRANSCRIPT ---\n  let cleanTranscript = body;\n  const forwardPatterns = [\n    /---------- Forwarded message ----------/i,\n    /---------- Mensaje reenviado ----------/i,\n    /^On\\s.+?wrote:/m,\n    /^El\\s.+?escribió:/m,\n    /^De:\\s.+?Enviado el:/m\n  ];\n\n  for (const pattern of forwardPatterns) {\n    const match = body.match(pattern);\n    if (match) {\n      cleanTranscript = body.substring(match.index + match[0].length).trim();\n      break;\n    }\n  }\n  if (!cleanTranscript) cleanTranscript = body;\n\n  return {\n    projectTitle: cleanTitle,\n    transcript: cleanTranscript,\n    referenceDate: extractedDate // <--- USA ESTO EN EL RESTO DEL FLUJO\n  };\n};",
+              "packageJson": "{}"
+            },
+            "errorHandlingOptions": {
+              "retryOnFailure": {
+                "value": true
+              },
+              "continueOnFailure": {
+                "value": false
+              }
+            }
+          },
+          "nextAction": {
+            "name": "step_1",
+            "skip": false,
+            "type": "PIECE",
+            "valid": true,
+            "settings": {
+              "input": {
+                "auth": "{{connections['7UyEOcBImqZK15GkB3YUF']}}",
+                "model": "gemini-2.5-pro",
+                "prompt": "You are an expert Business Analyst specializing in software development. Your task is to read the following brainstorming transcript and extract the key project information.\nTRANSCRIPT: {{trigger.message.text}}\nTASK: Analyze the transcript and identify the following key components. Be concise and extract only the information explicitly mentioned\n- Mission: What is the high-level \"why\" of the project?\n- Objectives: What specific, actionable goals does it aim to achieve?\n- Business Model: How does it plan to generate revenue? Detail the different tiers mentioned.\n- Features: What specific functionalities, tools, or \"games\" are mentioned for the app?\n\n*** For the following variables, use information explicitly mentioned.\n- Client Data (Name, Company, Industry, Region): (If empty, prepare this as a in home project for Menatech)\n- Project Constraints (Budget, Timeframe):  (If empty, use the values \"Budget: Unlimited\" and Timeframe: \"No time constrains\"\n In case there's no explicitly mentioned information:\n- Infer \"Industry\" and  Region\". \n- For \"Name\" use \"Gonzalo Mena\" and for company use \"Menatech\"\n- For budget constrains use \"Unlimited\"\n- For time constrains use \"At regular pace\"\n\nSTRICT RULES:\nYour response must be only a valid JSON object.\nDo not include any text, markdown, or code fences (like ```json) before or after the JSON.\nThe JSON must follow this exact structure with English keys:\nJSON\n{\n  \"mission\": \"A concise summary of the project's high-level purpose.\",\n  \"objectives\": [\n    \"The first specific goal.\",\n    \"The second specific goal.\",\n    \"...\"\n  ],\n  \"businessModel\": {\n    \"freeTier\": \"Description of the free/unregistered tier.\",\n    \"leadGenTier_Registered\": \"Description of what registered users (leads) receive.\",\n    \"paidTier_10_USD\": \"Description of the $10 paid tier (e.g., audio report).\",\n    \"premiumTier_50_USD\": \"Description of the $50 premium tier (e.g., video presentation).\"\n  },\n  \"features\": [\n    \"Fact-checking tool.\",\n    \"Scenario simulator.\",\n    \"Voter alignment questionnaire (3 levels: basic, intermediate, advanced).\",\n    \"Historical voting record analysis.\",\n    \"Tie-breaker (audio submission).\",\n    \"Fun/personality quiz (Star Wars, etc.).\",\n    \"Disclaimer page.\",\n    \"Public dashboard with usage statistics.\"\n  ],\n  \"clientData\": {\n    \"name\": \"Extracted from transcript, or 'Gonzalo Mena' if not found\",\n    \"company\": \"Extracted from transcript, or 'Menatech' if not found\",\n    \"industry\": \"Extracted or inferred from transcript\",\n    \"region\": \"Extracted or inferred from transcript (e.g., 'Chile')\"\n  },\n  \"projectConstraints\": {\n    \"budget\": \"Extracted from transcript, or 'Unlimited' if not found\",\n    \"timeframe\": \"Extracted from transcript, or 'At regular pace' if not found\"\n  }\n}"
+              },
+              "pieceName": "@activepieces/piece-google-gemini",
+              "actionName": "chat_gemini",
+              "sampleData": {},
+              "pieceVersion": "0.0.23",
+              "propertySettings": {
+                "auth": {
+                  "type": "MANUAL"
+                },
+                "model": {
+                  "type": "MANUAL"
+                },
+                "prompt": {
+                  "type": "MANUAL"
+                },
+                "memoryKey": {
+                  "type": "MANUAL"
+                }
+              },
+              "errorHandlingOptions": {
+                "retryOnFailure": {
+                  "value": true
+                },
+                "continueOnFailure": {
+                  "value": false
+                }
+              }
+            },
+            "nextAction": {
+              "name": "step_7",
+              "skip": false,
+              "type": "CODE",
+              "valid": true,
+              "settings": {
+                "input": {
+                  "rawResponse": "{{step_1['response']}}"
+                },
+                "sampleData": {},
+                "sourceCode": {
+                  "code": "// This code robustly extracts a clean JSON object from a raw string,\n// ignoring common AI artifacts like markdown fences.\n\nfunction extractJson(text) {\n  // 1. Try to find a JSON code block ```json ... ```\n  let match = text.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  \n  // 2. If not found, find the first '{' and last '}'\n  if (!match) {\n    const startIndex = text.indexOf('{');\n    const endIndex = text.lastIndexOf('}');\n    if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {\n      match = [null, text.substring(startIndex, endIndex + 1)];\n    }\n  }\n\n  // 3. If still not found, assume the whole string is the JSON\n  if (!match && text.trim().startsWith('{')) {\n    match = [null, text.trim()];\n  }\n\n  if (match && match[1]) {\n    try {\n      // Try to parse the extracted JSON\n      return JSON.parse(match[1]);\n    } catch (e) {\n      console.error(\"Error parsing extracted JSON:\", e);\n      return { error: \"Failed to parse JSON from AI response.\" };\n    }\n  }\n  \n  console.error(\"No valid JSON object found in AI response.\");\n  return { error: \"No JSON object found.\" };\n}\n\nexport const code = async (inputs) => {\n  const rawText = inputs.rawResponse; // Asegúrate de mapear la salida de la IA aquí\n  \n  if (!rawText || typeof rawText !== 'string') {\n    return { error: \"Input 'rawResponse' is not a valid string.\" };\n  }\n\n  const extractedData = extractJson(rawText);\n  return extractedData;\n};",
+                  "packageJson": "{}"
+                },
+                "errorHandlingOptions": {
+                  "retryOnFailure": {
+                    "value": true
+                  },
+                  "continueOnFailure": {
+                    "value": false
+                  }
+                }
+              },
+              "nextAction": {
+                "name": "step_17",
+                "skip": false,
+                "type": "CODE",
+                "valid": true,
+                "settings": {
+                  "input": {},
+                  "sampleData": {},
+                  "sourceCode": {
+                    "code": "export const code = async (inputs: {}) => {\n  // Get today's date\n  const today = new Date();\n\n  // Format it into a nice string like \"August 23, 2025\"\n  const options: Intl.DateTimeFormatOptions = {\n    year: 'numeric',\n    month: 'long',\n    day: 'numeric'\n  };\n  const formattedDate = today.toLocaleDateString('en-US', options);\n\n  // Return the date so other steps can use it\n  return {\n    current_date: formattedDate\n  };\n};",
+                    "packageJson": "{}"
+                  },
+                  "errorHandlingOptions": {
+                    "retryOnFailure": {
+                      "value": true
+                    },
+                    "continueOnFailure": {
+                      "value": false
+                    }
+                  }
+                },
+                "nextAction": {
+                  "name": "step_2",
+                  "skip": false,
+                  "type": "PIECE",
+                  "valid": true,
+                  "settings": {
+                    "input": {
+                      "auth": "{{connections['7UyEOcBImqZK15GkB3YUF']}}",
+                      "model": "gemini-2.5-pro",
+                      "prompt": "ROLE: You are a Lead AI Solutions Architect. Your job is to analyze a client's project brief (derived from a transcript) and create a master \"Project Orchestration Plan.\" This plan includes both the technical project details and strategic directives to guide a team of specialized AI agents.\nCONTEXT (NEW SOURCE OF TRUTH):\n- Current Date: {{step_17.current_date}}\n- Project Title (from Email): {{step_19['projectTitle']}}\n- Project Mission: {{step_7['mission']}}\n- Project Objectives: {{step_7['objectives']}}\n- Key Features List: {{step_7['features']}}\n- Business Model Summary: {{step_7['businessModel']}}\n- Full Meeting Transcript (for additional context): {{trigger.message.text}}\n\n\nTASK:\nAnalyze all the provided context to generate a single, structured JSON object representing the Project Orchestration Plan.\n1.  Use the \"Project Mission\", \"Objectives\", and \"Features\" to define the project scope.\n2.  Use the \"Full Meeting Transcript\" to identify any subtle client needs, risks, or business opportunities.\n3.  **Constraint Handling**:\n    * Since \"Client Data\" is Not Provided, use \"N/A\" or \"To be defined\" for any fields that require this (like industry-specific risks).\n    * Since \"Project Constraints\" (Budget, Timeframe) are Not Provided, you must propose a standard, reasonable **MVP (Minimum Viable Product) scope**.\n    * Propose a standard MVP timeline (e.g., a total of 30-45 working days).\n    * The `urgencyMultiplier` **MUST BE 0**.\n4.  Define the tone, style, and key selling points for the proposal based on the project being a political/data analysis app (\"App Politika\").\n5.  Generate specific research questions that will guide the research AI to find relevant information.\n6. Industry & Region: Try to identify the client's primary industry (e.g., \"Technology Consulting,\" \"Political Analysis\") and the specific geographical region (e.g., \"Chile,\" \"Latin America\"). Infer from context (like \"chilenos\" implying \"Chile\") if not explicitly stated. If no context exists, use \"N/A\".\nHARD RULES:\n- Your entire response must be a single, bare JSON object. The first character must be { and the last character must be }.\n- Do not include backticks, code fences, markdown, comments, or any text before or after the JSON.\n- All fields in the schema below are required. Use empty arrays [] or default values (like \"N/A\") if information is unknown, but do not omit keys.\n- All text output must be in Spanish (\"es\").\nOUTPUT JSON SCHEMA:\n{\n  \"technicalPlan\": {\n    \"expertDescription\": \"A concise, technical summary of the proposed solution.\",\n    \"WorkPlan\": [\n      {\n        \"phaseNumber\": 1,\n        \"phaseName\": \"Discovery & Scoping\",\n        \"objectives\": [\"string\"],\n        \"deliverables\": [\"string\"],\n        \"tasks\": [\"string\"],\n        \"ownerRoles\": [\"string\"],\n        \"durationDays\": 0,\n        \"dependencies\": [\"string\"],\n        \"risks\": [\"string\"],\n        \"mitigations\": [\"string\"]\n      }\n    ],\n    \"TechStack\": [\"string\"],\n    \"InputsRequired\": [\"string\"],\n    \"Assumptions\": [\"string\"],\n    \"Exclusions\": [\"string\"],\n    \"AcceptanceCriteria\": [\"string\"],\n    \"SuccessMetrics\": [\"string\"],\n    \"EstimatedEffort\": {\n      \"overallLevel\": \"S | M | L\",\n      \"byRole\": [{\"role\": \"string\", \"hours\": 0}]\n    }\n  },\n  \"researchDirectives\": {\n    \"overallFocus\": \"A one-sentence directive for the research goal.\",\n    \"aiChallengesQuestions\": [\"string\"],\n    \"communityAnalystQuestions\": [\"string\"],\n    \"agencyMarketQuestions\": [\"string\"]\n  },\n  \"proposalDirectives\": {\n    \"targetAudience\": \"string\",\n    \"toneAndStyle\": \"string\",\n    \"keySellingPoints\": [\"string\"],\n    \"urgencyMultiplier\": 0.0\n  },\n  \"documentStyleDirectives\": {\n    \"theme\": \"Professional\",\n    \"branding\": {\n      \"primaryColor\": \"#0A3A5A\",\n      \"font\": \"Inter, sans-serif\"\n    }\n  },\n  \"executionPlanDirectives\": {\n    \"sprintCadence\": \"2-week sprints\",\n    \"riskTolerance\": \"string\",\n    \"communicationCadence\": \"string\"\n  }\n}"
+                    },
+                    "pieceName": "@activepieces/piece-google-gemini",
+                    "actionName": "chat_gemini",
+                    "sampleData": {},
+                    "pieceVersion": "0.0.23",
+                    "propertySettings": {
+                      "auth": {
+                        "type": "MANUAL"
+                      },
+                      "model": {
+                        "type": "MANUAL"
+                      },
+                      "prompt": {
+                        "type": "MANUAL"
+                      }
+                    },
+                    "errorHandlingOptions": {
+                      "retryOnFailure": {
+                        "value": true
+                      },
+                      "continueOnFailure": {
+                        "value": false
+                      }
+                    }
+                  },
+                  "nextAction": {
+                    "name": "step_4",
+                    "skip": false,
+                    "type": "CODE",
+                    "valid": true,
+                    "settings": {
+                      "input": {
+                        "orchestrationPlanRaw": "{{step_2['response']}}"
+                      },
+                      "sampleData": {},
+                      "sourceCode": {
+                        "code": "// --- Type Definitions (for clarity) ---\ntype Phase = {\n  phaseNumber: number; phaseName: string; objectives: string[]; deliverables: string[];\n  tasks: string[]; ownerRoles: string[]; durationDays: number; dependencies: string[];\n  risks: string[]; mitigations: string[];\n};\ntype EffortByRole = { role: string; hours: number };\ntype WorkPlanDoc = {\n  expertDescription: string;\n  WorkPlan: Phase[];\n  TechStack: string[];\n  InputsRequired: string[];\n  Assumptions: string[];\n  Exclusions: string[];\n  AcceptanceCriteria: string[];\n  SuccessMetrics: string[];\n  EstimatedEffort: { overallLevel: string; byRole: EffortByRole[] };\n};\n\n// --- Helper Functions (Unchanged) ---\nfunction fmtErr(e: unknown) {\n  const any = e as any;\n  return {\n    ok: false,\n    error: any?.message ?? String(e),\n    errorCode: any?.code ?? null,\n  };\n}\nfunction toStr(x: unknown): string {\n  if (typeof x === 'string') return x;\n  try { return JSON.stringify(x ?? ''); } catch { return String(x ?? ''); }\n}\nfunction stripOneFence(s: string): string {\n  const m1 = s.match(/^\\s*```json\\s*([\\s\\S]*?)\\s*```\\s*$/i);\n  if (m1) return m1[1];\n  const m2 = s.match(/^\\s*```\\s*([\\s\\S]*?)\\s*```\\s*$/);\n  if (m2) return m2[1];\n  return s;\n}\nfunction extractJson(s: string) {\n  const candidates: string[] = [];\n  const trimmed = s.trim();\n  candidates.push(trimmed);\n  candidates.push(stripOneFence(trimmed));\n\n  let depth = 0, start = -1;\n  for (let i = 0; i < trimmed.length; i++) {\n    const ch = trimmed[i];\n    if (ch === '{') { if (depth === 0) start = i; depth++; }\n    else if (ch === '}') { depth--; if (depth === 0 && start !== -1) { candidates.push(trimmed.slice(start, i + 1)); break; } }\n  }\n\n  const seen = new Set<string>();\n  for (const c of candidates) {\n    if (!c || seen.has(c)) continue;\n    seen.add(c);\n    try { return { parsed: JSON.parse(c), raw: c }; } catch { /* try next */ }\n  }\n\n  return { error: 'Unable to parse JSON from input (no valid object found).' };\n}\nfunction asNum(x: any, d = 0) { const n = typeof x === 'number' ? x : Number(x); return Number.isFinite(n) ? n : d; }\nfunction cleanStrArray(x: any): string[] {\n  if (!Array.isArray(x)) return [];\n  const out = x.map(v => (typeof v === 'string' ? v.trim() : String(v))).filter(Boolean);\n  return Array.from(new Set(out));\n}\n\n// --- Normalization Function (Unchanged) ---\nfunction normalize(doc: any): WorkPlanDoc {\n  const phases: Phase[] = Array.isArray(doc?.WorkPlan) ? doc.WorkPlan.map((p: any) => ({\n    phaseNumber: asNum(p?.phaseNumber, 0),\n    phaseName: typeof p?.phaseName === 'string' ? p.phaseName : '',\n    objectives: cleanStrArray(p?.objectives),\n    deliverables: cleanStrArray(p?.deliverables),\n    tasks: cleanStrArray(p?.tasks),\n    ownerRoles: cleanStrArray(p?.ownerRoles),\n    durationDays: asNum(p?.durationDays, 0),\n    dependencies: cleanStrArray(p?.dependencies),\n    risks: cleanStrArray(p?.risks),\n    mitigations: cleanStrArray(p?.mitigations),\n  })) : [];\n\n  return {\n    expertDescription: typeof doc?.expertDescription === 'string' ? doc.expertDescription : '',\n    WorkPlan: phases,\n    TechStack: cleanStrArray(doc?.TechStack),\n    InputsRequired: cleanStrArray(doc?.InputsRequired),\n    Assumptions: cleanStrArray(doc?.Assumptions),\n    Exclusions: cleanStrArray(doc?.Exclusions),\n    AcceptanceCriteria: cleanStrArray(doc?.AcceptanceCriteria),\n    SuccessMetrics: cleanStrArray(doc?.SuccessMetrics),\n    EstimatedEffort: {\n      overallLevel: typeof doc?.EstimatedEffort?.overallLevel === 'string' ? doc.EstimatedEffort.overallLevel : '',\n      byRole: Array.isArray(doc?.EstimatedEffort?.byRole)\n        ? doc.EstimatedEffort.byRole.map((r: any) => ({ role: String(r?.role ?? ''), hours: asNum(r?.hours, 0) }))\n        : [],\n    },\n  };\n}\n\n// --- Main Logic (Updated) ---\nexport const code = async (inputs: any) => {\n  try {\n    const rawText = toStr(inputs?.orchestrationPlanRaw ?? '');\n    if (!rawText) {\n        return { ok: false, error: \"Input 'orchestrationPlanRaw' is empty. Make sure you map the response from the previous Gemini step.\" };\n    }\n    \n    const got = extractJson(rawText);\n    if ((got as any).error) {\n      return {\n        ok: false,\n        error: (got as any).error,\n        sampleSnippet: rawText.slice(0, 400),\n        hint: 'Map a STRING field from the AI step (e.g., response), not the whole step object.',\n      };\n    }\n\n    const orchestrationPlan = (got as any).parsed;\n    const technicalPlan = orchestrationPlan?.technicalPlan;\n    \n    if (!technicalPlan) {\n        return { ok: false, error: \"The parsed JSON is missing the required 'technicalPlan' object.\" };\n    }\n\n    // Normalize and enrich the technical plan part of the JSON\n    const doc = normalize(technicalPlan);\n\n    const perPhase = doc.WorkPlan.map(p => ({\n      phaseNumber: p.phaseNumber,\n      phaseName: p.phaseName,\n      taskCount: p.tasks.length,\n      durationDays: p.durationDays,\n    }));\n    const totalTasks = perPhase.reduce((a, b) => a + b.taskCount, 0);\n    const totalDurationDays = perPhase.reduce((a, b) => a + b.durationDays, 0);\n\n    const byRole = doc.EstimatedEffort.byRole.filter(r => r.role && Number.isFinite(r.hours));\n    const totalHours = byRole.reduce((a, b) => a + b.hours, 0);\n\n    const roles = Array.from(new Set([\n      ...doc.WorkPlan.flatMap(p => p.ownerRoles),\n      ...byRole.map(r => r.role),\n    ]));\n    const techStack = Array.from(new Set(doc.TechStack));\n\n    const summaryLine =\n      `Plan listo: ${doc.WorkPlan.length} fases, ${totalDurationDays} días, ` +\n      `${totalTasks} tareas, esfuerzo ~${totalHours} h. ` +\n      (techStack.length ? `Tech: ${techStack.slice(0, 3).join(', ')}${techStack.length > 3 ? ', ...' : ''}.` : '');\n\n    const sheetRow = {\n      ExpertDescription: doc.expertDescription,\n      Phases: doc.WorkPlan.length,\n      DurationDaysTotal: totalDurationDays,\n      TasksTotal: totalTasks,\n      EffortOverall: doc.EstimatedEffort.overallLevel,\n      EffortHoursTotal: totalHours,\n      Roles: roles.join(', '),\n      TechStack: techStack.join(', '),\n    };\n\n    return {\n      ok: true,\n      // The fully parsed and enriched technical plan\n      workplan: doc,\n\n      // Pass through the directives for downstream nodes\n      researchDirectives: orchestrationPlan.researchDirectives ?? null,\n      proposalDirectives: orchestrationPlan.proposalDirectives ?? null,\n      documentStyleDirectives: orchestrationPlan.documentStyleDirectives ?? null,\n      executionPlanDirectives: orchestrationPlan.executionPlanDirectives ?? null,\n\n      // Keep all the useful calculated metadata\n      meta: {\n        perPhase,\n        totalTasks,\n        totalDurationDays,\n      },\n      effort: {\n        overallLevel: doc.EstimatedEffort.overallLevel,\n        totalHours,\n        byRole,\n        roles,\n      },\n      flattened: {\n        deliverables: Array.from(new Set(doc.WorkPlan.flatMap(p => p.deliverables))),\n        techStack,\n        // Add other flattened arrays as needed\n      },\n      summaryLine,\n      milestones: doc.WorkPlan.map(p => ({\n        title: `F${p.phaseNumber} - ${p.phaseName}`,\n        durationDays: p.durationDays,\n        deliverablesTop: p.deliverables.slice(0, 3),\n      })),\n      sheetRow,\n      rawUsed: (got as any).raw ?? '',\n    };\n  } catch (e) {\n    return fmtErr(e);\n  }\n};",
+                        "packageJson": "{}"
+                      },
+                      "errorHandlingOptions": {
+                        "retryOnFailure": {
+                          "value": true
+                        },
+                        "continueOnFailure": {
+                          "value": false
+                        }
+                      }
+                    },
+                    "nextAction": {
+                      "name": "step_13",
+                      "skip": false,
+                      "type": "PIECE",
+                      "valid": true,
+                      "settings": {
+                        "input": {
+                          "auth": "{{connections['ScZ69H4wwSmWhi3SGwGvD']}}",
+                          "folderName": "{{step_19['projectTitle']}}",
+                          "parentFolder": "1lVQNG1bldct4Wu1FkJcxer3uRlWs-ckA",
+                          "include_team_drives": false
+                        },
+                        "pieceName": "@activepieces/piece-google-drive",
+                        "actionName": "create_new_gdrive_folder",
+                        "sampleData": {},
+                        "pieceVersion": "0.5.53",
+                        "propertySettings": {
+                          "auth": {
+                            "type": "MANUAL"
+                          },
+                          "folderName": {
+                            "type": "MANUAL"
+                          },
+                          "parentFolder": {
+                            "type": "MANUAL"
+                          },
+                          "include_team_drives": {
+                            "type": "MANUAL"
+                          }
+                        },
+                        "errorHandlingOptions": {
+                          "retryOnFailure": {
+                            "value": true
+                          },
+                          "continueOnFailure": {
+                            "value": false
+                          }
+                        }
+                      },
+                      "nextAction": {
+                        "name": "step_18",
+                        "skip": false,
+                        "type": "PIECE",
+                        "valid": true,
+                        "settings": {
+                          "input": {
+                            "auth": "{{connections['dJic7sC9QvWAHp8kER1cK']}}",
+                            "model": "sonar-reasoning-pro",
+                            "roles": [
+                              {
+                                "role": "system",
+                                "content": "You are a senior AI research analyst using live web results. Your task is to perform targeted research to answer specific questions and synthesize the findings into a concise, decision-grade brief on AI/ML challenges."
+                              }
+                            ],
+                            "top_p": 0.9,
+                            "prompt": "CONTEXT:\nProject: {{step_19['projectTitle']}}\nInput Date: {{step_19['referenceDate']}}\nDescription: {{step_7['mission']}}\nIndustry/Region: {{step_7['clientData']['industry']}} / {{step_7['clientData']['region']}}\n\nRESEARCH OBJECTIVES:\nTechnical Challenges: Identify specific implementation risks for the proposed custom tech stack.\nCommercial Alternatives (Low-Tech/No-Code): Find 2-3 existing SaaS or No-Code tools (e.g., Zapier, Airtable, specific industry vertical SaaS) that could solve the client's problem without custom code. List their pros/cons vs. a custom solution.\nROI Analysis Data: Find benchmarks on \"time spent manually\" on typical tasks related to this project in the target industry. We need data to calculate how much money/time the client saves (e.g., \"Manual data entry costs companies $X/hour\").\nOUTPUT format: JSON (Keep existing schema, but add fields for commercialAlternatives and roiBenchmarks).",
+                            "max_tokens": "4096",
+                            "temperature": "0.2",
+                            "presence_penalty": 0,
+                            "frequency_penalty": 1
+                          },
+                          "pieceName": "@activepieces/piece-perplexity-ai",
+                          "actionName": "ask-ai",
+                          "sampleData": {},
+                          "pieceVersion": "0.2.8",
+                          "propertySettings": {
+                            "auth": {
+                              "type": "MANUAL"
+                            },
+                            "model": {
+                              "type": "MANUAL"
+                            },
+                            "roles": {
+                              "type": "MANUAL"
+                            },
+                            "top_p": {
+                              "type": "MANUAL"
+                            },
+                            "prompt": {
+                              "type": "MANUAL"
+                            },
+                            "max_tokens": {
+                              "type": "MANUAL"
+                            },
+                            "temperature": {
+                              "type": "MANUAL"
+                            },
+                            "presence_penalty": {
+                              "type": "MANUAL"
+                            },
+                            "frequency_penalty": {
+                              "type": "MANUAL"
+                            }
+                          },
+                          "errorHandlingOptions": {
+                            "retryOnFailure": {
+                              "value": true
+                            },
+                            "continueOnFailure": {
+                              "value": false
+                            }
+                          }
+                        },
+                        "nextAction": {
+                          "name": "step_21",
+                          "skip": false,
+                          "type": "CODE",
+                          "valid": true,
+                          "settings": {
+                            "input": {
+                              "rawResponse": "{{step_18['result']}}"
+                            },
+                            "sampleData": {},
+                            "sourceCode": {
+                              "code": "// This code robustly extracts a clean JSON object from a raw string,\n// ignoring common AI artifacts like <think> blocks or markdown fences.\n\n// --- Helper Functions ---\nfunction toStr(x) {\n  if (typeof x === 'string') return x;\n  try { return JSON.stringify(x ?? ''); } catch { return String(x ?? ''); }\n}\n\nfunction extractJson(s) {\n  // First, try to find JSON that appears after a </think> tag\n  const thinkMatch = s.match(/<\\/think>\\s*(\\{[\\s\\S]*\\})/);\n  if (thinkMatch && thinkMatch[1]) {\n    try {\n      return { parsed: JSON.parse(thinkMatch[1]), ok: true };\n    } catch (e) {\n      // Fall through if parsing fails\n    }\n  }\n\n  // Fallback for ```json ... ``` code fences\n  const fenceMatch = s.match(/^\\s*```json\\s*([\\s\\S]*?)\\s*```\\s*$/i);\n  if (fenceMatch && fenceMatch[1]) {\n    try {\n      return { parsed: JSON.parse(fenceMatch[1]), ok: true };\n    } catch (e) {\n      // Fall through\n    }\n  }\n  \n  // Final attempt: find the first valid top-level JSON object in the string\n  let depth = 0, start = -1;\n  for (let i = 0; i < s.length; i++) {\n    const ch = s[i];\n    if (ch === '{') {\n      if (depth === 0) start = i;\n      depth++;\n    } else if (ch === '}') {\n      depth--;\n      if (depth === 0 && start !== -1) {\n        const potentialJson = s.substring(start, i + 1);\n        try {\n          return { parsed: JSON.parse(potentialJson), ok: true };\n        } catch (e) {\n          start = -1; // Not a valid top-level object, continue searching\n        }\n      }\n    }\n  }\n\n  return { error: 'Unable to find a valid JSON object in the input string.', ok: false };\n}\n\n// --- Main Logic ---\nexport const code = async (inputs) => {\n  const rawText = toStr(inputs.rawResponse ?? '');\n  if (!rawText) {\n    return { ok: false, error: \"Input 'rawResponse' is empty.\" };\n  }\n  \n  const result = extractJson(rawText);\n  \n  if (!result.ok) {\n    return { ok: false, error: result.error, sample: rawText.slice(0, 250) };\n  }\n\n  // Return the entire parsed object so all its keys are available\n  return result.parsed;\n};",
+                              "packageJson": "{}"
+                            },
+                            "errorHandlingOptions": {
+                              "retryOnFailure": {
+                                "value": true
+                              },
+                              "continueOnFailure": {
+                                "value": false
+                              }
+                            }
+                          },
+                          "nextAction": {
+                            "name": "step_20",
+                            "skip": false,
+                            "type": "PIECE",
+                            "valid": true,
+                            "settings": {
+                              "input": {
+                                "auth": "{{connections['6yNrXYNWDrjoB3hB6eaa7']}}",
+                                "documentId": "1xRPPNOEP1dPrT1ooa0UGz2fwcV6UG-2ojIZyAPq4uEk"
+                              },
+                              "pieceName": "@activepieces/piece-google-docs",
+                              "actionName": "read_document",
+                              "sampleData": {},
+                              "pieceVersion": "0.2.12",
+                              "propertySettings": {
+                                "auth": {
+                                  "type": "MANUAL"
+                                },
+                                "documentId": {
+                                  "type": "MANUAL"
+                                }
+                              },
+                              "errorHandlingOptions": {
+                                "retryOnFailure": {
+                                  "value": true
+                                },
+                                "continueOnFailure": {
+                                  "value": false
+                                }
+                              }
+                            },
+                            "nextAction": {
+                              "name": "step_8",
+                              "type": "PIECE",
+                              "valid": true,
+                              "settings": {
+                                "input": {
+                                  "auth": "{{connections['7UyEOcBImqZK15GkB3YUF']}}",
+                                  "model": "gemini-2.5-pro",
+                                  "prompt": "ROLE: You are an expert Senior IT Cost Analyst and Solutions Architect for Menatech. Your task is to generate a detailed \"Dual Scenario\" financial estimation and an ROI analysis based on provided project data.\nCONTEXT (SOURCE OF TRUTH):\n- Project Title: {{step_19['projectTitle']}}\n- Reference Date: {{step_19['referenceDate']}}\n- Scenario A (Custom) Effort Breakdown: {{step_4['effort']['byRole']}}\n- Scenario A (Custom) Tech Stack: {{step_4['flattened']['techStack']}}\n- Market Research & SaaS Pricing: {{step_21}}\n- Contractor Rate Card: {{step_20['body']}}\n- Default Internal Rate: $100 USD/hr\n- Project Duration: {{step_4['meta']['totalDurationDays']}} days\nTASK:\nGenerate a structured JSON object containing a financial comparison between a \"Custom High-Tech\" solution and a \"Low-Tech/No-Code\" prototype, plus an ROI analysis.\n1. ROI BASELINE (The Cost of Doing Nothing):\n   - Estimate the \"Manual Operational Cost\" based on the project description.\n   - Assumption: If no specific data is present, assume the problem consumes 15 hours/week of a staff member ($25/hr).\n   - Calculate the `monthly_manual_cost` and `annual_manual_cost`.\n   - **CRITICAL:** You must generate a string explaining the math used (e.g., \"65 hours/month * $25/hr\").\n2. SCENARIO A: CUSTOM HIGH-TECH (Standard):\n   - **Labor:** Calculate cost using the `Scenario A Effort` and the `Rate Card`. If a role is missing in the card, use $100/hr.\n   - **Infra & AI Costs:**\n     - **Hosting:** Standard Vercel/AWS costs.\n     - **AI Token Consumption:** Estimate the monthly cost of OpenAI/Anthropic APIs ($100-$400+ USD/month).\n     - **Data APIs:** Cost of news/social media APIs if applicable.\n     - **Calculation:** `infrastructure_cost_usd` MUST be the sum of Hosting + AI Tokens + Data APIs.\n   - **Total:** Sum Labor + Infra + 15% Contingency.\n3. SCENARIO B: LOW-TECH / NO-CODE (Prototype):\n   - **Concept:** Use the \"Commercial Alternatives\" found in `Market Research`.\n   - **Labor:** Assume 70% LESS effort than Scenario A.\n   - **Subscription Costs:** Estimate $150-$300/mo for a Pro stack (Zapier + Airtable + Frontend).\n   - **Total:** Sum Discounted Labor + SaaS Subscription (for duration) + 10% Contingency.\nHARD RULES:\n- Output MUST be a single valid JSON object.\n- **DO NOT** use markdown formatting. Start directly with {.\n- All currency in USD.\n- **Language: Spanish (ES).**\n- **WRITING STYLE:** Write short, punchy descriptions. Max 2-3 sentences. Use specific details.\nOUTPUT JSON SCHEMA:\n{\n\"roi_analysis\": {\n    \"manual_process_description\": \"A detailed paragraph explaining WHY the current manual process is inefficient. Mention specific risks like human error, slow response times, lack of scalability, and opportunity cost (what could the team be doing instead?).\",\n    \"estimated_manual_hours_monthly\": 0,\n    \"hourly_cost_usd\": 0,\n    \"annual_loss_usd\": 0.00,\n    \"math_explanation\": \"String showing the calculation formula (e.g. '65 horas/mes * $25/hr * 12 meses')\"\n  },\n  \"scenario_A_custom\": {\n    \"title\": \"Solución A: Desarrollo a Medida (High-Tech)\",\n    \"description\": \"Descripción corta enfocada en propiedad intelectual y escala.\",\n    \"labor_cost_usd\": 0.00,\n    \"infrastructure_cost_usd\": 0.00,\n    \"contingency_15_percent\": 0.00,\n    \"grand_total_usd\": 0.00,\n    \"tech_breakdown\": [\n      {\"item\": \"Hosting\", \"cost\": 0, \"type\": \"Monthly\"},\n      {\"item\": \"AI Tokens\", \"cost\": 0, \"type\": \"Monthly Usage\"},\n      {\"item\": \"Data APIs\", \"cost\": 0, \"type\": \"Monthly\"}\n    ],\n    \"pros_with_desc\": [\n        {\"point\": \"Ventaja 1\", \"desc\": \"Explicación breve de por qué es una ventaja.\"},\n        {\"point\": \"Ventaja 2\", \"desc\": \"Explicación breve.\"}\n    ]\n  },\n  \"scenario_B_lowtech\": {\n    \"title\": \"Solución B: Prototipo No-Code (Validación Rápida)\",\n    \"description\": \"Descripción corta enfocada en velocidad y bajo costo inicial.\",\n    \"labor_cost_usd\": 0.00,\n    \"subscription_cost_usd\": 0.00,\n    \"contingency_10_percent\": 0.00,\n    \"grand_total_usd\": 0.00,\n    \"tools_breakdown\": [\n      {\"item\": \"Plataforma No-Code\", \"cost\": 0, \"type\": \"Monthly\"},\n      {\"item\": \"Base de Datos\", \"cost\": 0, \"type\": \"Monthly\"},\n      {\"item\": \"Automatización\", \"cost\": 0, \"type\": \"Monthly\"}\n    ],\n    \"pros_with_desc\": [\n        {\"point\": \"Ventaja 1\", \"desc\": \"Explicación breve.\"},\n        {\"point\": \"Ventaja 2\", \"desc\": \"Explicación breve.\"}\n    ],\n    \"cons_with_desc\": [\n        {\"point\": \"Desventaja 1\", \"desc\": \"Explicación breve.\"},\n        {\"point\": \"Desventaja 2\", \"desc\": \"Explicación breve.\"}\n    ]\n  },\n  \"recommendation\": \"Recomendación estratégica breve (A o B).\"\n}"
+                                },
+                                "pieceName": "@activepieces/piece-google-gemini",
+                                "actionName": "chat_gemini",
+                                "sampleData": {},
+                                "pieceVersion": "0.0.23",
+                                "propertySettings": {
+                                  "auth": {
+                                    "type": "MANUAL"
+                                  },
+                                  "model": {
+                                    "type": "MANUAL"
+                                  },
+                                  "prompt": {
+                                    "type": "MANUAL"
+                                  },
+                                  "memoryKey": {
+                                    "type": "MANUAL"
+                                  }
+                                },
+                                "errorHandlingOptions": {
+                                  "retryOnFailure": {
+                                    "value": true
+                                  },
+                                  "continueOnFailure": {
+                                    "value": false
+                                  }
+                                }
+                              },
+                              "nextAction": {
+                                "name": "step_5",
+                                "skip": false,
+                                "type": "CODE",
+                                "valid": true,
+                                "settings": {
+                                  "input": {
+                                    "workPlanFull": "{{step_4}}",
+                                    "rawCostResponse": "{{step_8['response']}}"
+                                  },
+                                  "sampleData": {},
+                                  "sourceCode": {
+                                    "code": "export const code = async (inputs) => {\n  // --- 1. SUPER PARSER ---\n  const parseInput = (text) => {\n    if (typeof text !== 'string') return text || {};\n    let clean = text.replace(/^```json\\s*|\\s*```$/g, '').trim();\n    try { return JSON.parse(clean); } catch (e) {}\n    try {\n      const start = text.indexOf('{');\n      const end = text.lastIndexOf('}');\n      if (start !== -1 && end !== -1) return JSON.parse(text.substring(start, end + 1));\n    } catch (e) {}\n    return {};\n  };\n\n  // --- 2. OBTENCIÓN DE DATOS ---\n  const rawData = parseInput(inputs.rawCostResponse);\n  \n  // CORRECCIÓN DE HORAS: Leemos del objeto completo (Full)\n  const plan = inputs.workPlanFull || {}; \n  const meta = plan.meta || {};   // Aquí están los días\n  const effort = plan.effort || {}; // Aquí están las horas\n\n  const totalHours = Number(effort.totalHours) || 0;       // <-- Corrección aquí\n  const totalDurationDays = Number(meta.totalDurationDays) || 22; \n\n  // --- 3. EXTRAER ESCENARIOS ---\n  const scA = rawData.scenario_A_custom || {};\n  const scB = rawData.scenario_B_lowtech || {};\n\n  // --- 4. HELPERS ---\n  const toNum = (val) => parseFloat(String(val).replace(/[^0-9.-]+/g, \"\")) || 0;\n  const fmt$ = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);\n  const fmtP = (n) => Math.round(n) + \"%\";\n\n  // --- 5. LÓGICA FINANCIERA ---\n  const calculateMetrics = (scenario, isHighTech) => {\n    const price = toNum(scenario.grand_total_usd);\n    const costLabor = toNum(scenario.labor_cost_usd);\n    const costInfra = toNum(scenario.infrastructure_cost_usd) || toNum(scenario.subscription_cost_usd);\n    \n    const baseCost = costLabor + costInfra;\n    const utility = price - baseCost;\n    const margin = price > 0 ? (utility / price) * 100 : 0;\n\n    // Estimación de Tiempo y Horas\n    const factor = isHighTech ? 1 : 0.3; \n    const hours = Math.round(totalHours * factor); // Ahora sí leerá las horas\n    const days = Math.round(totalDurationDays * factor);\n    const months = (days / 22).toFixed(1);\n\n    // Tech Stack Formatting\n    let stackList = \"\";\n    if (isHighTech) {\n         // Para avanzado mostramos infraestructura clave\n         stackList = (scenario.tech_breakdown || []).map(i => i.item).join(\", \");\n    } else {\n         // Para básico mostramos herramientas\n         stackList = (scenario.tools_breakdown || []).map(i => i.item).join(\", \");\n    }\n\n    return {\n        cost: baseCost,\n        price: price,\n        utility: utility,\n        margin: margin,\n        hours: hours,\n        months: months,\n        stack: stackList\n    };\n  };\n\n  const metricsA = calculateMetrics(scA, true);\n  const metricsB = calculateMetrics(scB, false);\n\n  // --- 6. OUTPUT FINAL ---\n  return {\n    roi_analysis: rawData.roi_analysis,\n    scenario_A_custom: scA,\n    scenario_B_lowtech: scB,\n    recommendation: rawData.recommendation,\n    verifiedCostSummary: { grandTotalUSD: metricsA.price }, \n    sheets: {\n        basic: { \n            cost: fmt$(metricsB.cost),\n            price: fmt$(metricsB.price),\n            margin: fmtP(metricsB.margin),\n            utility: fmt$(metricsB.utility),\n            stack: metricsB.stack,\n            hours: metricsB.hours,\n            months: metricsB.months\n        },\n        advanced: { \n            cost: fmt$(metricsA.cost),\n            price: fmt$(metricsA.price),\n            margin: fmtP(metricsA.margin),\n            utility: fmt$(metricsA.utility),\n            stack: metricsA.stack,\n            hours: metricsA.hours,\n            months: metricsA.months\n        }\n    }\n  };\n};",
+                                    "packageJson": "{}"
+                                  },
+                                  "errorHandlingOptions": {
+                                    "retryOnFailure": {
+                                      "value": true
+                                    },
+                                    "continueOnFailure": {
+                                      "value": false
+                                    }
+                                  }
+                                },
+                                "nextAction": {
+                                  "name": "step_9",
+                                  "skip": false,
+                                  "type": "PIECE",
+                                  "valid": true,
+                                  "settings": {
+                                    "input": {
+                                      "auth": "{{connections['HRSnRdbU15DnXlhDmUKqW']}}",
+                                      "topP": 1,
+                                      "model": "gpt-5.1",
+                                      "roles": [
+                                        {
+                                          "role": "system",
+                                          "content": "You are a world-class business strategist and proposal writer for a top-tier no-code/low-code development agency. Your primary goal is to convert a set of structured project data into a persuasive, client-facing business proposal that is clear, compelling, and designed to get a the final *yes*."
+                                        }
+                                      ],
+                                      "prompt": "ROLE: You are a world-class Business Strategist and Proposal Writer for Menatech. Your goal is to write the narrative sections of a winning proposal that presents a \"Dual Path\" strategy (High-Tech vs. Low-Code MVP).\nCONTEXT (SOURCE OF TRUTH):\n- Project: {{step_19['projectTitle']}}\n- Mission: {{step_7['mission']}}\n- Industry/Region: {{step_7['clientData']['industry']}} / {{step_7['clientData']['region']}}\n- Market Research: {{step_21}}\n- Financial Data: {{step_5}} (Contains 'roi_analysis', 'scenario_A_custom', 'scenario_B_lowtech')\nTASK:\nWrite persuasive narrative content (Spanish) for the following sections, explicitly referencing the financial data provided.\n1. **executiveSummary_introduction**:\n   - Hook the reader by highlighting the \"Cost of Inaction\".\n   - Use the data from `roi_analysis` (e.g., \"Currently, manual inefficiencies are costing approximately $X/year...\").\n   - Introduce Menatech's solution as the investment to stop this loss.\n2. **executiveSummary_keyOutcomes**:\n   - List 3 strategic business benefits (not just technical features).\n   - Focus on: Speed to Market (Scenario B) vs. Long-term Scalability (Scenario A).\n3. **strategicContext_summary**:\n   - Summarize *why* this is the right time for this project, based on the `Market Research` findings.\n   - Mention specific industry trends or gaps found in the research.\n4. **challenge_summary**:\n   - Describe the current problem. Use the `gapsInEvidence` or technical risks identified to explain why a professional solution is needed (vs. a DIY approach).\n5. **solution_narrative**:\n   - **CRITICAL:** Explain the \"Dual Strategy\".\n   - Describe Option A (High-Tech) as the robust, owned asset for long-term growth.\n   - Describe Option B (Low-Tech) as the agile, lower-risk pilot to validate the market immediately.\n   - Frame the choice as \"Speed vs. Scale\".\n6. **investment_summary**:\n   - Briefly summarize the value proposition of the recommended path (Scenario A) but mention that a lower-entry point (Scenario B) is available for risk mitigation.\n   - Do NOT list the specific prices here (tables will do that), focus on *value*.\nHARD RULES:\n- Output MUST be a single valid JSON object.\n- **Language: Spanish (ES) (Professional, Persuasive).**\n- Do not use markdown formatting (no ```json).\n- Populate ALL fields in the schema.\n\nOUTPUT JSON SCHEMA:\n{\n  \"executiveSummary_introduction\": \"Texto del párrafo introductorio (usando datos de ROI)...\",\n  \"executiveSummary_keyOutcomes\": [\"Beneficio 1\", \"Beneficio 2\", \"Beneficio 3\"],\n  \"strategicContext_summary\": \"Resumen del contexto de mercado...\",\n  \"challenge_summary\": \"Descripción del problema y riesgos...\",\n  \"solution_narrative\": \"Explicación comparativa de la estrategia Dual (Opción A vs B)...\",\n  \"investment_summary\": \"Resumen del valor de la inversión...\"\n}",
+                                      "maxTokens": "6500",
+                                      "temperature": "0.4",
+                                      "frequencyPenalty": "0"
+                                    },
+                                    "pieceName": "@activepieces/piece-openai",
+                                    "actionName": "ask_chatgpt",
+                                    "sampleData": {},
+                                    "pieceVersion": "0.5.5",
+                                    "propertySettings": {
+                                      "auth": {
+                                        "type": "MANUAL"
+                                      },
+                                      "topP": {
+                                        "type": "MANUAL"
+                                      },
+                                      "model": {
+                                        "type": "MANUAL"
+                                      },
+                                      "roles": {
+                                        "type": "MANUAL"
+                                      },
+                                      "prompt": {
+                                        "type": "MANUAL"
+                                      },
+                                      "maxTokens": {
+                                        "type": "MANUAL"
+                                      },
+                                      "temperature": {
+                                        "type": "MANUAL"
+                                      },
+                                      "presencePenalty": {
+                                        "type": "MANUAL"
+                                      },
+                                      "frequencyPenalty": {
+                                        "type": "MANUAL"
+                                      }
+                                    },
+                                    "errorHandlingOptions": {
+                                      "retryOnFailure": {
+                                        "value": true
+                                      },
+                                      "continueOnFailure": {
+                                        "value": false
+                                      }
+                                    }
+                                  },
+                                  "nextAction": {
+                                    "name": "step_6",
+                                    "skip": false,
+                                    "type": "CODE",
+                                    "valid": true,
+                                    "settings": {
+                                      "input": {
+                                        "costData": "{{step_5}}",
+                                        "currentDate": "{{step_17['current_date']}}",
+                                        "proseFromAI": "{{step_9}}",
+                                        "projectTitle": "{{step_19['projectTitle']}}",
+                                        "workPlanData": "{{step_4['workplan']}}",
+                                        "workPlanMeta": "{{step_4['meta']}}"
+                                      },
+                                      "sampleData": {},
+                                      "sourceCode": {
+                                        "code": "// --- Helper Functions ---\nconst fmtMoney = (amount) => {\n  if (amount === undefined || amount === null) return \"$0.00\";\n  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);\n};\n\nfunction extractJson(s) {\n  if (typeof s !== 'string') return s;\n  // Limpieza robusta de markdown fences\n  let cleanString = s.replace(/^```json\\s*|\\s*```$/g, '').trim();\n  try { return JSON.parse(cleanString); } catch (e) { return null; }\n}\n\nexport const code = async (inputs) => {\n  // 1. LEER Y LIMPIAR INPUTS\n  // Prose: Viene de OpenAI (Step 13)\n  let prose = extractJson(inputs.proseFromAI) || inputs.proseFromAI || {};\n  \n  // Costs: Viene de Gemini/Parser (Step 12)\n  // Aquí es donde estaba el problema: A veces costData viene como string, a veces como objeto.\n  let costs = extractJson(inputs.costData) || inputs.costData || {};\n\n  // Workplan: Viene de Gemini/Code (Step 7)\n  let workplanData = extractJson(inputs.workPlanData) || inputs.workPlanData || {};\n  let metaPlan = inputs.workPlanMeta || {};\n\n  // 2. EXTRAER DATOS FINANCIEROS (Manejo de anidación)\n  // Buscamos si 'roi_analysis' está en la raíz O dentro de 'verifiedCostSummary' o 'costDetails'\n  const roi = costs.roi_analysis || costs.verifiedCostSummary?.roi_analysis || {};\n  const scA = costs.scenario_A_custom || costs.verifiedCostSummary?.scenario_A_custom || {};\n  const scB = costs.scenario_B_lowtech || costs.verifiedCostSummary?.scenario_B_lowtech || {};\n  \n  // Determinamos el total para cálculos (Preferimos Escenario A)\n  const grandTotal = scA.grand_total_usd || costs.verifiedCostSummary?.grandTotalUSD || 0;\n\n  // 3. CALCULAR CRONOGRAMA DE PAGOS (35/30/35)\n  // Esto es lo que faltaba en tu JSON anterior\n  const paymentPlan = [\n    {\n      milestone: \"Anticipo - Inicio de Proyecto\",\n      percentage: \"35%\",\n      amountRaw: grandTotal * 0.35,\n      amountFmt: fmtMoney(grandTotal * 0.35),\n      trigger: \"A la firma del acuerdo\"\n    },\n    {\n      milestone: \"Entrega de Prototipo / MVP\",\n      percentage: \"30%\",\n      amountRaw: grandTotal * 0.30,\n      amountFmt: fmtMoney(grandTotal * 0.30),\n      trigger: \"Validación de hitos fase intermedia\"\n    },\n    {\n      milestone: \"Cierre y Entrega Final\",\n      percentage: \"35%\",\n      amountRaw: grandTotal * 0.35,\n      amountFmt: fmtMoney(grandTotal * 0.35),\n      trigger: \"Despliegue a producción y entrega de código\"\n    }\n  ];\n\n  // 4. CONSTRUIR OBJETO FINAL (Estructura Plana para HTML)\n  return {\n    metadata: {\n      projectTitle: inputs.projectTitle || \"Proyecto Sin Título\",\n      clientName: \"Equipo Menatech\",\n      date: inputs.currentDate || new Date().toLocaleDateString('es-ES'),\n      validUntil: new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString('es-ES')\n    },\n    // Elevamos estos objetos a la raíz para que el HTML los encuentre fácil\n    roi: roi,\n    scenarios: {\n      a: scA,\n      b: scB,\n      recommendation: costs.recommendation || prose.recommendation || \"Opción A recomendada.\"\n    },\n    financials: {\n        selectedTotal: fmtMoney(grandTotal),\n        paymentSchedule: paymentPlan, // <--- ¡Aquí está la magia para la tabla!\n        rawTotal: grandTotal\n    },\n    content: {\n      execSummary: prose.executiveSummary_introduction || prose.executiveSummary?.introduction || \"\",\n      keyOutcomes: prose.executiveSummary_keyOutcomes || prose.executiveSummary?.keyOutcomes || [],\n      strategy: prose.strategicContext_summary || prose.strategicContext?.summary || \"\",\n      challenge: prose.challenge_summary || prose.ourApproach_TheChallenge?.summary || \"\",\n      solution: prose.solution_narrative || prose.proposedSolution?.narrative || \"\"\n    },\n    workplan: {\n        WorkPlan: workplanData.WorkPlan || workplanData.phases || [] // Manejo de variaciones de nombre\n    }\n  };\n};",
+                                        "packageJson": "{}"
+                                      },
+                                      "errorHandlingOptions": {
+                                        "retryOnFailure": {
+                                          "value": true
+                                        },
+                                        "continueOnFailure": {
+                                          "value": false
+                                        }
+                                      }
+                                    },
+                                    "nextAction": {
+                                      "name": "step_22",
+                                      "skip": false,
+                                      "type": "CODE",
+                                      "valid": true,
+                                      "settings": {
+                                        "input": {
+                                          "proposalData": "{{step_6}}"
+                                        },
+                                        "sampleData": {},
+                                        "sourceCode": {
+                                          "code": "export const code = async (inputs) => {\n  // --- 1. PARSER & DATA ---\n  let data = inputs.proposalData;\n  let attempts = 0;\n  while (typeof data === 'string' && attempts < 3) {\n    try { data = JSON.parse(data.replace(/^```json\\s*|\\s*```$/g, '').trim()); } catch (e) {}\n    attempts++;\n  }\n  if (!data || typeof data !== 'object') data = {};\n\n  const meta = data.metadata || {};\n  const content = data.content || {};\n  const roi = data.roi || {};\n  const scA = (data.scenarios && data.scenarios.a) ? data.scenarios.a : {};\n  const scB = (data.scenarios && data.scenarios.b) ? data.scenarios.b : {};\n  const financials = data.financials || {};\n  const workplan = (data.workplan && data.workplan.WorkPlan) ? data.workplan.WorkPlan : [];\n\n  // --- 2. HELPERS ---\n  const fmt = (num) => {\n    if (!num) return \"$0.00\";\n    if (typeof num === 'string') return num;\n    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);\n  };\n\n  const formatTextToBlocks = (text) => {\n    if (!text) return \"\";\n    if (text.includes(\"<p>\") || text.includes(\"<ul>\")) return text;\n    const sentences = text.split('. ').filter(s => s.length > 10);\n    let html = \"\";\n    if (sentences.length > 0) html += `<div class=\"highlight-box\"><span class=\"icon\">&#128161;</span> ${sentences[0]}.</div>`;\n    if (sentences.length > 1) html += `<p>${sentences.slice(1).join('. ')}.</p>`;\n    return html;\n  };\n\n  const renderDetailedList = (items) => {\n    if (!items || !Array.isArray(items) || items.length === 0) return \"\";\n    return items.map(item => {\n        const title = typeof item === 'object' ? (item.point || item.item) : item;\n        const desc = typeof item === 'object' ? (item.desc || \"\") : \"\"; \n        return `<div class=\"list-item\"><div class=\"item-head\"><span class=\"check-icon\">&#10003;</span><strong>${title}</strong></div>${desc ? `<div class=\"item-desc\">${desc}</div>` : ''}</div>`;\n    }).join(\"\");\n  };\n\n  const renderConsList = (items) => {\n    if (!items || !Array.isArray(items) || items.length === 0) return \"\";\n    return items.map(item => {\n        const title = typeof item === 'object' ? (item.point || item.item) : item;\n        const desc = typeof item === 'object' ? (item.desc || \"\") : \"\";\n        return `<div class=\"list-item\"><div class=\"item-head\" style=\"color:#b45309;\"><span class=\"check-icon\" style=\"color:#f59e0b;\">&#9888;</span><strong>${title}</strong></div>${desc ? `<div class=\"item-desc\">${desc}</div>` : ''}</div>`;\n    }).join(\"\");\n  };\n\n  const renderPhases = () => {\n    if (!workplan || workplan.length === 0) return '<tr><td colspan=\"3\" style=\"padding:15px; text-align:center; color:#999;\">Detalle pendiente.</td></tr>';\n    return workplan.map(p => `<tr><td style=\"font-weight: 600; color: #334155;\">Fase ${p.phaseNumber}: ${p.phaseName}</td><td style=\"text-align: center;\">${p.durationDays} días</td><td style=\"font-size: 11px; color: #64748b;\">${(p.deliverables || []).slice(0, 2).join(\", \")}</td></tr>`).join(\"\");\n  };\n\n  const renderPaymentsA = () => {\n      const payments = financials.paymentSchedule || [];\n      return payments.map(p => `<tr><td><strong>${p.milestone}</strong><br><span style=\"font-size:10px; color:#64748b;\">${p.trigger}</span></td><td style=\"text-align:center\">${p.percentage}</td><td style=\"text-align:right\"><strong>${p.amountFmt}</strong></td></tr>`).join(\"\");\n  };\n\n  // --- 3. HTML TEMPLATE ---\n  const html = `\n<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Propuesta Menatech</title>\n  <link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap\" rel=\"stylesheet\">\n  <style>\n    body { font-family: 'Inter', sans-serif; color: #334155; line-height: 1.6; margin: 0; padding: 40px; font-size: 13px; }\n    .no-break { page-break-inside: avoid; }\n    .page-break { page-break-before: always; }\n    h2, h3 { page-break-after: avoid; }\n    \n    .header { border-bottom: 3px solid #0A3A5A; padding-bottom: 20px; margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; }\n    .title-box h1 { color: #0A3A5A; font-weight: 800; font-size: 24px; margin: 0; text-transform: uppercase; }\n    .subtitle { color: #00B8D4; font-size: 12px; font-weight: 700; margin-top: 5px; letter-spacing: 1px; }\n    .meta-box { text-align: right; font-size: 11px; color: #64748b; }\n    \n    h2 { color: #0A3A5A; font-size: 16px; border-left: 5px solid #00B8D4; padding-left: 10px; margin-top: 30px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px; }\n    .highlight-box { background: #f0f9ff; border-left: 4px solid #00B8D4; padding: 15px; border-radius: 0 6px 6px 0; margin-bottom: 15px; color: #0c4a6e; font-weight: 500; }\n    .highlight-box .icon { margin-right: 5px; }\n    \n    .roi-container { background: #fff1f2; border: 1px solid #fda4af; border-radius: 8px; padding: 20px; margin: 20px 0; display: flex; gap: 20px; align-items: center; }\n    .roi-number { font-size: 28px; font-weight: 800; color: #be123c; line-height: 1; }\n    .roi-math { font-family: 'Courier New', monospace; font-size: 11px; color: #9f1239; background: rgba(255,255,255,0.5); padding: 4px 8px; border-radius: 4px; margin-top: 8px; display: inline-block; border: 1px solid #fecdd3; }\n    \n    .cards-grid { display: flex; gap: 15px; margin-top: 20px; align-items: stretch; }\n    .card { flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; background: #fff; display: flex; flex-direction: column; }\n    .card.primary { border: 2px solid #0A3A5A; box-shadow: 0 4px 12px rgba(10, 58, 90, 0.1); position: relative; }\n    .badge { position: absolute; top: -10px; right: 15px; background: #0A3A5A; color: white; padding: 2px 8px; font-size: 9px; border-radius: 4px; text-transform: uppercase; font-weight: 700; }\n    .card-title { font-weight: 700; color: #0f172a; font-size: 14px; margin-bottom: 5px; }\n    .card-price { font-size: 22px; font-weight: 800; color: #0A3A5A; }\n    .card-sub { font-size: 10px; color: #64748b; margin-bottom: 15px; }\n    .intro-text { font-size: 11px; color: #334155; margin-bottom: 12px; font-weight: 500; background: #f8fafc; padding: 8px; border-radius: 4px; }\n    \n    .list-item { margin-bottom: 10px; }\n    .item-head { font-size: 11px; color: #334155; display: flex; align-items: center; }\n    .check-icon { color: #00B8D4; font-weight: bold; margin-right: 6px; font-size: 14px; }\n    .item-desc { font-size: 10px; color: #64748b; padding-left: 20px; margin-top: 2px; line-height: 1.4; font-style: italic; }\n\n    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }\n    th { background: #f8fafc; text-align: left; padding: 8px; color: #475569; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; }\n    td { padding: 10px 8px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }\n    .price-col { text-align: right; font-weight: 700; color: #0A3A5A; }\n    \n    /* NEW: Next Steps */\n    .steps-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 25px; margin-top: 30px; }\n    .step-row { display: flex; margin-bottom: 15px; }\n    .step-num { width: 24px; height: 24px; background: #0A3A5A; color: #fff; border-radius: 50%; text-align: center; line-height: 24px; font-weight: 700; font-size: 12px; margin-right: 15px; flex-shrink: 0; }\n    .step-content { font-size: 12px; color: #334155; padding-top: 3px; }\n    .step-content strong { color: #0f172a; }\n\n    .footer { margin-top: 50px; border-top: 1px solid #e2e8f0; padding-top: 15px; text-align: center; font-size: 9px; color: #94a3b8; }\n  </style>\n</head>\n<body>\n\n  <div class=\"header\">\n    <div class=\"title-box\">\n      <h1>${meta.projectTitle}</h1>\n      <div class=\"subtitle\">Propuesta Estratégica</div>\n    </div>\n    <div class=\"meta-box\">\n      <div>${meta.date}</div>\n      <div>${meta.clientName}</div>\n      <div><strong>MENATECH.CLOUD</strong></div>\n    </div>\n  </div>\n\n  <div class=\"no-break\">\n    <h2>Resumen Ejecutivo</h2>\n    ${formatTextToBlocks(content.execSummary)}\n    \n    <div class=\"roi-container\">\n      <div style=\"text-align: center; min-width: 120px;\">\n        <div class=\"roi-number\">${fmt(roi.annual_loss_usd)}</div>\n        <div style=\"font-size: 9px; text-transform: uppercase; font-weight: 700; color: #be123c;\">Pérdida Anual</div>\n      </div>\n      <div style=\"border-left: 1px solid #fda4af; padding-left: 20px;\">\n        <strong style=\"color: #9f1239; font-size: 12px;\">El Costo de la Inacción</strong><br>\n        <span style=\"font-size: 11px;\">Los procesos manuales actuales generan una ineficiencia operativa crítica.</span><br>\n        <div class=\"roi-math\">\n           Cálculo: ${roi.math_explanation || \"65 horas/mes × $25/hr × 12 meses\"}\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <div class=\"no-break\">\n    <h3>El Desafío</h3>\n    ${formatTextToBlocks(content.challenge)}\n  </div>\n\n  <div class=\"page-break\"></div>\n\n  <h2>Estrategia de Implementación</h2>\n  ${formatTextToBlocks(content.solution)}\n\n  <div class=\"cards-grid no-break\">\n    <div class=\"card primary\">\n      <div class=\"badge\">Recomendado</div>\n      <div class=\"card-title\">Opción A: High-Tech</div>\n      <div class=\"card-price\">${fmt(scA.grand_total_usd)}</div>\n      <div class=\"card-sub\">Pago Único (Infraestructura ~${fmt(scA.infrastructure_cost_usd)}/mes)</div>\n      <hr style=\"border:0; border-top:1px solid #f1f5f9; margin:5px 0 10px 0;\">\n      <div class=\"intro-text\"><strong>¿Por qué empezar aquí?</strong><br>Garantiza propiedad intelectual total y escalabilidad técnica desde el inicio.</div>\n      ${renderDetailedList(scA.pros_with_desc || scA.pros)}\n    </div>\n\n    <div class=\"card\">\n      <div class=\"card-title\">Opción B: MVP No-Code</div>\n      <div class=\"card-price\">${fmt(scB.grand_total_usd)}</div>\n      <div class=\"card-sub\">+ ${fmt(scB.subscription_cost_usd)}/mes</div>\n      <hr style=\"border:0; border-top:1px solid #f1f5f9; margin:5px 0 10px 0;\">\n      <div class=\"intro-text\"><strong>Ideal para validación:</strong><br>Lanzamiento rápido para probar el mercado con menor riesgo inicial.</div>\n      ${renderDetailedList(scB.pros_with_desc || scB.pros)}\n      <div style=\"margin-top:15px; padding-top:10px; border-top:1px dashed #e2e8f0;\">\n         <strong style=\"font-size:10px; color:#b45309; text-transform:uppercase;\">Limitaciones:</strong>\n         <div style=\"margin-top:5px;\">${renderConsList(scB.cons_with_desc || scB.cons)}</div>\n      </div>\n    </div>\n  </div>\n\n  <div style=\"margin-top: 20px; background: #f0fdf4; border-left: 4px solid #16a34a; padding: 15px; border-radius: 4px; color: #14532d;\" class=\"no-break\">\n    <strong>Recomendación Estratégica:</strong> ${data.scenarios?.recommendation}\n    <div style=\"margin-top:8px; font-size:12px; font-style:italic; border-top:1px solid rgba(22, 163, 74, 0.2); padding-top:8px;\">\n        <strong>💡 Garantía de Evolución:</strong> Si decides comenzar con la Opción B para validar y luego migrar a la Opción A para escalar, <strong>el 100% de lo invertido en la implementación de la Opción B se descontará del precio final de la Opción A</strong>. No pagas dos veces.\n    </div>\n  </div>\n\n  <div class=\"page-break\"></div>\n\n  <div class=\"no-break\">\n    <h2>Plan de Trabajo (Opción A: High-Tech)</h2>\n    <table><thead><tr><th>Fase</th><th>Duración</th><th>Entregables</th></tr></thead><tbody>${renderPhases()}</tbody></table>\n  </div>\n\n  <div class=\"no-break\" style=\"margin-top:30px;\">\n    <h2>Plan de Trabajo (Opción B: Acelerado)</h2>\n    <table><thead><tr><th>Fase</th><th>Duración Est.</th><th>Entregables</th></tr></thead><tbody>\n      <tr><td style=\"font-weight:600;\">Fase 1: Configuración</td><td style=\"text-align:center\">5 días</td><td>Setup de Base de Datos y Cuentas SaaS.</td></tr>\n      <tr><td style=\"font-weight:600;\">Fase 2: Integración</td><td style=\"text-align:center\">7 días</td><td>Conexión de flujos lógicos y Frontend.</td></tr>\n      <tr><td style=\"font-weight:600;\">Fase 3: Lanzamiento</td><td style=\"text-align:center\">3 días</td><td>Pruebas de usuario y entrega.</td></tr>\n    </tbody></table>\n  </div>\n\n  <div class=\"page-break\"></div>\n\n  <div class=\"no-break\">\n    <h2>Cronograma de Inversión</h2>\n    <p>Detalle de las condiciones comerciales para ambas alternativas.</p>\n\n    <div style=\"background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; margin-bottom: 20px;\">\n        <div style=\"background: #f8fafc; padding: 8px 12px; font-weight: 700; border-bottom: 1px solid #e2e8f0; color: #0A3A5A;\">Opción A: Desarrollo a Medida (High-Tech)</div>\n        <table>\n            <thead><tr><th>Hito</th><th style=\"text-align:center\">%</th><th style=\"text-align:right\">Monto</th></tr></thead>\n            <tbody>${renderPaymentsA()}</tbody>\n            <tfoot><tr style=\"background:#fcfcfc\"><td colspan=\"2\" style=\"text-align:right\"><strong>TOTAL</strong></td><td class=\"price-col\">${financials.selectedTotal}</td></tr></tfoot>\n        </table>\n    </div>\n\n    <div style=\"background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden;\">\n        <div style=\"background: #f8fafc; padding: 8px 12px; font-weight: 700; border-bottom: 1px solid #e2e8f0; color: #475569;\">Opción B: MVP No-Code (Low-Tech)</div>\n        <table>\n            <thead><tr><th>Concepto</th><th>Detalle</th><th style=\"text-align:right\">Monto</th></tr></thead>\n            <tbody>\n                <tr><td><strong>Implementación Inicial</strong></td><td>Pago único de configuración y setup.</td><td class=\"price-col\">${fmt(scB.grand_total_usd)}</td></tr>\n                <tr><td><strong>Suscripción Mensual</strong></td><td>Licencias de Software (Airtable, Zapier, etc).</td><td class=\"price-col\">${fmt(scB.subscription_cost_usd)} / mes</td></tr>\n            </tbody>\n        </table>\n    </div>\n  </div>\n\n  <div class=\"page-break\"></div>\n  <div class=\"no-break\">\n    <h2>Próximos Pasos</h2>\n    <div class=\"steps-box\">\n        <div class=\"step-row\">\n            <div class=\"step-num\">1</div>\n            <div class=\"step-content\"><strong>Decisión Estratégica:</strong> Evaluar internamente si se prioriza velocidad (Opción B) o escala (Opción A).</div>\n        </div>\n        <div class=\"step-row\">\n            <div class=\"step-num\">2</div>\n            <div class=\"step-content\"><strong>Consultas:</strong> Escribe a <a href=\"mailto:gonzalo@menatech.cloud\" style=\"color:#00B8D4; text-decoration:none;\">gonzalo@menatech.cloud</a> para resolver cualquier duda técnica o comercial.</div>\n        </div>\n        <div class=\"step-row\">\n            <div class=\"step-num\">3</div>\n            <div class=\"step-content\"><strong>Formalización:</strong> Enviar los documentos legales firmados (adjuntos en el correo) indicando la opción elegida y el comprobante del pago inicial (35% o Setup).</div>\n        </div>\n        <div class=\"step-row\">\n            <div class=\"step-num\">4</div>\n            <div class=\"step-content\"><strong>Kick-off:</strong> Recibirás un correo de confirmación y un enlace para agendar la primera reunión de trabajo con el equipo de proyecto y el Project Manager.</div>\n        </div>\n    </div>\n  </div>\n\n  <div class=\"footer\">\n    Generado por Menatech OS • Documento Confidencial • Validez: 30 días\n  </div>\n\n</body>\n</html>\n  `;\n  return { html };\n};",
+                                          "packageJson": "{}"
+                                        },
+                                        "errorHandlingOptions": {
+                                          "retryOnFailure": {
+                                            "value": true
+                                          },
+                                          "continueOnFailure": {
+                                            "value": false
+                                          }
+                                        }
+                                      },
+                                      "nextAction": {
+                                        "name": "step_12",
+                                        "skip": false,
+                                        "type": "PIECE",
+                                        "valid": true,
+                                        "settings": {
+                                          "input": {
+                                            "auth": "{{connections['LDbbwG2U6G4wEftStQmfe']}}",
+                                            "html": "{{step_22['html']}}",
+                                            "name": "Propuesta para {{step_7['clientData']['company']}}.pdf",
+                                            "margins": "10mm 10mm 10mm 10mm",
+                                            "paperSize": "A4",
+                                            "printBackground": true,
+                                            "doNotWaitFullLoad": false
+                                          },
+                                          "pieceName": "@activepieces/piece-pdf-co",
+                                          "actionName": "convert_html_to_pdf",
+                                          "sampleData": {},
+                                          "pieceVersion": "0.0.8",
+                                          "propertySettings": {
+                                            "auth": {
+                                              "type": "MANUAL"
+                                            },
+                                            "html": {
+                                              "type": "MANUAL"
+                                            },
+                                            "name": {
+                                              "type": "MANUAL"
+                                            },
+                                            "footer": {
+                                              "type": "MANUAL"
+                                            },
+                                            "margins": {
+                                              "type": "MANUAL"
+                                            },
+                                            "paperSize": {
+                                              "type": "MANUAL"
+                                            },
+                                            "printBackground": {
+                                              "type": "MANUAL"
+                                            },
+                                            "doNotWaitFullLoad": {
+                                              "type": "MANUAL"
+                                            }
+                                          },
+                                          "errorHandlingOptions": {
+                                            "retryOnFailure": {
+                                              "value": true
+                                            },
+                                            "continueOnFailure": {
+                                              "value": false
+                                            }
+                                          }
+                                        },
+                                        "nextAction": {
+                                          "name": "step_10",
+                                          "skip": false,
+                                          "type": "PIECE",
+                                          "valid": true,
+                                          "settings": {
+                                            "input": {
+                                              "auth": "{{connections['ScZ69H4wwSmWhi3SGwGvD']}}",
+                                              "file": "{{step_12['outputUrl']}}",
+                                              "fileName": "{{step_12['outputName']}}",
+                                              "parentFolder": "{{step_13['id']}}",
+                                              "include_team_drives": false
+                                            },
+                                            "pieceName": "@activepieces/piece-google-drive",
+                                            "actionName": "upload_gdrive_file",
+                                            "sampleData": {},
+                                            "pieceVersion": "0.5.53",
+                                            "propertySettings": {
+                                              "auth": {
+                                                "type": "MANUAL"
+                                              },
+                                              "file": {
+                                                "type": "MANUAL"
+                                              },
+                                              "fileName": {
+                                                "type": "MANUAL"
+                                              },
+                                              "parentFolder": {
+                                                "type": "DYNAMIC"
+                                              },
+                                              "include_team_drives": {
+                                                "type": "MANUAL"
+                                              }
+                                            },
+                                            "errorHandlingOptions": {
+                                              "retryOnFailure": {
+                                                "value": true
+                                              },
+                                              "continueOnFailure": {
+                                                "value": false
+                                              }
+                                            }
+                                          },
+                                          "nextAction": {
+                                            "name": "step_15",
+                                            "type": "PIECE",
+                                            "valid": true,
+                                            "settings": {
+                                              "input": {
+                                                "auth": "{{connections['bQWH152xxXZeib1hfesWI']}}",
+                                                "model": "claude-3-7-sonnet-latest",
+                                                "prompt": "CONTEXT:\n- Project: {{step_19['projectTitle']}}\n- High-Code Stack (Scenario A): {{step_5['scenario_A_custom']}}\n- No-Code Tools (Scenario B): {{step_5['scenario_B_lowtech']}}\n\nTASK:\nCreate a detailed \"Vibecoding Execution Manual\" that covers BOTH Scenario A (Custom Dev) and Scenario B (No-Code MVP).\nSTRUCTURE:\nDivide the response into two main manuals: \"Manual A: High-Tech Construction\" and \"Manual B: No-Code Assembly\".\nFOR MANUAL A (High-Tech):\nBreak down the development into logical Phases (Setup, Backend, Frontend, Deploy). For each key task, provide:\n1. **The Step:** Clear instruction.\n2. **The \"Vibecode Prompt\":** A specific, high-quality prompt that I can copy-paste into Cursor/Windsurf/ChatGPT to generate the code or file structure. (e.g., \"Act as a DB Architect. Create a schema for PostgreSQL with tables for...\")\n3. **Watch Out:** Specific pitfalls or configuration tips for this stack.\nFOR MANUAL B (No-Code):\nBreak down into steps (Database, UI, Logic). For each:\n1. **Configuration:** What fields to create or how to map the Zap.\n2. **Logic:** explicit \"If This Then That\" logic descriptions.\nHARD RULES:\n- Output MUST be a single valid JSON object.\n- No markdown outside the strings.\n- Language: Spanish (ES).\n- The \"vibecode_prompt\" fields should be in English (EN) as AI models code better with English prompts, but the rest of the text in Spanish.\nOUTPUT JSON SCHEMA:\n{\n  \"manual_title\": \"Manual de Ejecución: {{projectTitle}}\",\n  \"scenario_a_high_tech\": {\n    \"title\": \"Ruta A: Desarrollo Vibecoding (Cursor/Replit)\",\n    \"phases\": [\n      {\n        \"phase_name\": \"Fase 1: Configuración y Base de Datos\",\n        \"steps\": [\n          {\n            \"title\": \"Inicializar Repositorio y Stack\",\n            \"instruction\": \"Configura el monorepo con Next.js y FastAPI.\",\n            \"vibecode_prompt\": \"Create a monorepo structure using Turborepo. Apps folder should contain 'web' (Next.js 14, Tailwind) and 'api' (Python FastAPI). Generate the package.json and basic folder structure.\",\n            \"pro_tip\": \"Asegúrate de configurar los puertos 3000 y 8000 para evitar conflictos.\"\n          }\n        ]\n      }\n    ]\n  },\n  \"scenario_b_no_code\": {\n    \"title\": \"Ruta B: Ensamblaje No-Code (Rápido)\",\n    \"modules\": [\n      {\n        \"module_name\": \"Base de Datos (Airtable)\",\n        \"steps\": [\n          {\n            \"title\": \"Tabla de Usuarios\",\n            \"instruction\": \"Crear tabla con campos: Nombre, Email, Status, ID_Proyecto.\",\n            \"logic_detail\": \"Enlazar 'ID_Proyecto' a la tabla 'Proyectos' (Link to another record).\"\n          }\n        ]\n      }\n    ]\n  }\n}",
+                                                "maxTokens": "7500",
+                                                "temperature": "0.2",
+                                                "systemPrompt": "You are an expert \"Vibecoder\" and Senior Solutions Architect. You don't just plan projects; you write the \"Cheat Sheet\" for a developer to build them using AI tools.",
+                                                "thinkingMode": true,
+                                                "thinkingModeParams": {
+                                                  "budgetTokens": "2000"
+                                                }
+                                              },
+                                              "pieceName": "@activepieces/piece-claude",
+                                              "actionName": "ask_claude",
+                                              "sampleData": {},
+                                              "pieceVersion": "0.2.1",
+                                              "propertySettings": {
+                                                "auth": {
+                                                  "type": "MANUAL"
+                                                },
+                                                "model": {
+                                                  "type": "MANUAL"
+                                                },
+                                                "prompt": {
+                                                  "type": "MANUAL"
+                                                },
+                                                "maxTokens": {
+                                                  "type": "MANUAL"
+                                                },
+                                                "temperature": {
+                                                  "type": "MANUAL"
+                                                },
+                                                "systemPrompt": {
+                                                  "type": "MANUAL"
+                                                },
+                                                "thinkingMode": {
+                                                  "type": "MANUAL"
+                                                },
+                                                "thinkingModeParams": {
+                                                  "type": "MANUAL",
+                                                  "schema": {
+                                                    "budgetTokens": {
+                                                      "type": "NUMBER",
+                                                      "required": true,
+                                                      "description": "This parameter determines the maximum number of tokens Claude is allowed to use for its internal reasoning process.Your budget tokens must always be less than the max tokens specified.",
+                                                      "displayName": "Budget Tokens",
+                                                      "defaultValue": 1024
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                              "errorHandlingOptions": {
+                                                "retryOnFailure": {
+                                                  "value": true
+                                                },
+                                                "continueOnFailure": {
+                                                  "value": false
+                                                }
+                                              }
+                                            },
+                                            "nextAction": {
+                                              "name": "step_14",
+                                              "skip": false,
+                                              "type": "CODE",
+                                              "valid": true,
+                                              "settings": {
+                                                "input": {
+                                                  "executionPlanRaw": "{{step_15}}"
+                                                },
+                                                "sampleData": {},
+                                                "sourceCode": {
+                                                  "code": "export const code = async (inputs) => {\n  // 1. SUPER PARSER (Limpieza agresiva de texto a JSON)\n  let rawText = inputs.executionPlanRaw;\n  let plan = {};\n\n  if (typeof rawText === 'string') {\n    try {\n      // Eliminar ```json y ``` al final\n      const cleanStr = rawText.replace(/^```json\\s*|\\s*```$/g, '').trim();\n      plan = JSON.parse(cleanStr);\n    } catch (e) {\n      console.error(\"Error parsing Execution Plan JSON:\", e);\n      return { error: \"Failed to parse JSON from Claude\" };\n    }\n  } else {\n    plan = rawText || {};\n  }\n\n  // 2. ESTRUCTURACIÓN DE SALIDA\n  // Normalizamos los nombres para que el siguiente paso lo tenga fácil\n  return {\n    manual_title: plan.manual_title || \"Manual de Ejecución Técnica\",\n    \n    // Ruta A: High Tech (Vibecoding)\n    scenario_a: plan.scenario_a_high_tech || { \n      title: \"Ruta A: Desarrollo High-Tech\", \n      phases: [] \n    },\n    \n    // Ruta B: No Code\n    scenario_b: plan.scenario_b_no_code || { \n      title: \"Ruta B: Implementación No-Code\", \n      modules: [] \n    }\n  };\n};",
+                                                  "packageJson": "{}"
+                                                },
+                                                "errorHandlingOptions": {
+                                                  "retryOnFailure": {
+                                                    "value": true
+                                                  },
+                                                  "continueOnFailure": {
+                                                    "value": false
+                                                  }
+                                                }
+                                              },
+                                              "nextAction": {
+                                                "name": "step_28",
+                                                "skip": false,
+                                                "type": "CODE",
+                                                "valid": true,
+                                                "settings": {
+                                                  "input": {
+                                                    "executionPlan": "{{step_14}}"
+                                                  },
+                                                  "sampleData": {},
+                                                  "sourceCode": {
+                                                    "code": "export const code = async (inputs) => {\n  // 1. Obtener datos limpios del paso anterior\n  const plan = inputs.executionPlan || {};\n  const scA = plan.scenario_a || {};\n  const scB = plan.scenario_b || {};\n\n  // --- HELPER: Renderizado de Fases (Ruta A) ---\n  const renderStepsA = (steps) => {\n    if (!steps) return \"\";\n    return steps.map(s => `\n      <div class=\"step-item\">\n        <div class=\"step-header\">\n            <div class=\"step-title\">${s.title}</div>\n        </div>\n        <p class=\"step-desc\">${s.instruction}</p>\n        \n        ${s.vibecode_prompt ? `\n        <div class=\"prompt-container\">\n            <div class=\"prompt-label\">COPIAR A CURSOR / WINDSURF:</div>\n            <div class=\"prompt-box\">${s.vibecode_prompt.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>\n        </div>` : ''}\n\n        ${s.pro_tip ? `\n        <div class=\"tip-box\">\n            <strong>💡 Pro Tip:</strong> ${s.pro_tip}\n        </div>` : ''}\n      </div>\n    `).join(\"\");\n  };\n\n  const renderPhasesA = () => {\n    const phases = scA.phases || [];\n    if (phases.length === 0) return \"<p>Información técnica no disponible.</p>\";\n    \n    return phases.map(p => `\n      <div class=\"phase-block\">\n        <h3 class=\"phase-title\">${p.phase_name}</h3>\n        ${renderStepsA(p.steps)}\n      </div>\n    `).join(\"\");\n  };\n\n  // --- HELPER: Renderizado de Módulos (Ruta B) ---\n  const renderStepsB = (steps) => {\n    if (!steps) return \"\";\n    return steps.map(s => `\n      <li class=\"nocode-step\">\n        <strong>${s.title}</strong><br>\n        <span style=\"color:#334155;\">${s.instruction}</span>\n        ${s.logic_detail ? `\n        <div style=\"margin-top:4px; font-size:11px; color:#64748b; background:#f8fafc; padding:4px 8px; border-radius:4px;\">\n           ⚙️ <strong>Lógica:</strong> ${s.logic_detail}\n        </div>` : ''}\n      </li>\n    `).join(\"\");\n  };\n\n  const renderModulesB = () => {\n    const modules = scB.modules || [];\n    if (modules.length === 0) return \"<p>Información no-code no disponible.</p>\";\n\n    return modules.map(m => `\n      <div class=\"module-card\">\n        <div class=\"module-header\">${m.module_name}</div>\n        <ul class=\"module-list\">\n            ${renderStepsB(m.steps)}\n        </ul>\n      </div>\n    `).join(\"\");\n  };\n\n  // --- HTML FINAL ---\n  const html = `\n<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Manual de Ejecución</title>\n  <link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap\" rel=\"stylesheet\">\n  <style>\n    body { font-family: 'Inter', sans-serif; color: #0f172a; line-height: 1.5; margin: 0; padding: 40px; font-size: 13px; }\n    \n    /* Header */\n    .header { border-bottom: 3px solid #0A3A5A; padding-bottom: 20px; margin-bottom: 30px; }\n    .doc-type { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: #00B8D4; font-weight: 700; }\n    h1 { font-size: 22px; color: #0A3A5A; margin: 5px 0 0 0; font-weight: 800; }\n    \n    /* Section Headers */\n    h2.section-header { \n        background: #0A3A5A; color: #fff; padding: 10px 15px; font-size: 14px; text-transform: uppercase;\n        border-radius: 4px; margin-top: 40px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;\n    }\n    \n    /* MANUAL A (High Tech) */\n    .phase-block { margin-bottom: 35px; padding-left: 20px; border-left: 2px solid #e2e8f0; }\n    .phase-title { font-size: 14px; color: #00B8D4; font-weight: 700; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px; }\n    \n    .step-item { margin-bottom: 30px; }\n    .step-title { font-weight: 700; color: #0f172a; font-size: 14px; margin-bottom: 5px; }\n    .step-desc { margin: 0 0 10px 0; color: #475569; }\n    \n    /* TERMINAL PROMPT BOX */\n    .prompt-container { margin: 12px 0; }\n    .prompt-label { font-size: 9px; font-weight: 700; color: #64748b; margin-bottom: 4px; font-family: 'Inter', sans-serif; letter-spacing: 0.5px; }\n    .prompt-box { \n        background: #1e293b; color: #a5f3fc; font-family: 'JetBrains Mono', monospace; \n        font-size: 11px; line-height: 1.6; padding: 15px; border-radius: 6px; \n        border: 1px solid #334155; white-space: pre-wrap; position: relative;\n        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);\n    }\n    .prompt-box::before { content: \"$\"; position: absolute; left: 15px; color: #00B8D4; user-select: none; }\n    .prompt-box { padding-left: 35px; } \n    \n    .tip-box { background: #f0fdfa; border-left: 3px solid #0d9488; padding: 10px 12px; border-radius: 0 4px 4px 0; font-size: 12px; color: #115e59; margin-top: 10px; }\n\n    /* MANUAL B (No Code) */\n    .modules-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }\n    .module-card { border: 1px solid #e2e8f0; border-radius: 6px; background: #fff; overflow: hidden; }\n    .module-header { background: #f8fafc; padding: 10px 15px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #e2e8f0; font-size: 13px; }\n    .module-list { padding: 15px 15px 15px 35px; margin: 0; }\n    .nocode-step { margin-bottom: 12px; line-height: 1.4; color: #334155; }\n\n    .page-break { page-break-before: always; }\n    .footer { margin-top: 50px; text-align: center; font-size: 10px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 10px; }\n  </style>\n</head>\n<body>\n\n  <div class=\"header\">\n    <div class=\"doc-type\">MANUAL DE EJECUCIÓN TÉCNICA // MENATECH</div>\n    <h1>${plan.manual_title}</h1>\n  </div>\n\n  <p style=\"font-size: 14px; color: #475569; max-width: 700px;\">\n    Este documento contiene la hoja de ruta técnica detallada para la implementación del proyecto. \n    Incluye prompts de ingeniería para generación de código y lógica de configuración para herramientas no-code.\n  </p>\n\n  <h2 class=\"section-header\">\n    <span>${scA.title}</span>\n    <span style=\"opacity: 0.7; font-size: 11px;\">CURSOR • REPLIT • WINDSURF</span>\n  </h2>\n  \n  ${renderPhasesA()}\n\n  <div class=\"page-break\"></div>\n  \n  <h2 class=\"section-header\" style=\"background: #0891b2;\">\n    <span>${scB.title}</span>\n    <span style=\"opacity: 0.7; font-size: 11px;\">AIRTABLE • MAKE • SOFTR</span>\n  </h2>\n\n  <div class=\"modules-grid\">\n    ${renderModulesB()}\n  </div>\n\n  <div class=\"footer\">\n    Generado por Menatech AI Workflow • Uso interno confidencial • ${new Date().getFullYear()}\n  </div>\n\n</body>\n</html>\n  `;\n\n  return { html };\n};",
+                                                    "packageJson": "{}"
+                                                  },
+                                                  "errorHandlingOptions": {
+                                                    "retryOnFailure": {
+                                                      "value": true
+                                                    },
+                                                    "continueOnFailure": {
+                                                      "value": false
+                                                    }
+                                                  }
+                                                },
+                                                "nextAction": {
+                                                  "name": "step_3",
+                                                  "skip": false,
+                                                  "type": "PIECE",
+                                                  "valid": true,
+                                                  "settings": {
+                                                    "input": {
+                                                      "auth": "{{connections['LDbbwG2U6G4wEftStQmfe']}}",
+                                                      "html": "{{step_28['html']}}",
+                                                      "name": "Execution Plan for {{step_19['projectTitle']}}.pdf",
+                                                      "paperSize": "A4",
+                                                      "printBackground": true,
+                                                      "doNotWaitFullLoad": false
+                                                    },
+                                                    "pieceName": "@activepieces/piece-pdf-co",
+                                                    "actionName": "convert_html_to_pdf",
+                                                    "sampleData": {},
+                                                    "pieceVersion": "0.0.8",
+                                                    "propertySettings": {
+                                                      "auth": {
+                                                        "type": "MANUAL"
+                                                      },
+                                                      "html": {
+                                                        "type": "MANUAL"
+                                                      },
+                                                      "name": {
+                                                        "type": "MANUAL"
+                                                      },
+                                                      "footer": {
+                                                        "type": "MANUAL"
+                                                      },
+                                                      "header": {
+                                                        "type": "MANUAL"
+                                                      },
+                                                      "margins": {
+                                                        "type": "MANUAL"
+                                                      },
+                                                      "profiles": {
+                                                        "type": "MANUAL"
+                                                      },
+                                                      "mediaType": {
+                                                        "type": "MANUAL"
+                                                      },
+                                                      "paperSize": {
+                                                        "type": "MANUAL"
+                                                      },
+                                                      "expiration": {
+                                                        "type": "MANUAL"
+                                                      },
+                                                      "orientation": {
+                                                        "type": "MANUAL"
+                                                      },
+                                                      "printBackground": {
+                                                        "type": "MANUAL"
+                                                      },
+                                                      "doNotWaitFullLoad": {
+                                                        "type": "MANUAL"
+                                                      }
+                                                    },
+                                                    "errorHandlingOptions": {
+                                                      "retryOnFailure": {
+                                                        "value": true
+                                                      },
+                                                      "continueOnFailure": {
+                                                        "value": false
+                                                      }
+                                                    }
+                                                  },
+                                                  "nextAction": {
+                                                    "name": "step_23",
+                                                    "skip": false,
+                                                    "type": "PIECE",
+                                                    "valid": true,
+                                                    "settings": {
+                                                      "input": {
+                                                        "auth": "{{connections['ScZ69H4wwSmWhi3SGwGvD']}}",
+                                                        "file": "{{step_3['outputUrl']}}",
+                                                        "fileName": "{{step_3['outputName']}}",
+                                                        "parentFolder": "{{step_13['id']}}",
+                                                        "include_team_drives": false
+                                                      },
+                                                      "pieceName": "@activepieces/piece-google-drive",
+                                                      "actionName": "upload_gdrive_file",
+                                                      "sampleData": {},
+                                                      "pieceVersion": "0.5.53",
+                                                      "propertySettings": {
+                                                        "auth": {
+                                                          "type": "MANUAL"
+                                                        },
+                                                        "file": {
+                                                          "type": "MANUAL"
+                                                        },
+                                                        "fileName": {
+                                                          "type": "MANUAL"
+                                                        },
+                                                        "parentFolder": {
+                                                          "type": "DYNAMIC"
+                                                        },
+                                                        "include_team_drives": {
+                                                          "type": "MANUAL"
+                                                        }
+                                                      },
+                                                      "errorHandlingOptions": {
+                                                        "retryOnFailure": {
+                                                          "value": true
+                                                        },
+                                                        "continueOnFailure": {
+                                                          "value": false
+                                                        }
+                                                      }
+                                                    },
+                                                    "nextAction": {
+                                                      "name": "step_26",
+                                                      "skip": false,
+                                                      "type": "CODE",
+                                                      "valid": true,
+                                                      "settings": {
+                                                        "input": {
+                                                          "scopeWork": "{{step_4.workplan.expertDescription}}",
+                                                          "clientData": "{{step_7}}",
+                                                          "projectTitle": "{{step_19.projectTitle}}",
+                                                          "proposalData": "{{step_6}}"
+                                                        },
+                                                        "sampleData": {},
+                                                        "sourceCode": {
+                                                          "code": "export const code = async (inputs) => {\n  // --- 1. PARSEO DE DATOS ---\n  // Función segura para leer inputs que pueden venir como string o json\n  const parse = (d) => (typeof d === 'string' ? JSON.parse(d.replace(/^```json\\s*|\\s*```$/g, '').trim()) : d) || {};\n  \n  const proposal = parse(inputs.proposalData);\n  const client = parse(inputs.clientData);\n  \n  // Variables clave\n  const meta = proposal.metadata || {};\n  const financials = proposal.financials || {};\n  const payments = financials.paymentSchedule || [];\n  const scopeText = inputs.scopeWork || \"Desarrollo de solución tecnológica según especificaciones.\";\n  const grandTotal = financials.selectedTotal || \"$0.00\";\n  const today = meta.date || new Date().toLocaleDateString();\n\n  // Datos del Cliente para inyección\n  const clientName = meta.clientName || \"EL CLIENTE\";\n  const clientCompany = client.empresa || clientName;\n  \n  // --- 2. PLANTILLAS LEGALES (HARDCODED - MÁS SEGURO) ---\n  // AQUÍ PEGAS TUS TEXTOS LEGALES REALES. Usamos backticks (`) para texto multilínea.\n  \n  const NDA_TEXT = `\n    <p><strong>PARTES:</strong> Este Acuerdo de Confidencialidad (\"Acuerdo\") se celebra entre <strong>MENATECH LLC</strong> (\"Parte Reveladora\") y <strong>${clientCompany}</strong> (\"Parte Receptora\").</p>\n    <p><strong>1. PROPÓSITO:</strong> La Parte Reveladora puede compartir información confidencial técnica y comercial en relación con el proyecto \"${meta.projectTitle}\".</p>\n    <p><strong>2. OBLIGACIONES:</strong> La Parte Receptora mantendrá la confidencialidad de la información y no la divulgará a terceros sin consentimiento escrito.</p>\n    <p><strong>3. VIGENCIA:</strong> Las obligaciones de confidencialidad perdurarán por un periodo de 2 años desde la fecha de revelación.</p>\n    `;\n\n  const MSA_TEXT = `\n    <p><strong>1. SERVICIOS:</strong> Menatech proveerá los servicios de desarrollo de software y consultoría descritos en los Anexos de Trabajo (SOW).</p>\n    <p><strong>2. RELACIÓN INDEPENDIENTE:</strong> Menatech actúa como contratista independiente, no como empleado del Cliente.</p>\n    <p><strong>3. PROPIEDAD INTELECTUAL:</strong> Tras el pago total de los honorarios, Menatech cede al Cliente todos los derechos sobre el código desarrollado específicamente para este proyecto (Work for Hire).</p>\n    <p><strong>4. LIMITACIÓN DE RESPONSABILIDAD:</strong> La responsabilidad máxima de Menatech no excederá el total de honorarios pagados bajo este acuerdo.</p>\n    `;\n\n  const DPA_TEXT = `\n    <p><strong>1. PROTECCIÓN DE DATOS:</strong> Ambas partes acuerdan cumplir con las leyes aplicables de privacidad y protección de datos.</p>\n    <p><strong>2. PROCESAMIENTO:</strong> Menatech procesará datos personales solo siguiendo instrucciones del Cliente y para fines del proyecto.</p>\n    `;\n\n  // --- 3. GENERADOR DINÁMICO DE SOW (Statement of Work) ---\n  // Construimos el SOW usando los datos vivos del proyecto\n  const generateSOW = () => `\n    <h3>1. Alcance del Proyecto</h3>\n    <p>${scopeText}</p>\n    \n    <h3>2. Honorarios y Presupuesto</h3>\n    <p>El costo total del proyecto es de <strong>${grandTotal} USD</strong>.</p>\n    \n    <h3>3. Cronograma de Pagos</h3>\n    <table style=\"width:100%; border-collapse:collapse; margin-top:10px; font-size:12px;\">\n      <tr style=\"background:#f1f5f9;\">\n        <th style=\"padding:8px; text-align:left; border:1px solid #e2e8f0;\">Hito</th>\n        <th style=\"padding:8px; text-align:left; border:1px solid #e2e8f0;\">Detalle</th>\n        <th style=\"padding:8px; text-align:right; border:1px solid #e2e8f0;\">Monto</th>\n      </tr>\n      ${payments.map(p => `\n        <tr>\n          <td style=\"padding:8px; border:1px solid #e2e8f0;\">${p.milestone}</td>\n          <td style=\"padding:8px; border:1px solid #e2e8f0;\">${p.trigger}</td>\n          <td style=\"padding:8px; text-align:right; border:1px solid #e2e8f0;\"><strong>${p.amountFmt}</strong></td>\n        </tr>\n      `).join('')}\n    </table>\n  `;\n\n  // --- 4. HELPER: BLOQUE DE FIRMAS Y FACTURAS (Reutilizado) ---\n  const signatureBlock = `\n    <div class=\"signature-block\">\n      <div class=\"sign-box\">\n        <div class=\"sign-line\"></div>\n        <div class=\"sign-label\">MENATECH LLC</div>\n        <div style=\"font-size:10px; color:#94a3b8; margin-top:5px;\">Firma Autorizada</div>\n      </div>\n      <div class=\"sign-box\">\n        <div class=\"sign-line\"></div>\n        <div class=\"sign-label\">${clientName}</div>\n        <div style=\"font-size:10px; color:#94a3b8; margin-top:5px;\">Firma Autorizada</div>\n      </div>\n    </div>\n  `;\n\n  const renderInvoices = () => {\n    if (!payments.length) return \"\";\n    return payments.map((pay, index) => `\n      <div class=\"page-break\"></div>\n      <div class=\"invoice-container\">\n        <div class=\"inv-header\">\n            <div>\n                <div class=\"brand\">MENATECH</div>\n                <div style=\"font-size: 11px; color: #64748b;\">San Juan, PR &bull; billing@menatech.cloud</div>\n            </div>\n            <div style=\"text-align:right;\">\n                <div class=\"inv-title\">INVOICE</div>\n                <div style=\"font-size: 14px; color: #334155;\">#INV-${new Date().getFullYear()}-${1001 + index}</div>\n                <div style=\"font-size: 11px; color: #94a3b8;\">Fecha: ${today}</div>\n            </div>\n        </div>\n        <div class=\"inv-meta\">\n            <div style=\"width: 50%;\">\n                <strong style=\"color: #0A3A5A; font-size: 11px;\">FACTURAR A:</strong><br>\n                <div style=\"font-size: 14px; font-weight: 600;\">${clientName}</div>\n                <div style=\"font-size: 12px; color: #64748b;\">${clientCompany}</div>\n            </div>\n            <div style=\"width: 40%; text-align: right;\">\n                <strong style=\"color: #0A3A5A; font-size: 11px;\">VENCIMIENTO:</strong><br>\n                <div style=\"font-size: 13px;\">${pay.trigger}</div>\n            </div>\n        </div>\n        <table class=\"inv-table\">\n            <thead><tr><th>Descripción</th><th style=\"text-align:right;\">Importe</th></tr></thead>\n            <tbody>\n                <tr>\n                    <td style=\"padding: 20px;\">\n                        <strong style=\"font-size: 14px; color: #1e293b;\">${pay.milestone}</strong><br>\n                        <span style=\"font-size: 12px; color: #64748b;\">Proyecto: ${meta.projectTitle}</span>\n                    </td>\n                    <td style=\"text-align:right; font-size: 14px; font-weight: 600; padding: 20px;\">${pay.amountFmt}</td>\n                </tr>\n            </tbody>\n        </table>\n        <div class=\"inv-total-row\">\n            <div style=\"font-size: 11px; color: #64748b;\">Total a Pagar</div>\n            <div class=\"inv-amount\">${pay.amountFmt}</div>\n        </div>\n        <div class=\"bank-info\">\n            <strong>Datos de Transferencia:</strong><br>\n            Banco: Chase Bank NA &bull; Cuenta: Menatech LLC &bull; Routing: XXXXXXXX\n        </div>\n      </div>\n    `).join(\"\");\n  };\n\n  // --- 5. ENSAMBLAJE HTML FINAL ---\n  const html = `\n<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Pack Legal</title>\n  <link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap\" rel=\"stylesheet\">\n  <style>\n    body { font-family: 'Inter', sans-serif; font-size: 10pt; line-height: 1.7; color: #334155; margin: 0; padding: 40px; }\n    \n    /* Portada */\n    .cover-page { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 90vh; text-align: center; }\n    .cover-title { font-size: 28px; font-weight: 800; color: #0A3A5A; margin-bottom: 10px; }\n    .cover-subtitle { font-size: 14px; color: #00B8D4; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; }\n    \n    /* Headers */\n    h2 { font-size: 14pt; font-weight: 700; color: #0A3A5A; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-top: 0; margin-bottom: 25px; }\n    h3 { font-size: 11pt; color: #1e293b; font-weight: 700; margin-top: 20px; }\n    \n    /* Invoice Styles */\n    .invoice-container { border: 1px solid #e2e8f0; padding: 40px; background: #fff; height: 95%; }\n    .inv-header { display: flex; justify-content: space-between; border-bottom: 2px solid #0A3A5A; padding-bottom: 20px; margin-bottom: 30px; }\n    .brand { font-size: 22px; font-weight: 900; color: #0A3A5A; }\n    .inv-title { font-size: 28px; font-weight: 300; color: #cbd5e1; line-height: 1; }\n    .inv-meta { display: flex; justify-content: space-between; margin-bottom: 40px; }\n    .inv-table { width: 100%; border-collapse: collapse; }\n    .inv-table th { text-align: left; background: #f8fafc; padding: 10px 20px; font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 700; }\n    .inv-table td { border-bottom: 1px solid #f1f5f9; }\n    .inv-total-row { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 2px solid #00B8D4; }\n    .inv-amount { font-size: 24px; font-weight: 800; color: #0A3A5A; }\n    .bank-info { margin-top: 60px; padding: 20px; background: #f0f9ff; border-radius: 6px; border-left: 4px solid #00B8D4; font-size: 11px; }\n\n    .signature-block { margin-top: 50px; background: #f8fafc; padding: 30px; border-radius: 8px; display: flex; justify-content: space-between; page-break-inside: avoid; }\n    .sign-box { width: 45%; }\n    .sign-line { border-bottom: 1px solid #94a3b8; height: 40px; margin-bottom: 8px; }\n    .page-break { page-break-before: always; }\n    .section-container { padding: 20px 0; }\n  </style>\n</head>\n<body>\n\n  <div class=\"cover-page\">\n    <div class=\"cover-title\">Acuerdo Maestro de Servicios</div>\n    <div class=\"cover-subtitle\">Menatech &bull; ${clientCompany}</div>\n    <div style=\"margin-top: 40px; font-size: 12px; color: #64748b;\">${today}</div>\n  </div>\n\n  <div class=\"page-break\"></div>\n  <div class=\"section-container\">\n    <h2>1. Acuerdo de Confidencialidad (NDA)</h2>\n    ${NDA_TEXT}\n    ${signatureBlock}\n  </div>\n\n  <div class=\"page-break\"></div>\n  <div class=\"section-container\">\n    <h2>2. Acuerdo Maestro (MSA)</h2>\n    ${MSA_TEXT}\n    ${signatureBlock}\n  </div>\n\n  <div class=\"page-break\"></div>\n  <div class=\"section-container\">\n    <h2>3. Declaración de Trabajo (SOW)</h2>\n    ${generateSOW()}\n    ${signatureBlock}\n  </div>\n\n  <div class=\"page-break\"></div>\n  <div class=\"section-container\">\n    <h2>4. Protección de Datos (DPA)</h2>\n    ${DPA_TEXT}\n    ${signatureBlock}\n  </div>\n\n  ${renderInvoices()}\n\n</body>\n</html>\n  `;\n\n  return { html };\n};",
+                                                          "packageJson": "{}"
+                                                        },
+                                                        "errorHandlingOptions": {
+                                                          "retryOnFailure": {
+                                                            "value": true
+                                                          },
+                                                          "continueOnFailure": {
+                                                            "value": false
+                                                          }
+                                                        }
+                                                      },
+                                                      "nextAction": {
+                                                        "name": "step_27",
+                                                        "skip": false,
+                                                        "type": "PIECE",
+                                                        "valid": true,
+                                                        "settings": {
+                                                          "input": {
+                                                            "auth": "{{connections['LDbbwG2U6G4wEftStQmfe']}}",
+                                                            "html": "{{step_26['html']}}",
+                                                            "name": "Engagement Agreement Documents for {{step_7['clientData']['company']}}.pdf",
+                                                            "paperSize": "A4",
+                                                            "printBackground": true,
+                                                            "doNotWaitFullLoad": false
+                                                          },
+                                                          "pieceName": "@activepieces/piece-pdf-co",
+                                                          "actionName": "convert_html_to_pdf",
+                                                          "sampleData": {},
+                                                          "pieceVersion": "0.0.8",
+                                                          "propertySettings": {
+                                                            "auth": {
+                                                              "type": "MANUAL"
+                                                            },
+                                                            "html": {
+                                                              "type": "MANUAL"
+                                                            },
+                                                            "name": {
+                                                              "type": "MANUAL"
+                                                            },
+                                                            "footer": {
+                                                              "type": "MANUAL"
+                                                            },
+                                                            "header": {
+                                                              "type": "MANUAL"
+                                                            },
+                                                            "margins": {
+                                                              "type": "MANUAL"
+                                                            },
+                                                            "profiles": {
+                                                              "type": "MANUAL"
+                                                            },
+                                                            "mediaType": {
+                                                              "type": "MANUAL"
+                                                            },
+                                                            "paperSize": {
+                                                              "type": "MANUAL"
+                                                            },
+                                                            "expiration": {
+                                                              "type": "MANUAL"
+                                                            },
+                                                            "orientation": {
+                                                              "type": "MANUAL"
+                                                            },
+                                                            "printBackground": {
+                                                              "type": "MANUAL"
+                                                            },
+                                                            "doNotWaitFullLoad": {
+                                                              "type": "MANUAL"
+                                                            }
+                                                          },
+                                                          "errorHandlingOptions": {
+                                                            "retryOnFailure": {
+                                                              "value": true
+                                                            },
+                                                            "continueOnFailure": {
+                                                              "value": false
+                                                            }
+                                                          }
+                                                        },
+                                                        "nextAction": {
+                                                          "name": "step_24",
+                                                          "skip": false,
+                                                          "type": "PIECE",
+                                                          "valid": true,
+                                                          "settings": {
+                                                            "input": {
+                                                              "auth": "{{connections['ScZ69H4wwSmWhi3SGwGvD']}}",
+                                                              "file": "{{step_27['outputUrl']}}",
+                                                              "fileName": "{{step_27['outputName']}}",
+                                                              "parentFolder": "{{step_13['id']}}",
+                                                              "include_team_drives": false
+                                                            },
+                                                            "pieceName": "@activepieces/piece-google-drive",
+                                                            "actionName": "upload_gdrive_file",
+                                                            "sampleData": {},
+                                                            "pieceVersion": "0.5.53",
+                                                            "propertySettings": {
+                                                              "auth": {
+                                                                "type": "MANUAL"
+                                                              },
+                                                              "file": {
+                                                                "type": "MANUAL"
+                                                              },
+                                                              "fileName": {
+                                                                "type": "MANUAL"
+                                                              },
+                                                              "parentFolder": {
+                                                                "type": "DYNAMIC"
+                                                              },
+                                                              "include_team_drives": {
+                                                                "type": "MANUAL"
+                                                              }
+                                                            },
+                                                            "errorHandlingOptions": {
+                                                              "retryOnFailure": {
+                                                                "value": true
+                                                              },
+                                                              "continueOnFailure": {
+                                                                "value": false
+                                                              }
+                                                            }
+                                                          },
+                                                          "nextAction": {
+                                                            "name": "step_11",
+                                                            "skip": false,
+                                                            "type": "PIECE",
+                                                            "valid": true,
+                                                            "settings": {
+                                                              "input": {
+                                                                "auth": "{{connections['9NXu5l3MoKkruSp1AhEbt']}}",
+                                                                "values": {
+                                                                  "A": "{{step_19['projectTitle']}}",
+                                                                  "B": "{{step_7['mission']}}",
+                                                                  "C": "{{step_7['clientData']['name']}}",
+                                                                  "D": "{{step_7['clientData']['company']}}",
+                                                                  "E": "{{step_19['referenceDate']}}",
+                                                                  "F": "https://drive.google.com/drive/u/0/folders/{{step_13['id']}}",
+                                                                  "G": "{{step_5['sheets']['basic']['cost']}}",
+                                                                  "H": "{{step_5['sheets']['basic']['price']}}",
+                                                                  "I": "{{step_5['sheets']['basic']['margin']}}",
+                                                                  "J": "{{step_5['sheets']['basic']['utility']}}",
+                                                                  "K": "{{step_5['sheets']['basic']['stack']}}",
+                                                                  "L": "{{step_5['sheets']['basic']['hours']}}",
+                                                                  "M": "{{step_5['sheets']['basic']['months']}}",
+                                                                  "N": "{{step_5['sheets']['advanced']['cost']}}",
+                                                                  "O": "{{step_5['sheets']['advanced']['price']}}",
+                                                                  "P": "{{step_5['sheets']['advanced']['margin']}}",
+                                                                  "Q": "{{step_5['sheets']['advanced']['utility']}}",
+                                                                  "R": "{{step_5['sheets']['advanced']['stack']}}",
+                                                                  "S": "{{step_5['sheets']['advanced']['hours']}}",
+                                                                  "T": "{{step_5['sheets']['advanced']['months']}}"
+                                                                },
+                                                                "sheetId": 0,
+                                                                "as_string": false,
+                                                                "spreadsheetId": "1JpNaALQOdaft_dv9US4ED6CgN1rnpOMAenRZ57BcyiU",
+                                                                "first_row_headers": true,
+                                                                "includeTeamDrives": false
+                                                              },
+                                                              "pieceName": "@activepieces/piece-google-sheets",
+                                                              "actionName": "insert_row",
+                                                              "sampleData": {},
+                                                              "pieceVersion": "0.12.20",
+                                                              "propertySettings": {
+                                                                "auth": {
+                                                                  "type": "MANUAL"
+                                                                },
+                                                                "values": {
+                                                                  "type": "MANUAL",
+                                                                  "schema": {
+                                                                    "A": {
+                                                                      "type": "SHORT_TEXT",
+                                                                      "required": false,
+                                                                      "description": "Proyecto",
+                                                                      "displayName": "Proyecto",
+                                                                      "defaultValue": ""
+                                                                    },
+                                                                    "B": {
+                                                                      "type": "SHORT_TEXT",
+                                                                      "required": false,
+                                                                      "description": "Descripción",
+                                                                      "displayName": "Descripción",
+                                                                      "defaultValue": ""
+                                                                    },
+                                                                    "C": {
+                                                                      "type": "SHORT_TEXT",
+                                                                      "required": false,
+                                                                      "description": "Nombre Cliente",
+                                                                      "displayName": "Nombre Cliente",
+                                                                      "defaultValue": ""
+                                                                    },
+                                                                    "D": {
+                                                                      "type": "SHORT_TEXT",
+                                                                      "required": false,
+                                                                      "description": "Empresa",
+                                                                      "displayName": "Empresa",
+                                                                      "defaultValue": ""
+                                                                    },
+                                                                    "E": {
+                                                                      "type": "SHORT_TEXT",
+                                                                      "required": false,
+                                                                      "description": "Fecha",
+                                                                      "displayName": "Fecha",
+                                                                      "defaultValue": ""
+                                                                    },
+                                                                    "F": {
+                                                                      "type": "SHORT_TEXT",
+                                                                      "required": false,
+                                                                      "description": "Documentación",
+                                                                      "displayName": "Documentación",
+                                                                      "defaultValue": ""
+                                                                    },
+                                                                    "G": {
+                                                                      "type": "SHORT_TEXT",
+                                                                      "required": false,
+                                                                      "description": "Costo Básico",
+                                                                      "displayName": "Costo Básico",
+                                                                      "defaultValue": ""
+                                                                    },
+                                                                    "H": {
+                                                                      "type": "SHORT_TEXT",
+                                                                      "required": false,
+                                                                      "description": "Presupuesto Básico",
+                                                                      "displayName": "Presupuesto Básico",
+                                                                      "defaultValue": ""
+                                                                    },
+                                                                    "I": {
+                                                                      "type": "SHORT_TEXT",
+                                                                      "required": false,
+                                                                      "description": "Margen Básico",
+                                                                      "displayName": "Margen Básico",
+                                                                      "defaultValue": ""
+                                                                    },
+                                                                    "J": {
+                                                                      "type": "SHORT_TEXT",
+                                                                      "required": false,
+                                                                      "description": "Utilidad Básica",
+                                                                      "displayName": "Utilidad Básica",
+                                                                      "defaultValue": ""
+                                                                    },
+                                                                    "K": {
+                                                                      "type": "SHORT_TEXT",
+                                                                      "required": false,
+                                                                      "description": "TechStack Básico",
+                                                                      "displayName": "TechStack Básico",
+                                                                      "defaultValue": ""
+                                                                    },
+                                                                    "L": {
+                                                                      "type": "SHORT_TEXT",
+                                                                      "required": false,
+                                                                      "description": "Horas Estimadas Básico",
+                                                                      "displayName": "Horas Estimadas Básico",
+                                                                      "defaultValue": ""
+                                                                    },
+                                                                    "M": {
+                                                                      "type": "SHORT_TEXT",
+                                                                      "required": false,
+                                                                      "description": "Plazo (meses) Básico",
+                                                                      "displayName": "Plazo (meses) Básico",
+                                                                      "defaultValue": ""
+                                                                    },
+                                                                    "N": {
+                                                                      "type": "SHORT_TEXT",
+                                                                      "required": false,
+                                                                      "description": "Costo Avanzado",
+                                                                      "displayName": "Costo Avanzado",
+                                                                      "defaultValue": ""
+                                                                    },
+                                                                    "O": {
+                                                                      "type": "SHORT_TEXT",
+                                                                      "required": false,
+                                                                      "description": "Presupuesto Avanzado",
+                                                                      "displayName": "Presupuesto Avanzado",
+                                                                      "defaultValue": ""
+                                                                    },
+                                                                    "P": {
+                                                                      "type": "SHORT_TEXT",
+                                                                      "required": false,
+                                                                      "description": "Margen Avanzado",
+                                                                      "displayName": "Margen Avanzado",
+                                                                      "defaultValue": ""
+                                                                    },
+                                                                    "Q": {
+                                                                      "type": "SHORT_TEXT",
+                                                                      "required": false,
+                                                                      "description": "Utilidad Avanzado",
+                                                                      "displayName": "Utilidad Avanzado",
+                                                                      "defaultValue": ""
+                                                                    },
+                                                                    "R": {
+                                                                      "type": "SHORT_TEXT",
+                                                                      "required": false,
+                                                                      "description": "TechStack Avanzado",
+                                                                      "displayName": "TechStack Avanzado",
+                                                                      "defaultValue": ""
+                                                                    },
+                                                                    "S": {
+                                                                      "type": "SHORT_TEXT",
+                                                                      "required": false,
+                                                                      "description": "Horas Estimadas Avanzado",
+                                                                      "displayName": "Horas Estimadas Avanzado",
+                                                                      "defaultValue": ""
+                                                                    },
+                                                                    "T": {
+                                                                      "type": "SHORT_TEXT",
+                                                                      "required": false,
+                                                                      "description": "Plazo (meses) Avanzado",
+                                                                      "displayName": "Plazo (meses) Avanzado",
+                                                                      "defaultValue": ""
+                                                                    }
+                                                                  }
+                                                                },
+                                                                "sheetId": {
+                                                                  "type": "MANUAL"
+                                                                },
+                                                                "as_string": {
+                                                                  "type": "MANUAL"
+                                                                },
+                                                                "spreadsheetId": {
+                                                                  "type": "MANUAL"
+                                                                },
+                                                                "first_row_headers": {
+                                                                  "type": "MANUAL"
+                                                                },
+                                                                "includeTeamDrives": {
+                                                                  "type": "MANUAL"
+                                                                }
+                                                              },
+                                                              "errorHandlingOptions": {
+                                                                "retryOnFailure": {
+                                                                  "value": true
+                                                                },
+                                                                "continueOnFailure": {
+                                                                  "value": false
+                                                                }
+                                                              }
+                                                            },
+                                                            "nextAction": {
+                                                              "name": "step_16",
+                                                              "skip": false,
+                                                              "type": "PIECE",
+                                                              "valid": true,
+                                                              "settings": {
+                                                                "input": {
+                                                                  "cc": [],
+                                                                  "bcc": [],
+                                                                  "auth": "{{connections['5fzRIc3J1ulrSw0AhXhRW']}}",
+                                                                  "body": "<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"utf-8\">\n    <style>\n        /* Reset & Base */\n        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #333333; }\n        .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }\n        \n        /* Header */\n        .header { background-color: #0A3A5A; color: #ffffff; padding: 30px; text-align: center; border-bottom: 4px solid #00B8D4; }\n        .header h1 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }\n        .subtitle { font-size: 12px; opacity: 0.8; margin-top: 5px; }\n        \n        /* Content */\n        .content { padding: 30px; }\n        .intro { font-size: 15px; line-height: 1.6; color: #555555; margin-bottom: 25px; }\n        \n        /* Comparison Table */\n        .comp-box { background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 25px; }\n        .comp-header { background-color: #f8fafc; padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }\n        \n        .metrics-table { width: 100%; border-collapse: collapse; font-size: 13px; }\n        .metrics-table th { text-align: left; padding: 12px 15px; color: #64748b; font-weight: 600; border-bottom: 2px solid #f1f5f9; background-color: #fafafa; font-size: 11px; text-transform: uppercase; }\n        .metrics-table td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; color: #334155; }\n        \n        .badge-basic { background-color: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }\n        .badge-adv { background-color: #f0fdf4; color: #15803d; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }\n        .highlight { font-weight: 700; color: #0A3A5A; }\n        /* Recommendation Box */\n        .rec-box { background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 4px; margin-bottom: 25px; }\n        .rec-title { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; margin-bottom: 5px; }\n        .rec-text { font-size: 13px; color: #78350f; line-height: 1.5; font-style: italic; }\n        \n        /* Button Area */\n        .action-area { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; }\n        .btn-main { display: inline-block; background-color: #00B8D4; color: #ffffff !important; text-decoration: none; padding: 12px 25px; border-radius: 6px; font-size: 14px; font-weight: 700; transition: background-color 0.2s; box-shadow: 0 2px 5px rgba(0,184,212,0.3); }\n        .btn-sub { display: block; margin-top: 10px; font-size: 11px; color: #94a3b8; }\n        \n        /* Footer */\n        .footer { background-color: #f8fafc; padding: 20px; text-align: center; font-size: 11px; color: #a0aec0; border-top: 1px solid #e2e8f0; }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h1>Análisis Completado</h1>\n            <div class=\"subtitle\">Menatech Automation Systems</div>\n        </div>\n        \n        <div class=\"content\">\n            <p class=\"intro\">\n                Hola <strong>Gonzalo</strong>,<br><br>\n                El flujo de trabajo para el proyecto <strong>\"{{step_19.projectTitle}}\"</strong> ha finalizado. Hemos generado la documentación estratégica, técnica y legal, y los archivos ya están asegurados en Drive.\n            </p>\n            \n            <div class=\"comp-box\">\n                <div class=\"comp-header\">Resumen de Escenarios</div>\n                <table class=\"metrics-table\">\n                    <thead>\n                        <tr>\n                            <th width=\"30%\">Métrica</th>\n                            <th width=\"35%\"><span class=\"badge-basic\">B (Low-Code)</span></th>\n                            <th width=\"35%\"><span class=\"badge-adv\">A (High-Tech)</span></th>\n                        </tr>\n                    </thead>\n                    <tbody>\n                        <tr>\n                            <td><strong>Inversión</strong></td>\n                            <td>{{step_5.sheets.basic.price}}</td>\n                            <td class=\"highlight\">{{step_5.sheets.advanced.price}}</td>\n                        </tr>\n                        <tr>\n                            <td><strong>Tiempo</strong></td>\n                            <td>{{step_5.sheets.basic.months}} Meses</td>\n                            <td>{{step_5.sheets.advanced.months}} Meses</td>\n                        </tr>\n                        <tr>\n                            <td><strong>Utilidad</strong></td>\n                            <td>{{step_5.sheets.basic.utility}}</td>\n                            <td class=\"highlight\">{{step_5.sheets.advanced.utility}}</td>\n                        </tr>\n                    </tbody>\n                </table>\n            </div>\n            <div class=\"rec-box\">\n                <div class=\"rec-title\">Recomendación Estratégica</div>\n                <div class=\"rec-text\">\n                    \"{{step_5.recommendation}}\"\n                </div>\n            </div>\n            \n            <p style=\"font-size: 13px; color: #64748b; text-align: center;\">\n                La carpeta contiene: Propuesta Comercial, Manual de Ejecución y Pack Legal.\n            </p>\n            <div class=\"action-area\">\n                <a href=\"https://drive.google.com/drive/u/0/folders/{{step_13['id']}}\" class=\"btn-main\">\n                    📂 Acceder a Carpeta de Documentación\n                </a>\n                <span class=\"btn-sub\">Enlace directo a Google Drive</span>\n            </div>\n        </div>\n        \n        <div class=\"footer\">\n            &copy; {{step_17.current_date}} Menatech Intelligence.<br>\n            Reporte generado automáticamente.\n        </div>\n    </div>\n</body>\n</html>",
+                                                                  "draft": false,
+                                                                  "subject": "[REVISIÓN] Pack Documental Generado: {{step_19.projectTitle}}",
+                                                                  "receiver": [
+                                                                    "gonzalo@menatech.cloud"
+                                                                  ],
+                                                                  "reply_to": [],
+                                                                  "body_type": "html",
+                                                                  "attachments": []
+                                                                },
+                                                                "pieceName": "@activepieces/piece-gmail",
+                                                                "actionName": "send_email",
+                                                                "sampleData": {},
+                                                                "pieceVersion": "0.9.6",
+                                                                "propertySettings": {
+                                                                  "cc": {
+                                                                    "type": "MANUAL"
+                                                                  },
+                                                                  "bcc": {
+                                                                    "type": "MANUAL"
+                                                                  },
+                                                                  "auth": {
+                                                                    "type": "MANUAL"
+                                                                  },
+                                                                  "body": {
+                                                                    "type": "MANUAL"
+                                                                  },
+                                                                  "draft": {
+                                                                    "type": "MANUAL"
+                                                                  },
+                                                                  "subject": {
+                                                                    "type": "MANUAL"
+                                                                  },
+                                                                  "receiver": {
+                                                                    "type": "MANUAL"
+                                                                  },
+                                                                  "reply_to": {
+                                                                    "type": "MANUAL"
+                                                                  },
+                                                                  "body_type": {
+                                                                    "type": "MANUAL"
+                                                                  },
+                                                                  "attachments": {
+                                                                    "type": "MANUAL"
+                                                                  }
+                                                                },
+                                                                "errorHandlingOptions": {
+                                                                  "retryOnFailure": {
+                                                                    "value": true
+                                                                  },
+                                                                  "continueOnFailure": {
+                                                                    "value": false
+                                                                  }
+                                                                }
+                                                              },
+                                                              "displayName": "Send Email"
+                                                            },
+                                                            "displayName": "Data Repository"
+                                                          },
+                                                          "displayName": "Upload Engagement Agreement"
+                                                        },
+                                                        "displayName": "Engagement Agreement to PDF"
+                                                      },
+                                                      "displayName": "Engagement Agreement"
+                                                    },
+                                                    "displayName": "Upload Execution Plan"
+                                                  },
+                                                  "displayName": "Execution Plan to PDF"
+                                                },
+                                                "displayName": "HTML Execution Plan"
+                                              },
+                                              "displayName": "Parsing | Execution Plan"
+                                            },
+                                            "displayName": "Execution Plan"
+                                          },
+                                          "displayName": "Upload Client's Proposal"
+                                        },
+                                        "displayName": "Proposal to PDF"
+                                      },
+                                      "displayName": "HTML Format | Client's Proposal"
+                                    },
+                                    "displayName": "Parsing | Proposal Assembley"
+                                  },
+                                  "displayName": "Client's Proposal"
+                                },
+                                "displayName": "Parsing | Project Costs"
+                              },
+                              "displayName": "Project Costs"
+                            },
+                            "displayName": "Contractors List"
+                          },
+                          "displayName": "Parsing | Research Findings"
+                        },
+                        "displayName": "MasterResearch"
+                      },
+                      "displayName": "Create Project Folder"
+                    },
+                    "displayName": "Parsing | Work Plan"
+                  },
+                  "displayName": "Work Plan"
+                },
+                "displayName": "Current Date"
+              },
+              "displayName": "Parsing | Project Data"
+            },
+            "displayName": "Project Data"
+          },
+          "displayName": "Transcription Cleaning"
+        }
+      },
+      "valid": true,
+      "schemaVersion": "10"
+    }
+  ]
+}
