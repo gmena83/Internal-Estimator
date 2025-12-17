@@ -9,6 +9,7 @@ import { aiService } from "./ai-service";
 import { generateProposalPdf, generateInternalReportPdf } from "./pdf-service";
 import { sendProposalEmail } from "./email-service";
 import { generateCoverImageWithApproval } from "./image-service";
+import { generatePresentation } from "./gamma-service";
 
 // Configure multer for file uploads
 const uploadsDir = path.join(process.cwd(), "uploads");
@@ -442,11 +443,23 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Project not found" });
       }
 
-      // Generate PDFs using local pdfmake library
+      let presentationUrl: string | null = null;
+
+      if (process.env.GAMMA_API_KEY) {
+        try {
+          const presentationResult = await generatePresentation(project);
+          if (presentationResult.success && presentationResult.embedUrl) {
+            presentationUrl = presentationResult.embedUrl;
+          }
+        } catch (gammaError) {
+          console.error("Gamma presentation generation failed:", gammaError);
+        }
+      }
+
       const updated = await storage.updateProject(req.params.id, {
         proposalPdfUrl: `/api/projects/${req.params.id}/proposal.pdf`,
         internalReportPdfUrl: `/api/projects/${req.params.id}/internal-report.pdf`,
-        presentationUrl: project.coverImageUrl ? `https://gamma.app/embed/demo-presentation` : null,
+        presentationUrl: presentationUrl || (project.coverImageUrl ? `https://gamma.app/embed/demo-presentation` : null),
         status: "assets_ready",
       });
 
