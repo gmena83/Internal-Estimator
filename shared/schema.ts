@@ -68,12 +68,26 @@ export const knowledgeEntries = pgTable("knowledge_entries", {
 // API health tracking
 export const apiHealthLogs = pgTable("api_health_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  service: text("service").notNull(), // 'gemini', 'claude', 'openai', 'pdf_co', 'resend', 'gamma', 'nano_banana'
+  service: text("service").notNull(), // 'gemini', 'claude', 'openai', 'perplexity', 'pdf_co', 'resend', 'gamma', 'nano_banana'
   status: text("status").notNull(), // 'online', 'degraded', 'offline'
   latencyMs: integer("latency_ms"),
   errorMessage: text("error_message"),
   requestCount: integer("request_count").default(0),
   lastChecked: timestamp("last_checked").defaultNow(),
+});
+
+// API usage tracking per project
+export const apiUsageLogs = pgTable("api_usage_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  provider: text("provider").notNull(), // 'gemini', 'claude', 'openai', 'perplexity'
+  model: text("model").notNull(), // e.g., 'gemini-2.0-flash-exp', 'claude-3-opus', 'gpt-4o'
+  inputTokens: integer("input_tokens").notNull().default(0),
+  outputTokens: integer("output_tokens").notNull().default(0),
+  totalTokens: integer("total_tokens").notNull().default(0),
+  costUsd: text("cost_usd").notNull().default("0"), // stored as string for precision
+  operation: text("operation"), // 'estimate', 'chat', 'market_research', etc.
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Relations
@@ -118,6 +132,11 @@ export const insertApiHealthLogSchema = createInsertSchema(apiHealthLogs).omit({
   lastChecked: true,
 });
 
+export const insertApiUsageLogSchema = createInsertSchema(apiUsageLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type Project = typeof projects.$inferSelect;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
@@ -127,6 +146,8 @@ export type KnowledgeEntry = typeof knowledgeEntries.$inferSelect;
 export type InsertKnowledgeEntry = z.infer<typeof insertKnowledgeEntrySchema>;
 export type ApiHealthLog = typeof apiHealthLogs.$inferSelect;
 export type InsertApiHealthLog = z.infer<typeof insertApiHealthLogSchema>;
+export type ApiUsageLog = typeof apiUsageLogs.$inferSelect;
+export type InsertApiUsageLog = z.infer<typeof insertApiUsageLogSchema>;
 
 // Scenario types
 export type Scenario = {
@@ -185,6 +206,18 @@ export type ServiceStatus = {
   latencyMs?: number;
   requestCount?: number;
   lastChecked?: Date;
+};
+
+// API Usage aggregated stats per project
+export type ProjectApiUsageStats = {
+  provider: string;
+  displayName: string;
+  model: string;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalTokens: number;
+  totalCostUsd: number;
+  callCount: number;
 };
 
 // Stage definitions

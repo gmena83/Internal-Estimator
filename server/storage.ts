@@ -3,6 +3,7 @@ import {
   messages,
   knowledgeEntries,
   apiHealthLogs,
+  apiUsageLogs,
   type Project,
   type InsertProject,
   type Message,
@@ -11,6 +12,9 @@ import {
   type InsertKnowledgeEntry,
   type ApiHealthLog,
   type InsertApiHealthLog,
+  type ApiUsageLog,
+  type InsertApiUsageLog,
+  type ProjectApiUsageStats,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql } from "drizzle-orm";
@@ -36,6 +40,11 @@ export interface IStorage {
   // API Health
   getApiHealth(): Promise<ApiHealthLog[]>;
   updateApiHealth(log: InsertApiHealthLog): Promise<ApiHealthLog>;
+
+  // API Usage
+  logApiUsage(usage: InsertApiUsageLog): Promise<ApiUsageLog>;
+  getProjectApiUsage(projectId: string): Promise<ApiUsageLog[]>;
+  getProjectApiUsageStats(projectId: string): Promise<ProjectApiUsageStats[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -182,6 +191,66 @@ export class DatabaseStorage implements IStorage {
     
     const [created] = await db.insert(apiHealthLogs).values(log).returning();
     return created;
+  }
+
+  // API Usage
+  async logApiUsage(usage: InsertApiUsageLog): Promise<ApiUsageLog> {
+    const [created] = await db.insert(apiUsageLogs).values(usage).returning();
+    return created;
+  }
+
+  async getProjectApiUsage(projectId: string): Promise<ApiUsageLog[]> {
+    return await db
+      .select()
+      .from(apiUsageLogs)
+      .where(eq(apiUsageLogs.projectId, projectId))
+      .orderBy(desc(apiUsageLogs.createdAt));
+  }
+
+  async getProjectApiUsageStats(projectId: string): Promise<ProjectApiUsageStats[]> {
+    const usageLogs = await db
+      .select()
+      .from(apiUsageLogs)
+      .where(eq(apiUsageLogs.projectId, projectId));
+
+    const providerDisplayNames: Record<string, string> = {
+      gemini: 'Google Gemini',
+      claude: 'Anthropic Claude',
+      openai: 'OpenAI',
+      perplexity: 'Perplexity',
+    };
+
+    const statsMap = new Map<string, ProjectApiUsageStats>();
+
+    for (const log of usageLogs) {
+      const key = log.provider;
+      const existing = statsMap.get(key);
+      const costUsd = parseFloat(log.costUsd) || 0;
+
+      if (existing) {
+        existing.totalInputTokens += log.inputTokens;
+        existing.totalOutputTokens += log.outputTokens;
+        existing.totalTokens += log.totalTokens;
+        existing.totalCostUsd += costUsd;
+        existing.callCount += 1;
+        if (log.model && log.model !== existing.model) {
+          existing.model = log.model;
+        }
+      } else {
+        statsMap.set(key, {
+          provider: log.provider,
+          displayName: providerDisplayNames[log.provider] || log.provider,
+          model: log.model,
+          totalInputTokens: log.inputTokens,
+          totalOutputTokens: log.outputTokens,
+          totalTokens: log.totalTokens,
+          totalCostUsd: costUsd,
+          callCount: 1,
+        });
+      }
+    }
+
+    return Array.from(statsMap.values());
   }
 }
 
