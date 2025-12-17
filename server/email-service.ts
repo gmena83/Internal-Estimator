@@ -1,4 +1,5 @@
 import type { Project } from "@shared/schema";
+import { storage } from "./storage";
 
 interface EmailResult {
   success: boolean;
@@ -19,6 +20,7 @@ export async function sendProposalEmail(
   recipientEmail?: string
 ): Promise<EmailResult> {
   const resendApiKey = process.env.RESEND_API_KEY;
+  const startTime = Date.now();
   
   if (!resendApiKey) {
     console.log("Resend API key not configured - simulating email send");
@@ -42,8 +44,8 @@ export async function sendProposalEmail(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "ISI Agent <noreply@isi-agent.com>",
-        to: recipientEmail || project.clientName || "client@example.com",
+        from: "ISI Agent <onboarding@resend.dev>",
+        to: recipientEmail || project.clientEmail || "client@example.com",
         subject: `Project Proposal: ${project.title}`,
         html: htmlContent,
         text: emailContent,
@@ -53,9 +55,16 @@ export async function sendProposalEmail(
       }),
     });
 
+    const latencyMs = Date.now() - startTime;
+
     if (!response.ok) {
       const errorData = await response.json();
       console.error("Resend API error:", errorData);
+      await storage.updateApiHealth({
+        service: "resend",
+        status: "error",
+        latencyMs,
+      });
       return {
         success: false,
         error: errorData.message || "Failed to send email",
@@ -63,12 +72,24 @@ export async function sendProposalEmail(
     }
 
     const data = await response.json();
+    
+    await storage.updateApiHealth({
+      service: "resend",
+      status: "online",
+      latencyMs,
+    });
+    
     return {
       success: true,
       messageId: data.id,
     };
   } catch (error) {
     console.error("Email send error:", error);
+    await storage.updateApiHealth({
+      service: "resend",
+      status: "error",
+      latencyMs: Date.now() - startTime,
+    });
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
