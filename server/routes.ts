@@ -8,6 +8,7 @@ import { insertProjectSchema, insertMessageSchema, type ServiceStatus, type Atta
 import { aiService } from "./ai-service";
 import { generateProposalPdf, generateInternalReportPdf } from "./pdf-service";
 import { sendProposalEmail } from "./email-service";
+import { generateCoverImageWithApproval } from "./image-service";
 
 // Configure multer for file uploads
 const uploadsDir = path.join(process.cwd(), "uploads");
@@ -379,6 +380,60 @@ export async function registerRoutes(
     }
   });
 
+  // Stage Actions - Generate Cover Images for Approval
+  app.post("/api/projects/:id/generate-images", async (req, res) => {
+    try {
+      const project = await storage.getProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+
+      const parsedData = project.parsedData as { mission?: string } | null;
+      const industry = parsedData?.mission?.slice(0, 50) || "technology";
+
+      const images = await generateCoverImageWithApproval(
+        project.title,
+        parsedData?.mission || project.title,
+        industry,
+        project.id
+      );
+
+      res.json({
+        success: true,
+        images,
+        message: "Please review and approve one of the generated images before creating the PDF and presentation.",
+      });
+    } catch (error) {
+      console.error("Error generating images:", error);
+      res.status(500).json({ error: "Failed to generate images" });
+    }
+  });
+
+  // Stage Actions - Approve Image and Generate Assets
+  app.post("/api/projects/:id/approve-image", async (req, res) => {
+    try {
+      const { imageId, imageUrl } = req.body;
+      const project = await storage.getProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+
+      // Update project with approved cover image
+      const updated = await storage.updateProject(req.params.id, {
+        coverImageUrl: imageUrl || `/api/projects/${req.params.id}/cover-${imageId}.png`,
+      });
+
+      res.json({
+        success: true,
+        project: updated,
+        message: "Image approved. You can now generate the PDF and presentation.",
+      });
+    } catch (error) {
+      console.error("Error approving image:", error);
+      res.status(500).json({ error: "Failed to approve image" });
+    }
+  });
+
   // Stage Actions - Generate Assets (Stage 2 -> ready for Stage 3)
   app.post("/api/projects/:id/generate-assets", async (req, res) => {
     try {
@@ -387,12 +442,11 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Project not found" });
       }
 
-      // In production, this would generate actual PDFs via external services
-      // For now, simulate asset generation with placeholder URLs
+      // Generate PDFs using local pdfmake library
       const updated = await storage.updateProject(req.params.id, {
         proposalPdfUrl: `/api/projects/${req.params.id}/proposal.pdf`,
         internalReportPdfUrl: `/api/projects/${req.params.id}/internal-report.pdf`,
-        presentationUrl: `https://gamma.app/embed/demo-presentation`,
+        presentationUrl: project.coverImageUrl ? `https://gamma.app/embed/demo-presentation` : null,
         status: "assets_ready",
       });
 

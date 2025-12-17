@@ -1,7 +1,7 @@
 import { storage } from "./storage";
 
 export type AIProvider = "gemini" | "claude" | "openai" | "perplexity";
-export type OperationType = "input_processing" | "estimate" | "chat" | "market_research" | "vibecode" | "pm_breakdown";
+export type OperationType = "input_processing" | "estimate" | "chat" | "market_research" | "vibecode" | "pm_breakdown" | "image_generation" | "email";
 
 const PRICING: Record<AIProvider, Record<string, { inputPer1M: number; outputPer1M: number }>> = {
   gemini: {
