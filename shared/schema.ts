@@ -79,6 +79,45 @@ export const apiHealthLogs = pgTable("api_health_logs", {
   lastChecked: timestamp("last_checked").defaultNow(),
 });
 
+// Diagnostic reports table for repository audits
+export const diagnosticReports = pgTable("diagnostic_reports", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  repoUrl: text("repo_url").notNull(),
+  repoOwner: text("repo_owner").notNull(),
+  repoName: text("repo_name").notNull(),
+  status: text("status").notNull().default("pending"), // pending, analyzing, completed, failed
+  healthAssessment: text("health_assessment"), // Executive summary paragraph
+  criticalCount: integer("critical_count").default(0),
+  highCount: integer("high_count").default(0),
+  mediumCount: integer("medium_count").default(0),
+  lowCount: integer("low_count").default(0),
+  findings: jsonb("findings").$type<DiagnosticFinding[]>(),
+  correctedSnippets: jsonb("corrected_snippets").$type<CorrectedSnippet[]>(),
+  fullReportMarkdown: text("full_report_markdown"),
+  analyzedFiles: jsonb("analyzed_files").$type<string[]>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+});
+
+// Diagnostic finding type
+export type DiagnosticFinding = {
+  file: string;
+  line?: number;
+  category: string;
+  severity: "Critical" | "High" | "Medium" | "Low";
+  description: string;
+  recommendation: string;
+};
+
+// Corrected code snippet type
+export type CorrectedSnippet = {
+  file: string;
+  language: string;
+  original?: string;
+  corrected: string;
+  description: string;
+};
+
 // API usage tracking per project
 export const apiUsageLogs = pgTable("api_usage_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -140,6 +179,12 @@ export const insertApiUsageLogSchema = createInsertSchema(apiUsageLogs).omit({
   createdAt: true,
 });
 
+export const insertDiagnosticReportSchema = createInsertSchema(diagnosticReports).omit({
+  id: true,
+  createdAt: true,
+  completedAt: true,
+});
+
 // Types
 export type Project = typeof projects.$inferSelect;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
@@ -151,6 +196,8 @@ export type ApiHealthLog = typeof apiHealthLogs.$inferSelect;
 export type InsertApiHealthLog = z.infer<typeof insertApiHealthLogSchema>;
 export type ApiUsageLog = typeof apiUsageLogs.$inferSelect;
 export type InsertApiUsageLog = z.infer<typeof insertApiUsageLogSchema>;
+export type DiagnosticReport = typeof diagnosticReports.$inferSelect;
+export type InsertDiagnosticReport = z.infer<typeof insertDiagnosticReportSchema>;
 
 // Scenario types
 export type Scenario = {
