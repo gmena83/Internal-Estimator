@@ -204,6 +204,7 @@ export type Scenario = {
   name: string;
   description: string;
   features: string[];
+  featureBreakdown?: FeatureBreakdown[];
   techStack: string[];
   timeline: string;
   totalCost: number;
@@ -212,6 +213,10 @@ export type Scenario = {
   pros: string[];
   cons: string[];
   recommended: boolean;
+  ongoingCosts?: OngoingCosts;
+  regionalAlternatives?: RegionalAlternative[];
+  multipliers?: PricingMultipliers;
+  rateJustification?: string;
 };
 
 export type ROIAnalysis = {
@@ -220,6 +225,41 @@ export type ROIAnalysis = {
   projectedSavings: number;
   paybackPeriodMonths: number;
   threeYearROI: number;
+  methodology?: string;
+};
+
+export type OngoingCosts = {
+  annualMaintenanceLow: number;
+  annualMaintenanceHigh: number;
+  monthlyCloudInfraLow: number;
+  monthlyCloudInfraHigh: number;
+  monthlyAiApiLow: number;
+  monthlyAiApiHigh: number;
+  monthlyMonitoringLow: number;
+  monthlyMonitoringHigh: number;
+};
+
+export type RegionalAlternative = {
+  region: string;
+  multiplier: number;
+  adjustedCost: number;
+  notes: string;
+};
+
+export type FeatureBreakdown = {
+  feature: string;
+  hours: number;
+  cost: number;
+  expectedRangeLow: number;
+  expectedRangeHigh: number;
+};
+
+export type PricingMultipliers = {
+  complexity: { factor: string; description: string };
+  data: { factor: string; description: string };
+  integration: { factor: string; description: string };
+  customization: { factor: string; description: string };
+  timeline: { factor: string; description: string };
 };
 
 export type PMPhase = {
