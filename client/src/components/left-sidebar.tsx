@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Clock, Archive, FolderOpen, Plus, Filter } from "lucide-react";
+import { Clock, Archive, FolderOpen, Plus, Filter, Search } from "lucide-react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -92,6 +93,17 @@ export function LeftSidebar({ selectedProjectId, onSelectProject, onNewProject }
         >
           <Plus className="h-4 w-4 mr-2" />
           New Project
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full mt-2"
+          asChild
+          data-testid="link-diagnostician"
+        >
+          <Link href="/diagnostician">
+            <Search className="h-4 w-4 mr-2" />
+            Repo Diagnostician
+          </Link>
         </Button>
       </div>
 
