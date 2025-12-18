@@ -59,7 +59,7 @@ export async function htmlToPdf(html: string, projectId?: string): Promise<Buffe
     if (projectId) {
       await logApiUsage({
         projectId,
-        provider: "openai",
+        provider: "gemini",
         model: "pdf-co-html-to-pdf",
         inputTokens: Math.ceil(html.length / 4),
         outputTokens: 100,

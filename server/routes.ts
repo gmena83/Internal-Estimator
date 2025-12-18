@@ -6,7 +6,8 @@ import fs from "fs";
 import { storage } from "./storage";
 import { insertProjectSchema, insertMessageSchema, type ServiceStatus, type Attachment } from "@shared/schema";
 import { aiService } from "./ai-service";
-import { generateProposalPdf, generateInternalReportPdf } from "./pdf-service";
+import { generateProposalPdf, generateInternalReportPdf, generateExecutionManualPdf } from "./pdf-service";
+import { htmlToPdf, generateExecutionManualHtml } from "./pdfco-service";
 import { sendProposalEmail } from "./email-service";
 import { generateCoverImageWithApproval } from "./image-service";
 import { generatePresentation } from "./gamma-service";
@@ -612,6 +613,96 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error generating PM breakdown:", error);
       res.status(500).json({ error: "Failed to generate PM breakdown" });
+    }
+  });
+
+  // Generate Execution Manual PDF
+  app.get("/api/projects/:id/execution-manual.pdf", async (req, res) => {
+    try {
+      const project = await storage.getProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+
+      const scenarioA = project.scenarioA as { name?: string; title?: string } | null;
+      const scenarioB = project.scenarioB as { name?: string; title?: string } | null;
+      const vibeGuideA = project.vibecodeGuideA as string | null;
+      const vibeGuideB = project.vibecodeGuideB as string | null;
+
+      const phasesA: { phaseTitle: string; steps: { title: string; description: string; prompt?: string; tip?: string }[] }[] = [];
+      const modulesB: { title: string; items: string[] }[] = [];
+
+      if (vibeGuideA) {
+        let currentPhase = "";
+        let currentSteps: { title: string; description: string; prompt?: string; tip?: string }[] = [];
+        
+        vibeGuideA.split("\n").forEach(line => {
+          if (line.startsWith("## ")) {
+            if (currentPhase && currentSteps.length > 0) {
+              phasesA.push({ phaseTitle: currentPhase, steps: currentSteps });
+              currentSteps = [];
+            }
+            currentPhase = line.replace("## ", "");
+          } else if (line.startsWith("### ")) {
+            currentSteps.push({ title: line.replace("### ", ""), description: "" });
+          } else if (line.startsWith("$ ") && currentSteps.length > 0) {
+            currentSteps[currentSteps.length - 1].prompt = line.replace("$ ", "");
+          } else if (line.startsWith("> ") && currentSteps.length > 0) {
+            currentSteps[currentSteps.length - 1].tip = line.replace("> ", "");
+          } else if (line.trim() && currentSteps.length > 0) {
+            currentSteps[currentSteps.length - 1].description += (currentSteps[currentSteps.length - 1].description ? " " : "") + line.trim();
+          }
+        });
+        
+        if (currentPhase && currentSteps.length > 0) {
+          phasesA.push({ phaseTitle: currentPhase, steps: currentSteps });
+        }
+      }
+
+      if (vibeGuideB) {
+        let currentModule = "";
+        let currentItems: string[] = [];
+        
+        vibeGuideB.split("\n").forEach(line => {
+          if (line.startsWith("## ")) {
+            if (currentModule && currentItems.length > 0) {
+              modulesB.push({ title: currentModule, items: currentItems });
+              currentItems = [];
+            }
+            currentModule = line.replace("## ", "");
+          } else if (line.startsWith("- ") || line.startsWith("* ")) {
+            currentItems.push(line.replace(/^[-*]\s*/, ""));
+          }
+        });
+        
+        if (currentModule && currentItems.length > 0) {
+          modulesB.push({ title: currentModule, items: currentItems });
+        }
+      }
+
+      let pdfBuffer: Buffer | null = null;
+
+      if (process.env.PDF_CO_API_KEY) {
+        const html = generateExecutionManualHtml(
+          project.title,
+          scenarioA?.title || scenarioA?.name || "Manual A: High-Code Approach",
+          scenarioB?.title || scenarioB?.name || "Manual B: No-Code Approach",
+          phasesA,
+          modulesB
+        );
+        pdfBuffer = await htmlToPdf(html, project.id);
+      }
+
+      if (!pdfBuffer) {
+        pdfBuffer = await generateExecutionManualPdf(project);
+      }
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${project.title.replace(/[^a-zA-Z0-9]/g, "_")}_execution_manual.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error("Error generating execution manual PDF:", error);
+      res.status(500).json({ error: "Failed to generate execution manual PDF" });
     }
   });
 
