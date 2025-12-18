@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Clock, Archive, FolderOpen, Plus, Filter, Search } from "lucide-react";
+import { Clock, Archive, FolderOpen, Plus, Filter, Search, FileText, Presentation, FileCode, ClipboardList, Download, X } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,90 @@ import {
 import { Input } from "@/components/ui/input";
 import type { Project } from "@shared/schema";
 import { format } from "date-fns";
+
+interface ProjectFile {
+  name: string;
+  type: "pdf" | "presentation" | "guide" | "breakdown" | "estimate";
+  url: string | null;
+  createdAt: Date | null;
+  icon: typeof FileText;
+}
+
+function getProjectFiles(project: Project): ProjectFile[] {
+  const files: ProjectFile[] = [];
+  
+  if (project.estimateMarkdown) {
+    files.push({
+      name: "Project Estimate",
+      type: "estimate",
+      url: null,
+      createdAt: project.updatedAt,
+      icon: FileText,
+    });
+  }
+  
+  if (project.proposalPdfUrl) {
+    files.push({
+      name: "Proposal PDF",
+      type: "pdf",
+      url: project.proposalPdfUrl,
+      createdAt: project.updatedAt,
+      icon: FileText,
+    });
+  }
+  
+  if (project.internalReportPdfUrl) {
+    files.push({
+      name: "Internal Report PDF",
+      type: "pdf",
+      url: project.internalReportPdfUrl,
+      createdAt: project.updatedAt,
+      icon: FileText,
+    });
+  }
+  
+  if (project.presentationUrl) {
+    files.push({
+      name: "Client Presentation",
+      type: "presentation",
+      url: project.presentationUrl,
+      createdAt: project.updatedAt,
+      icon: Presentation,
+    });
+  }
+  
+  if (project.vibecodeGuideA) {
+    files.push({
+      name: "Manual A (High-Code)",
+      type: "guide",
+      url: null,
+      createdAt: project.updatedAt,
+      icon: FileCode,
+    });
+  }
+  
+  if (project.vibecodeGuideB) {
+    files.push({
+      name: "Manual B (No-Code)",
+      type: "guide",
+      url: null,
+      createdAt: project.updatedAt,
+      icon: FileCode,
+    });
+  }
+  
+  if (project.pmBreakdown) {
+    files.push({
+      name: "PM Breakdown",
+      type: "breakdown",
+      url: null,
+      createdAt: project.updatedAt,
+      icon: ClipboardList,
+    });
+  }
+  
+  return files;
+}
 
 interface LeftSidebarProps {
   selectedProjectId: string | null;
@@ -52,9 +136,17 @@ const statusLabels: Record<string, string> = {
 
 export function LeftSidebar({ selectedProjectId, onSelectProject, onNewProject }: LeftSidebarProps) {
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [filesDialogOpen, setFilesDialogOpen] = useState(false);
+  const [selectedFilesProject, setSelectedFilesProject] = useState<Project | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [stageFilter, setStageFilter] = useState<string>("all");
+
+  const handleOpenFiles = (e: React.MouseEvent, project: Project) => {
+    e.stopPropagation();
+    setSelectedFilesProject(project);
+    setFilesDialogOpen(true);
+  };
 
   const { data: recentProjects, isLoading: recentLoading } = useQuery<Project[]>({
     queryKey: ["/api/projects/recent"],
@@ -159,7 +251,21 @@ export function LeftSidebar({ selectedProjectId, onSelectProject, onNewProject }
                         </Badge>
                       </div>
                     </div>
-                    <FolderOpen className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      className="h-6 w-6 flex-shrink-0 flex items-center justify-center rounded-md hover-elevate active-elevate-2 cursor-pointer"
+                      onClick={(e) => handleOpenFiles(e, project)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleOpenFiles(e as unknown as React.MouseEvent, project);
+                        }
+                      }}
+                      data-testid={`button-files-${project.id}`}
+                    >
+                      <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                    </div>
                   </div>
                 </button>
               ))
@@ -167,6 +273,54 @@ export function LeftSidebar({ selectedProjectId, onSelectProject, onNewProject }
           </div>
         </ScrollArea>
       </div>
+
+      <Dialog open={filesDialogOpen} onOpenChange={setFilesDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FolderOpen className="h-5 w-5" />
+              {selectedFilesProject?.title || "Project"} Files
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {selectedFilesProject && getProjectFiles(selectedFilesProject).length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No files generated yet. Complete workflow stages to generate assets.
+              </div>
+            ) : (
+              selectedFilesProject && getProjectFiles(selectedFilesProject).map((file, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover-elevate"
+                >
+                  <div className="flex items-center gap-3">
+                    <file.icon className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm font-medium">{file.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {file.createdAt
+                          ? format(new Date(file.createdAt), "MMM d, yyyy 'at' h:mm a")
+                          : "Generated"}
+                      </p>
+                    </div>
+                  </div>
+                  {file.url && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      asChild
+                    >
+                      <a href={file.url} download target="_blank" rel="noopener noreferrer">
+                        <Download className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="p-4 border-t border-sidebar-border">
         <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>

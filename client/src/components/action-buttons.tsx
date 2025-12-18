@@ -12,7 +12,8 @@ import {
   Download,
   FileJson,
   FileSpreadsheet,
-  Mail
+  Mail,
+  RotateCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,13 +40,15 @@ interface ActionButtonsProps {
   project: Project | null | undefined;
   currentStage: number;
   isLoading?: boolean;
+  onResetProject?: () => void;
 }
 
-export function ActionButtons({ project, currentStage, isLoading }: ActionButtonsProps) {
+export function ActionButtons({ project, currentStage, isLoading, onResetProject }: ActionButtonsProps) {
   const { toast } = useToast();
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [clientEmail, setClientEmail] = useState(project?.clientEmail || "");
   const [shouldSendAfterUpdate, setShouldSendAfterUpdate] = useState(false);
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
 
   const updateClientEmail = useMutation({
     mutationFn: async (email: string) => {
@@ -93,20 +96,78 @@ export function ActionButtons({ project, currentStage, isLoading }: ActionButton
 
   const approveEstimate = useMutation({
     mutationFn: async () => {
-      return await apiRequest("POST", `/api/projects/${project?.id}/approve-estimate`);
+      const response = await fetch(`/api/projects/${project?.id}/approve-estimate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) {
+        throw new Error("Failed to approve estimate");
+      }
+      return response.json() as Promise<{ proposalPdfUrl?: string }>;
     },
-    onSuccess: () => {
+    onSuccess: async (data: { proposalPdfUrl?: string }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/projects", project?.id] });
       queryClient.invalidateQueries({ queryKey: ["/api/projects/recent"] });
-      toast({
-        title: "Estimate Approved",
-        description: "Moving to production assets generation...",
-      });
+      
+      // Trigger PDF download if URL is available
+      if (data?.proposalPdfUrl) {
+        try {
+          const response = await fetch(data.proposalPdfUrl);
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `${project?.title || "proposal"}_proposal.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+          
+          toast({
+            title: "PDF Generated & Downloaded",
+            description: "Your proposal PDF has been saved to your downloads folder.",
+          });
+        } catch {
+          toast({
+            title: "Estimate Approved",
+            description: "PDF generated. You can download it from the Export menu.",
+          });
+        }
+      } else {
+        toast({
+          title: "Estimate Approved",
+          description: "Moving to production assets generation...",
+        });
+      }
     },
     onError: (error) => {
       toast({
         title: "Error",
         description: error.message || "Failed to approve estimate",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const resetProject = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", `/api/projects/${project?.id}/reset`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", project?.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", project?.id, "messages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects/recent"] });
+      setResetDialogOpen(false);
+      toast({
+        title: "Project Reset",
+        description: "Starting fresh from the beginning.",
+      });
+      onResetProject?.();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reset project",
         variant: "destructive",
       });
     },
@@ -253,12 +314,26 @@ export function ActionButtons({ project, currentStage, isLoading }: ActionButton
     sendEmailWithRecipient.isPending ||
     updateClientEmail.isPending ||
     generateVibeGuide.isPending || 
-    generatePMBreakdown.isPending;
+    generatePMBreakdown.isPending ||
+    resetProject.isPending;
 
   return (
     <div className="flex items-center gap-3 flex-wrap justify-end" data-testid="action-buttons">
       {currentStage === 1 && project.estimateMarkdown && (
         <>
+          <Button
+            variant="outline"
+            onClick={() => setResetDialogOpen(true)}
+            disabled={isPending}
+            data-testid="button-start-from-zero"
+          >
+            {resetProject.isPending ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <RotateCcw className="h-4 w-4 mr-2" />
+            )}
+            Start from 0
+          </Button>
           <Button
             variant="glass"
             onClick={() => regenerateEstimate.mutate()}
@@ -491,6 +566,38 @@ export function ActionButtons({ project, currentStage, isLoading }: ActionButton
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : null}
               Save & Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RotateCcw className="h-5 w-5" />
+              Start from 0?
+            </DialogTitle>
+            <DialogDescription>
+              This will clear all generated content for this project and start fresh from the beginning. Your chat history will be preserved.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResetDialogOpen(false)} data-testid="button-cancel-reset">
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={() => resetProject.mutate()}
+              disabled={resetProject.isPending}
+              data-testid="button-confirm-reset"
+            >
+              {resetProject.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <RotateCcw className="h-4 w-4 mr-2" />
+              )}
+              Reset Project
             </Button>
           </DialogFooter>
         </DialogContent>

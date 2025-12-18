@@ -202,13 +202,13 @@ Be helpful, professional, and concise. Guide users through the estimate and prop
 
       // Fallback response when AI is unavailable
       return {
-        content: getDefaultChatResponse(project, userMessage),
+        content: getStageAwareResponse(project, userMessage),
         stage: project.currentStage,
       };
     } catch (error) {
       console.error("Error processing message:", error);
       return {
-        content: "I'm processing your request. Please check the Estimate tab for updates, or try again in a moment.",
+        content: getStageAwareResponse(project, userMessage),
         stage: project.currentStage,
       };
     }
@@ -969,25 +969,113 @@ function extractBasicInfo(rawInput: string): any {
 }
 
 // Fallback chat response
-function getDefaultChatResponse(project: Project, userMessage: string): string {
+function getStageAwareResponse(project: Project, userMessage: string): string {
   const stage = project.currentStage;
+  const projectTitle = project.title || "your project";
   
+  // Stage 1: Input Processing & Estimate Generation
   if (stage === 1) {
     if (project.estimateMarkdown) {
-      return `Your estimate is ready. You can view it in the "Estimate" tab and compare the two scenarios in the "Scenarios" tab. When you're satisfied, click "Approve & Generate PDF" to proceed to the next stage.`;
+      return `Great news! Your dual-scenario estimate for "${projectTitle}" is ready.
+
+**What's included:**
+- Two pricing approaches: High-Tech Custom vs No-Code MVP
+- Feature-level cost breakdowns with hour estimates
+- ROI analysis including "Cost of Doing Nothing"
+- Regional pricing alternatives and multiplier transparency
+
+**Next step:** Review the estimate in the "Estimate" tab, then click **"Approve & Generate PDF"** to create your proposal documents and move to Stage 2.
+
+If you'd like to refine the estimate, click "Regenerate" or tell me what adjustments you need.`;
     }
-    return `I'll analyze your input and generate a dual-scenario estimate. This will include both a High-Tech Custom approach and a No-Code MVP option, along with ROI analysis.`;
-  } else if (stage === 2) {
-    return `Your production assets are ready. You can download the proposal PDF and view the presentation. When ready, click "Send Email" to share the proposal with your client.`;
-  } else if (stage === 3) {
-    return `The proposal has been sent. You can track client engagement and generate execution guides when the project is accepted.`;
-  } else if (stage === 4) {
-    return `Your Vibecoding execution guides are ready. These contain step-by-step implementation instructions and prompts you can use with AI coding assistants.`;
-  } else if (stage === 5) {
-    return `The project management breakdown is complete. You can view the phases, tasks, and deliverables for your selected approach.`;
+    return `I'm analyzing your input for "${projectTitle}" and generating a comprehensive dual-scenario estimate.
+
+This includes:
+- High-Tech Custom solution (full ownership, maximum flexibility)
+- No-Code MVP approach (faster delivery, lower initial cost)
+- Detailed feature breakdowns and ROI analysis
+
+The estimate will appear in the "Estimate" tab momentarily. You can also attach additional reference documents using the paperclip icon.`;
   }
   
-  return `How can I help you with your project "${project.title}"?`;
+  // Stage 2: Production Assets Ready
+  if (stage === 2) {
+    const hasProposal = !!project.proposalPdfUrl;
+    const hasPresentation = !!project.presentationUrl;
+    
+    if (hasProposal || hasPresentation) {
+      return `Your production assets for "${projectTitle}" are ready!
+
+**Available documents:**
+${hasProposal ? "- Proposal PDF (ready for download)" : ""}
+${hasPresentation ? "- Client presentation" : ""}
+
+**Next step:** Click **"Send Email"** to deliver the proposal to your client and move to Stage 3.
+
+You can also download these files from the Export menu for offline review.`;
+    }
+    return `Generating production assets for "${projectTitle}"...
+
+This includes your client proposal PDF and presentation materials. Once ready, you'll be able to send these directly to your client via email.`;
+  }
+  
+  // Stage 3: Email Sent, Awaiting Response
+  if (stage === 3) {
+    const emailSent = project.emailSentAt;
+    const emailOpened = project.emailOpened;
+    
+    return `The proposal for "${projectTitle}" has been sent${emailSent ? ` on ${new Date(emailSent).toLocaleDateString()}` : ""}.
+
+**Status:**
+${emailOpened ? "- Client has opened the email" : "- Awaiting client response"}
+
+**Next step:** Once the client accepts, click **"Generate Execution Guide"** to create implementation manuals and move to Stage 4.
+
+Feel free to follow up with your client or make any needed clarifications.`;
+  }
+  
+  // Stage 4: Execution Guides Ready
+  if (stage === 4) {
+    const hasGuideA = !!project.vibecodeGuideA;
+    const hasGuideB = !!project.vibecodeGuideB;
+    
+    if (hasGuideA || hasGuideB) {
+      return `Your execution guides for "${projectTitle}" are ready!
+
+**Available manuals:**
+${hasGuideA ? "- Manual A: High-Code Implementation Guide" : ""}
+${hasGuideB ? "- Manual B: No-Code Implementation Guide" : ""}
+
+These contain step-by-step instructions and prompts for AI coding assistants.
+
+**Next step:** Click **"Generate PM Tracks"** to create a project management breakdown and move to Stage 5.`;
+    }
+    return `Generating execution guides for "${projectTitle}"...
+
+These will include detailed implementation steps and AI-assisted coding prompts for both development approaches.`;
+  }
+  
+  // Stage 5: PM Breakdown Complete
+  if (stage === 5) {
+    const hasPM = !!project.pmBreakdown;
+    
+    if (hasPM) {
+      return `Congratulations! The project for "${projectTitle}" is fully scoped and ready for execution.
+
+**Completed deliverables:**
+- Dual-scenario estimate with cost breakdowns
+- Client proposal and presentation
+- Execution guides for implementation
+- Project management breakdown with phases and tasks
+
+You can export all materials from the Export menu. This project is ready to begin development!`;
+    }
+    return `Generating project management breakdown for "${projectTitle}"...
+
+This will include detailed phases, milestones, task assignments, and deliverable schedules for your chosen approach.`;
+  }
+  
+  return `I'm here to help with "${projectTitle}". What would you like to do next?`;
 }
 
 // Fallback email content

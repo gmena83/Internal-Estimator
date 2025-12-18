@@ -287,10 +287,14 @@ export async function registerRoutes(
         await aiService.generateEstimate(project);
       }
 
+      // Set up PDF URL for later download
+      const proposalPdfUrl = `/api/projects/${req.params.id}/proposal.pdf`;
+
       // Move to stage 2
       const updated = await storage.updateProject(req.params.id, {
         currentStage: 2,
         status: "estimate_generated",
+        proposalPdfUrl,
       });
 
       // Index the approved estimate in knowledge base
@@ -308,10 +312,50 @@ export async function registerRoutes(
         });
       }
 
-      res.json(updated);
+      // Return the PDF URL so frontend can trigger download
+      res.json({ ...updated, proposalPdfUrl });
     } catch (error) {
       console.error("Error approving estimate:", error);
       res.status(500).json({ error: "Failed to approve estimate" });
+    }
+  });
+
+  // Reset project to initial state
+  app.post("/api/projects/:id/reset", async (req, res) => {
+    try {
+      const project = await storage.getProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+
+      // Reset project to stage 1 with cleared content
+      const updated = await storage.updateProject(req.params.id, {
+        currentStage: 1,
+        status: "draft",
+        estimateMarkdown: null,
+        scenarioA: null,
+        scenarioB: null,
+        roiAnalysis: null,
+        selectedScenario: null,
+        proposalPdfUrl: null,
+        internalReportPdfUrl: null,
+        presentationUrl: null,
+        coverImageUrl: null,
+        emailContent: null,
+        emailSentAt: null,
+        emailOpened: false,
+        emailClicked: false,
+        vibecodeGuideA: null,
+        vibecodeGuideB: null,
+        pmBreakdown: null,
+        rawInput: null,
+        parsedData: null,
+      });
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error resetting project:", error);
+      res.status(500).json({ error: "Failed to reset project" });
     }
   });
 
