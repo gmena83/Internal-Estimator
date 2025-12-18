@@ -4,6 +4,7 @@ import {
   knowledgeEntries,
   apiHealthLogs,
   apiUsageLogs,
+  diagnosticReports,
   type Project,
   type InsertProject,
   type Message,
@@ -15,6 +16,8 @@ import {
   type ApiUsageLog,
   type InsertApiUsageLog,
   type ProjectApiUsageStats,
+  type DiagnosticReport,
+  type InsertDiagnosticReport,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql } from "drizzle-orm";
@@ -45,6 +48,12 @@ export interface IStorage {
   logApiUsage(usage: InsertApiUsageLog): Promise<ApiUsageLog>;
   getProjectApiUsage(projectId: string): Promise<ApiUsageLog[]>;
   getProjectApiUsageStats(projectId: string): Promise<ProjectApiUsageStats[]>;
+
+  // Diagnostic Reports
+  getDiagnosticReport(id: string): Promise<DiagnosticReport | undefined>;
+  getDiagnosticReports(): Promise<DiagnosticReport[]>;
+  createDiagnosticReport(report: InsertDiagnosticReport): Promise<DiagnosticReport>;
+  updateDiagnosticReport(id: string, updates: Partial<InsertDiagnosticReport>): Promise<DiagnosticReport | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -251,6 +260,30 @@ export class DatabaseStorage implements IStorage {
     }
 
     return Array.from(statsMap.values());
+  }
+
+  // Diagnostic Reports
+  async getDiagnosticReport(id: string): Promise<DiagnosticReport | undefined> {
+    const [report] = await db.select().from(diagnosticReports).where(eq(diagnosticReports.id, id));
+    return report || undefined;
+  }
+
+  async getDiagnosticReports(): Promise<DiagnosticReport[]> {
+    return await db.select().from(diagnosticReports).orderBy(desc(diagnosticReports.createdAt));
+  }
+
+  async createDiagnosticReport(report: InsertDiagnosticReport): Promise<DiagnosticReport> {
+    const [created] = await db.insert(diagnosticReports).values(report).returning();
+    return created;
+  }
+
+  async updateDiagnosticReport(id: string, updates: Partial<InsertDiagnosticReport>): Promise<DiagnosticReport | undefined> {
+    const [updated] = await db
+      .update(diagnosticReports)
+      .set(updates)
+      .where(eq(diagnosticReports.id, id))
+      .returning();
+    return updated || undefined;
   }
 }
 

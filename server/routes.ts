@@ -11,6 +11,7 @@ import { htmlToPdf, generateExecutionManualHtml } from "./pdfco-service";
 import { sendProposalEmail } from "./email-service";
 import { generateCoverImageWithApproval } from "./image-service";
 import { generatePresentation } from "./gamma-service";
+import { runDiagnostics } from "./diagnostics-service";
 
 // Configure multer for file uploads
 const uploadsDir = path.join(process.cwd(), "uploads");
@@ -859,6 +860,87 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error exporting CSV:", error);
       res.status(500).json({ error: "Failed to export CSV" });
+    }
+  });
+
+  // Diagnostics - Run audit on GitHub repository
+  app.post("/api/diagnostics", async (req, res) => {
+    try {
+      const { repoUrl } = req.body;
+      
+      if (!repoUrl || typeof repoUrl !== "string") {
+        return res.status(400).json({ error: "Repository URL is required" });
+      }
+      
+      const match = repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+      if (!match) {
+        return res.status(400).json({ error: "Invalid GitHub URL format" });
+      }
+      
+      const [, owner, repoName] = match;
+      const cleanRepoName = repoName.replace(/\.git$/, "");
+      
+      const report = await storage.createDiagnosticReport({
+        repoUrl,
+        repoOwner: owner,
+        repoName: cleanRepoName,
+        status: "analyzing",
+      });
+      
+      (async () => {
+        try {
+          const results = await runDiagnostics(repoUrl);
+          
+          await storage.updateDiagnosticReport(report.id, {
+            status: "completed",
+            healthAssessment: results.healthAssessment,
+            criticalCount: results.counts.critical,
+            highCount: results.counts.high,
+            mediumCount: results.counts.medium,
+            lowCount: results.counts.low,
+            findings: results.findings,
+            correctedSnippets: results.snippets,
+            fullReportMarkdown: results.fullReport,
+            analyzedFiles: results.analyzedFiles,
+          });
+        } catch (error) {
+          console.error("Diagnostic analysis failed:", error);
+          await storage.updateDiagnosticReport(report.id, {
+            status: "failed",
+            healthAssessment: `Analysis failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+          });
+        }
+      })();
+      
+      res.json(report);
+    } catch (error) {
+      console.error("Error creating diagnostic report:", error);
+      res.status(500).json({ error: "Failed to create diagnostic report" });
+    }
+  });
+
+  // Diagnostics - Get report by ID
+  app.get("/api/diagnostics/:id", async (req, res) => {
+    try {
+      const report = await storage.getDiagnosticReport(req.params.id);
+      if (!report) {
+        return res.status(404).json({ error: "Report not found" });
+      }
+      res.json(report);
+    } catch (error) {
+      console.error("Error fetching diagnostic report:", error);
+      res.status(500).json({ error: "Failed to fetch diagnostic report" });
+    }
+  });
+
+  // Diagnostics - List all reports
+  app.get("/api/diagnostics", async (req, res) => {
+    try {
+      const reports = await storage.getDiagnosticReports();
+      res.json(reports);
+    } catch (error) {
+      console.error("Error fetching diagnostic reports:", error);
+      res.status(500).json({ error: "Failed to fetch diagnostic reports" });
     }
   });
 
