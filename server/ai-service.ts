@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 import { storage } from "./storage";
-import type { Project, Scenario, ROIAnalysis } from "@shared/schema";
+import type { Project, Scenario, ROIAnalysis, OngoingCosts, RegionalAlternative, FeatureBreakdown, PricingMultipliers } from "@shared/schema";
 import { loadPricingMatrix, getPricingContext, estimateCostFromMatrix } from "./pricing-matrix";
 import { conductMarketResearch, formatMarketResearchMarkdown, type MarketResearchResult } from "./perplexity-service";
 import { logApiUsage } from "./usage-tracker";
@@ -245,76 +245,132 @@ ${pricingContext}
           // Use Gemini for complex reasoning on scenarios
           const response = await gemini.models.generateContent({
             model: "gemini-2.5-flash",
-            contents: `You are a Lead AI Solutions Architect creating a "Dual Scenario" project estimate.
+            contents: `You are a Lead AI Solutions Architect creating a comprehensive "Dual Scenario" project estimate.
 
 ${context}
 
-Generate a comprehensive project estimate with TWO scenarios:
+Generate a detailed project estimate with TWO scenarios following 2026 pricing standards:
 
 SCENARIO A (High-Tech/Custom):
-- Full custom code development
-- Complete ownership of codebase
-- Higher initial cost but more flexibility
-- Best for complex, long-term projects
+- Full custom code development with complete ownership
+- US-based senior developer rates: $150/hr (mid-level to senior range $120-$250/hr)
+- Higher initial cost but maximum flexibility and scalability
 
 SCENARIO B (No-Code/MVP):
-- Use no-code/low-code platforms where possible
-- Faster time to market
-- Lower initial cost
-- Best for validation and quick launches
+- No-code/low-code platforms for rapid deployment
+- Lower hourly rate: $75/hr (nearshore/specialized no-code rate)
+- Faster time to market, lower initial investment
 
-For each scenario, include:
-1. Feature list with estimated hours
-2. Tech stack recommendation
-3. Timeline (in weeks)
-4. Total cost calculation (use $150/hr for custom dev, $75/hr for no-code)
-5. Pros and cons
-6. Mark one as recommended based on the project context
+For EACH scenario, provide:
+1. Feature list with individual hour estimates
+2. Feature breakdown table (feature name, hours, cost at hourly rate)
+3. Tech stack recommendation
+4. Timeline (realistic for complexity - AI agents typically need 3-6 months)
+5. Total cost calculation with hours x rate
+6. Ongoing costs estimates (25-40% of development annually for maintenance)
+7. Regional alternatives with cost multipliers (LATAM 0.45x, Eastern Europe 0.40x, India 0.30x)
+8. Pricing multipliers applied (complexity, data, integration, customization)
+9. Rate justification based on team location and experience level
+10. Pros and cons
 
-Also calculate ROI Analysis:
-- Cost of Doing Nothing (estimated manual operational cost per year)
-- Projected savings from automation
-- Payback period in months
-- 3-year ROI percentage
+ROI Analysis requirements:
+- Cost of Doing Nothing: Estimate annual cost of manual operations, lost opportunities, inefficiencies
+- Methodology: Explain the basis for each ROI figure
+- Projected savings with realistic assumptions
+- Payback period calculated as: totalCost / (annualSavings / 12)
+- 3-year ROI: ((3 * annualSavings - totalCost) / totalCost) * 100
 
 Return a JSON object with this structure:
 {
   "scenarioA": {
     "name": "High-Tech Custom",
-    "description": "Full custom development...",
+    "description": "Full custom development with complete code ownership",
     "features": ["Feature 1", "Feature 2"],
+    "featureBreakdown": [
+      {"feature": "Project Discovery & Architecture", "hours": 60, "cost": 9000, "expectedRangeLow": 5000, "expectedRangeHigh": 15000},
+      {"feature": "Custom Data Ingestion & ETL", "hours": 180, "cost": 27000, "expectedRangeLow": 15000, "expectedRangeHigh": 50000}
+    ],
     "techStack": ["React", "Node.js", "PostgreSQL"],
-    "timeline": "8-10 weeks",
-    "totalCost": 45000,
+    "timeline": "10-14 weeks",
+    "totalCost": 130500,
     "hourlyRate": 150,
-    "totalHours": 300,
-    "pros": ["Full ownership", "Customizable"],
-    "cons": ["Higher cost", "Longer timeline"],
+    "totalHours": 870,
+    "rateJustification": "US-based mid-level to senior development team ($120-$250/hr range)",
+    "ongoingCosts": {
+      "annualMaintenanceLow": 32625,
+      "annualMaintenanceHigh": 52200,
+      "monthlyCloudInfraLow": 500,
+      "monthlyCloudInfraHigh": 2000,
+      "monthlyAiApiLow": 200,
+      "monthlyAiApiHigh": 1000,
+      "monthlyMonitoringLow": 200,
+      "monthlyMonitoringHigh": 500
+    },
+    "regionalAlternatives": [
+      {"region": "Latin America (Nearshore)", "multiplier": 0.45, "adjustedCost": 58725, "notes": "Quality nearshore development"},
+      {"region": "Eastern Europe", "multiplier": 0.40, "adjustedCost": 52200, "notes": "Strong technical talent pool"},
+      {"region": "India/Asia", "multiplier": 0.30, "adjustedCost": 39150, "notes": "Cost-optimized offshore"}
+    ],
+    "multipliers": {
+      "complexity": {"factor": "5-10x", "description": "High - RAG/LLM integration"},
+      "data": {"factor": "2-3x", "description": "Medium - Custom data pipelines"},
+      "integration": {"factor": "1.2-1.5x", "description": "Simple - 1-3 system integrations"},
+      "customization": {"factor": "3-10x", "description": "Custom development"},
+      "timeline": {"factor": "1.0x", "description": "Standard timeline"}
+    },
+    "pros": ["Full code ownership", "Complete customization", "Scalable architecture"],
+    "cons": ["Higher upfront cost", "Longer development time"],
     "recommended": false
   },
   "scenarioB": {
     "name": "No-Code MVP",
-    "description": "Rapid development using...",
+    "description": "Rapid development using no-code/low-code platforms",
     "features": ["Feature 1", "Feature 2"],
-    "techStack": ["Airtable", "Zapier", "Webflow"],
-    "timeline": "3-4 weeks",
-    "totalCost": 15000,
+    "featureBreakdown": [
+      {"feature": "Project Scoping", "hours": 50, "cost": 3750, "expectedRangeLow": 2000, "expectedRangeHigh": 8000}
+    ],
+    "techStack": ["Airtable", "Zapier", "Webflow", "Make"],
+    "timeline": "8-10 weeks",
+    "totalCost": 45000,
     "hourlyRate": 75,
-    "totalHours": 200,
-    "pros": ["Fast launch", "Lower cost"],
-    "cons": ["Less customization", "Platform limits"],
+    "totalHours": 600,
+    "rateJustification": "Nearshore no-code specialists or US junior developers",
+    "ongoingCosts": {
+      "annualMaintenanceLow": 11250,
+      "annualMaintenanceHigh": 18000,
+      "monthlyCloudInfraLow": 100,
+      "monthlyCloudInfraHigh": 500,
+      "monthlyAiApiLow": 50,
+      "monthlyAiApiHigh": 300,
+      "monthlyMonitoringLow": 50,
+      "monthlyMonitoringHigh": 200
+    },
+    "regionalAlternatives": [
+      {"region": "Latin America", "multiplier": 0.60, "adjustedCost": 27000, "notes": "No-code specialists"},
+      {"region": "Eastern Europe", "multiplier": 0.55, "adjustedCost": 24750, "notes": "Technical automation experts"}
+    ],
+    "multipliers": {
+      "complexity": {"factor": "1-2x", "description": "Simple-Medium - No-code configuration"},
+      "data": {"factor": "1x", "description": "Low - Standard data handling"},
+      "integration": {"factor": "1.2x", "description": "Simple - Platform integrations"},
+      "customization": {"factor": "1x", "description": "Platform-based"},
+      "timeline": {"factor": "1.0x", "description": "Standard timeline"}
+    },
+    "pros": ["Fast time to market", "Lower initial cost", "Easy to iterate"],
+    "cons": ["Platform limitations", "Recurring platform costs", "Less customization"],
     "recommended": true
   },
   "roiAnalysis": {
-    "costOfDoingNothing": 50000,
+    "costOfDoingNothing": 75000,
     "manualOperationalCost": 40000,
-    "projectedSavings": 35000,
-    "paybackPeriodMonths": 6,
-    "threeYearROI": 400
+    "projectedSavings": 80000,
+    "paybackPeriodMonths": 12,
+    "threeYearROI": 284,
+    "methodology": "Cost of Doing Nothing based on: 1) Manual operational labor ($40K/yr), 2) Lost efficiency opportunities ($20K/yr), 3) Competitive disadvantage risk ($15K/yr). Savings assume 80% automation of manual tasks and new revenue opportunities."
   }
 }
 
-Return ONLY the JSON object.`,
+Ensure all numbers are realistic based on the project scope. Return ONLY the JSON object.`,
           });
 
           await trackHealth("gemini", startTime);
@@ -604,16 +660,49 @@ function createDefaultScenarios(project: Project): {
   scenarioB: Scenario;
   roiAnalysis: ROIAnalysis;
 } {
+  const scenarioACost = 45000;
+  const scenarioBCost = 15000;
+  
   return {
     scenarioA: {
       name: "High-Tech Custom",
       description: "Full custom development with complete code ownership",
       features: ["Custom backend API", "React frontend", "Database design", "Authentication", "Admin dashboard"],
+      featureBreakdown: [
+        { feature: "Project Discovery & Architecture", hours: 40, cost: 6000, expectedRangeLow: 5000, expectedRangeHigh: 15000 },
+        { feature: "Backend API Development", hours: 80, cost: 12000, expectedRangeLow: 10000, expectedRangeHigh: 25000 },
+        { feature: "Frontend Development", hours: 100, cost: 15000, expectedRangeLow: 12000, expectedRangeHigh: 30000 },
+        { feature: "Database Design & Integration", hours: 40, cost: 6000, expectedRangeLow: 5000, expectedRangeHigh: 15000 },
+        { feature: "Testing & QA", hours: 40, cost: 6000, expectedRangeLow: 3000, expectedRangeHigh: 8000 },
+      ],
       techStack: ["React", "Node.js", "PostgreSQL", "TypeScript"],
       timeline: "8-10 weeks",
-      totalCost: 45000,
+      totalCost: scenarioACost,
       hourlyRate: 150,
       totalHours: 300,
+      rateJustification: "US-based mid-level to senior development team ($120-$250/hr range)",
+      ongoingCosts: {
+        annualMaintenanceLow: Math.round(scenarioACost * 0.25),
+        annualMaintenanceHigh: Math.round(scenarioACost * 0.40),
+        monthlyCloudInfraLow: 200,
+        monthlyCloudInfraHigh: 800,
+        monthlyAiApiLow: 100,
+        monthlyAiApiHigh: 500,
+        monthlyMonitoringLow: 100,
+        monthlyMonitoringHigh: 300,
+      },
+      regionalAlternatives: [
+        { region: "Latin America (Nearshore)", multiplier: 0.45, adjustedCost: Math.round(scenarioACost * 0.45), notes: "Quality nearshore development" },
+        { region: "Eastern Europe", multiplier: 0.40, adjustedCost: Math.round(scenarioACost * 0.40), notes: "Strong technical talent pool" },
+        { region: "India/Asia", multiplier: 0.30, adjustedCost: Math.round(scenarioACost * 0.30), notes: "Cost-optimized offshore" },
+      ],
+      multipliers: {
+        complexity: { factor: "2-3x", description: "Medium - Standard web application" },
+        data: { factor: "1-2x", description: "Low-Medium - Standard data handling" },
+        integration: { factor: "1.2x", description: "Simple - Few integrations" },
+        customization: { factor: "3x", description: "Custom development" },
+        timeline: { factor: "1.0x", description: "Standard timeline" },
+      },
       pros: ["Full code ownership", "Complete customization", "Scalable architecture"],
       cons: ["Higher upfront cost", "Longer development time"],
       recommended: false,
@@ -622,11 +711,40 @@ function createDefaultScenarios(project: Project): {
       name: "No-Code MVP",
       description: "Rapid development using no-code/low-code platforms",
       features: ["Database (Airtable)", "Workflows (Zapier)", "Frontend (Webflow)", "User management", "Basic analytics"],
+      featureBreakdown: [
+        { feature: "Project Scoping", hours: 30, cost: 2250, expectedRangeLow: 2000, expectedRangeHigh: 5000 },
+        { feature: "Platform Configuration", hours: 60, cost: 4500, expectedRangeLow: 3000, expectedRangeHigh: 10000 },
+        { feature: "Workflow Automation", hours: 50, cost: 3750, expectedRangeLow: 3000, expectedRangeHigh: 8000 },
+        { feature: "UI/UX Setup", hours: 40, cost: 3000, expectedRangeLow: 2500, expectedRangeHigh: 6000 },
+        { feature: "Testing & Iteration", hours: 20, cost: 1500, expectedRangeLow: 1000, expectedRangeHigh: 3000 },
+      ],
       techStack: ["Airtable", "Zapier", "Webflow", "Make"],
       timeline: "3-4 weeks",
-      totalCost: 15000,
+      totalCost: scenarioBCost,
       hourlyRate: 75,
       totalHours: 200,
+      rateJustification: "Nearshore no-code specialists or US junior developers ($30-$90/hr range)",
+      ongoingCosts: {
+        annualMaintenanceLow: Math.round(scenarioBCost * 0.25),
+        annualMaintenanceHigh: Math.round(scenarioBCost * 0.40),
+        monthlyCloudInfraLow: 50,
+        monthlyCloudInfraHigh: 200,
+        monthlyAiApiLow: 25,
+        monthlyAiApiHigh: 150,
+        monthlyMonitoringLow: 25,
+        monthlyMonitoringHigh: 100,
+      },
+      regionalAlternatives: [
+        { region: "Latin America", multiplier: 0.60, adjustedCost: Math.round(scenarioBCost * 0.60), notes: "No-code specialists" },
+        { region: "Eastern Europe", multiplier: 0.55, adjustedCost: Math.round(scenarioBCost * 0.55), notes: "Technical automation experts" },
+      ],
+      multipliers: {
+        complexity: { factor: "1x", description: "Simple - No-code configuration" },
+        data: { factor: "1x", description: "Low - Standard data handling" },
+        integration: { factor: "1.2x", description: "Simple - Platform integrations" },
+        customization: { factor: "1x", description: "Platform-based" },
+        timeline: { factor: "1.0x", description: "Standard timeline" },
+      },
       pros: ["Fast time to market", "Lower initial cost", "Easy to iterate"],
       cons: ["Platform limitations", "Recurring platform costs"],
       recommended: true,
@@ -635,8 +753,9 @@ function createDefaultScenarios(project: Project): {
       costOfDoingNothing: 50000,
       manualOperationalCost: 40000,
       projectedSavings: 35000,
-      paybackPeriodMonths: 6,
-      threeYearROI: 400,
+      paybackPeriodMonths: Math.round(scenarioBCost / (35000 / 12)),
+      threeYearROI: Math.round(((3 * 35000 - scenarioBCost) / scenarioBCost) * 100),
+      methodology: "Cost of Doing Nothing based on: 1) Manual operational labor ($40K/yr), 2) Lost efficiency opportunities ($10K/yr). Savings assume 70% automation of manual tasks.",
     },
   };
 }
@@ -645,6 +764,79 @@ function generateEstimateMarkdown(project: Project, scenarios: any, marketResear
   const { scenarioA, scenarioB, roiAnalysis } = scenarios;
   const parsedData = project.parsedData as any || {};
   const marketResearchMarkdown = formatMarketResearchMarkdown(marketResearch);
+
+  // Helper to safely format numbers
+  const formatNum = (val: any, fallback: number = 0): string => {
+    const num = typeof val === 'number' ? val : (typeof val === 'string' ? parseFloat(val) : fallback);
+    return isNaN(num) ? fallback.toLocaleString() : num.toLocaleString();
+  };
+
+  // Generate feature breakdown table for a scenario
+  const generateFeatureBreakdown = (scenario: any, label: string): string => {
+    if (!scenario?.featureBreakdown?.length) return "";
+    
+    let table = `\n#### ${label} Feature Cost Breakdown\n\n`;
+    table += `| Feature | Hours | Cost | Expected Range | Assessment |\n`;
+    table += `|---------|-------|------|----------------|------------|\n`;
+    
+    for (const fb of scenario.featureBreakdown) {
+      const cost = fb.cost || (fb.hours * (scenario.hourlyRate || 150));
+      const inRange = cost >= fb.expectedRangeLow && cost <= fb.expectedRangeHigh;
+      table += `| ${fb.feature} | ${fb.hours} hrs | $${formatNum(cost)} | $${formatNum(fb.expectedRangeLow)}-$${formatNum(fb.expectedRangeHigh)} | ${inRange ? 'Aligned' : 'Review'} |\n`;
+    }
+    return table;
+  };
+
+  // Generate ongoing costs section
+  const generateOngoingCosts = (scenario: any, label: string): string => {
+    if (!scenario?.ongoingCosts) return "";
+    const oc = scenario.ongoingCosts;
+    
+    return `
+#### ${label} Ongoing Costs (Annual)
+
+| Cost Category | Monthly Range | Annual Range |
+|---------------|---------------|--------------|
+| Maintenance & Support | - | $${formatNum(oc.annualMaintenanceLow)} - $${formatNum(oc.annualMaintenanceHigh)} |
+| Cloud Infrastructure | $${formatNum(oc.monthlyCloudInfraLow)} - $${formatNum(oc.monthlyCloudInfraHigh)} | $${formatNum(oc.monthlyCloudInfraLow * 12)} - $${formatNum(oc.monthlyCloudInfraHigh * 12)} |
+| AI/API Costs | $${formatNum(oc.monthlyAiApiLow)} - $${formatNum(oc.monthlyAiApiHigh)} | $${formatNum(oc.monthlyAiApiLow * 12)} - $${formatNum(oc.monthlyAiApiHigh * 12)} |
+| Monitoring & Analytics | $${formatNum(oc.monthlyMonitoringLow)} - $${formatNum(oc.monthlyMonitoringHigh)} | $${formatNum(oc.monthlyMonitoringLow * 12)} - $${formatNum(oc.monthlyMonitoringHigh * 12)} |
+
+`;
+  };
+
+  // Generate regional alternatives section
+  const generateRegionalAlternatives = (scenario: any, label: string): string => {
+    if (!scenario?.regionalAlternatives?.length) return "";
+    
+    let table = `#### ${label} Regional Alternatives\n\n`;
+    table += `| Region | Multiplier | Adjusted Cost | Notes |\n`;
+    table += `|--------|------------|---------------|-------|\n`;
+    
+    for (const ra of scenario.regionalAlternatives) {
+      table += `| ${ra.region} | ${ra.multiplier}x | $${formatNum(ra.adjustedCost)} | ${ra.notes} |\n`;
+    }
+    return table + "\n";
+  };
+
+  // Generate multipliers section
+  const generateMultipliers = (scenario: any): string => {
+    if (!scenario?.multipliers) return "";
+    const m = scenario.multipliers;
+    
+    return `
+#### Pricing Multipliers Applied
+
+| Factor | Multiplier | Description |
+|--------|------------|-------------|
+| Project Complexity | ${m.complexity?.factor || '1x'} | ${m.complexity?.description || 'Standard'} |
+| Data Requirements | ${m.data?.factor || '1x'} | ${m.data?.description || 'Standard'} |
+| Integration Complexity | ${m.integration?.factor || '1x'} | ${m.integration?.description || 'Standard'} |
+| Customization Level | ${m.customization?.factor || '1x'} | ${m.customization?.description || 'Standard'} |
+| Timeline | ${m.timeline?.factor || '1x'} | ${m.timeline?.description || 'Standard'} |
+
+`;
+  };
 
   return `# Project Estimate: ${project.title}
 
@@ -667,14 +859,24 @@ ${parsedData?.objectives?.length ? `### Objectives\n${parsedData.objectives.map(
 | Metric | Value |
 |--------|-------|
 | Timeline | ${scenarioA?.timeline || "8-10 weeks"} |
-| Total Hours | ${scenarioA?.totalHours || 300} |
-| Hourly Rate | $${scenarioA?.hourlyRate || 150} |
-| **Total Investment** | **$${(scenarioA?.totalCost || 45000).toLocaleString()}** |
+| Total Hours | ${formatNum(scenarioA?.totalHours, 300)} |
+| Hourly Rate | $${formatNum(scenarioA?.hourlyRate, 150)} |
+| **Total Investment** | **$${formatNum(scenarioA?.totalCost, 45000)}** |
+
+${scenarioA?.rateJustification ? `**Rate Justification:** ${scenarioA.rateJustification}\n` : ""}
 
 **Tech Stack:** ${scenarioA?.techStack?.join(", ") || "React, Node.js, PostgreSQL"}
 
 **Features:**
 ${scenarioA?.features?.map((f: string) => `- ${f}`).join("\n") || "- Custom development"}
+
+${generateFeatureBreakdown(scenarioA, "Scenario A")}
+
+${generateMultipliers(scenarioA)}
+
+${generateOngoingCosts(scenarioA, "Scenario A")}
+
+${generateRegionalAlternatives(scenarioA, "Scenario A")}
 
 ---
 
@@ -685,26 +887,38 @@ ${scenarioA?.features?.map((f: string) => `- ${f}`).join("\n") || "- Custom deve
 | Metric | Value |
 |--------|-------|
 | Timeline | ${scenarioB?.timeline || "3-4 weeks"} |
-| Total Hours | ${scenarioB?.totalHours || 200} |
-| Hourly Rate | $${scenarioB?.hourlyRate || 75} |
-| **Total Investment** | **$${(scenarioB?.totalCost || 15000).toLocaleString()}** |
+| Total Hours | ${formatNum(scenarioB?.totalHours, 200)} |
+| Hourly Rate | $${formatNum(scenarioB?.hourlyRate, 75)} |
+| **Total Investment** | **$${formatNum(scenarioB?.totalCost, 15000)}** |
+
+${scenarioB?.rateJustification ? `**Rate Justification:** ${scenarioB.rateJustification}\n` : ""}
 
 **Tech Stack:** ${scenarioB?.techStack?.join(", ") || "Airtable, Zapier, Webflow"}
 
 **Features:**
 ${scenarioB?.features?.map((f: string) => `- ${f}`).join("\n") || "- No-code solution"}
 
+${generateFeatureBreakdown(scenarioB, "Scenario B")}
+
+${generateMultipliers(scenarioB)}
+
+${generateOngoingCosts(scenarioB, "Scenario B")}
+
+${generateRegionalAlternatives(scenarioB, "Scenario B")}
+
 ---
 
 ## ROI Analysis
 
-| Metric | Annual Value |
-|--------|--------------|
-| Cost of Doing Nothing | $${(roiAnalysis?.costOfDoingNothing || 50000).toLocaleString()}/year |
-| Manual Operational Cost | $${(roiAnalysis?.manualOperationalCost || 40000).toLocaleString()}/year |
-| Projected Savings | $${(roiAnalysis?.projectedSavings || 35000).toLocaleString()}/year |
-| Payback Period | ${roiAnalysis?.paybackPeriodMonths || 6} months |
-| 3-Year ROI | ${roiAnalysis?.threeYearROI || 400}% |
+| Metric | Value |
+|--------|-------|
+| Cost of Doing Nothing | $${formatNum(roiAnalysis?.costOfDoingNothing, 50000)}/year |
+| Manual Operational Cost | $${formatNum(roiAnalysis?.manualOperationalCost, 40000)}/year |
+| Projected Savings | $${formatNum(roiAnalysis?.projectedSavings, 35000)}/year |
+| Payback Period | ${formatNum(roiAnalysis?.paybackPeriodMonths, 6)} months |
+| 3-Year ROI | ${formatNum(roiAnalysis?.threeYearROI, 400)}% |
+
+${roiAnalysis?.methodology ? `\n**Methodology:** ${roiAnalysis.methodology}\n` : ""}
 
 ---
 
@@ -720,6 +934,7 @@ ${scenarioB?.recommended ?
 ---
 
 *Estimate generated by ISI Agent | ${new Date().toLocaleDateString()}*
+*Pricing aligned with AI Agent Pricing Knowledge Base 2026*
 `;
 }
 
