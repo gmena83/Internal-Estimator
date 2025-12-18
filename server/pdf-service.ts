@@ -13,8 +13,27 @@ const fonts = {
 
 const printer = new PdfPrinter(fonts);
 
+const COLORS = {
+  primary: "#0A3A5A",
+  accent: "#00B8D4",
+  text: "#0f172a",
+  textSecondary: "#475569",
+  textTertiary: "#64748b",
+  textMuted: "#94a3b8",
+  border: "#e2e8f0",
+  background: "#f8fafc",
+  terminalBg: "#1e293b",
+  terminalText: "#a5f3fc",
+  terminalBorder: "#334155",
+  tipBg: "#f0fdfa",
+  tipBorder: "#0d9488",
+  tipText: "#115e59",
+  error: "#cc0000",
+};
+
 interface Scenario {
   name?: string;
+  title?: string;
   description?: string;
   features?: string[];
   techStack?: string[];
@@ -35,6 +54,194 @@ interface ROIAnalysis {
   threeYearROI?: number;
 }
 
+interface PMPhase {
+  phaseNumber: number;
+  phaseName: string;
+  objectives?: string[];
+  durationDays?: number;
+  tasks?: { id: string; name: string; estimatedHours?: number }[];
+  deliverables?: string[];
+}
+
+function createTerminalBox(command: string, label?: string): Content[] {
+  const content: Content[] = [];
+  
+  if (label) {
+    content.push({
+      text: label.toUpperCase(),
+      fontSize: 8,
+      bold: true,
+      color: COLORS.textTertiary,
+      margin: [0, 10, 0, 3] as [number, number, number, number],
+    });
+  }
+  
+  content.push({
+    table: {
+      widths: ["*"],
+      body: [[
+        {
+          text: `$ ${command}`,
+          font: "Helvetica",
+          fontSize: 10,
+          color: COLORS.terminalText,
+          fillColor: COLORS.terminalBg,
+          margin: [12, 10, 12, 10] as [number, number, number, number],
+        }
+      ]],
+    },
+    layout: {
+      hLineWidth: () => 1,
+      vLineWidth: () => 1,
+      hLineColor: () => COLORS.terminalBorder,
+      vLineColor: () => COLORS.terminalBorder,
+    },
+    margin: [0, 0, 0, 10] as [number, number, number, number],
+  });
+  
+  return content;
+}
+
+function createTipBox(text: string): Content {
+  return {
+    table: {
+      widths: [3, "*"],
+      body: [[
+        { text: "", fillColor: COLORS.tipBorder },
+        {
+          text: text,
+          fontSize: 11,
+          color: COLORS.tipText,
+          fillColor: COLORS.tipBg,
+          margin: [8, 8, 8, 8] as [number, number, number, number],
+        }
+      ]],
+    },
+    layout: "noBorders",
+    margin: [0, 5, 0, 15] as [number, number, number, number],
+  };
+}
+
+function createSectionHeader(text: string, subtitle?: string): Content {
+  const headerContent: any[][] = [[
+    {
+      text: text.toUpperCase(),
+      fontSize: 12,
+      bold: true,
+      color: "#ffffff",
+    },
+  ]];
+
+  if (subtitle) {
+    headerContent[0].push({
+      text: subtitle,
+      fontSize: 10,
+      color: "rgba(255,255,255,0.7)",
+      alignment: "right",
+    });
+  }
+
+  return {
+    table: {
+      widths: subtitle ? ["*", "auto"] : ["*"],
+      body: headerContent,
+    },
+    layout: {
+      fillColor: () => COLORS.primary,
+      hLineWidth: () => 0,
+      vLineWidth: () => 0,
+      paddingLeft: () => 12,
+      paddingRight: () => 12,
+      paddingTop: () => 8,
+      paddingBottom: () => 8,
+    },
+    margin: [0, 25, 0, 18] as [number, number, number, number],
+  };
+}
+
+function createPhaseBlock(phaseTitle: string, steps: { title: string; description: string; prompt?: string; tip?: string }[]): Content[] {
+  const content: Content[] = [
+    {
+      canvas: [
+        { type: "line", x1: 0, y1: 0, x2: 2, y2: 0, lineWidth: 2, lineColor: COLORS.border }
+      ],
+    },
+    {
+      text: phaseTitle.toUpperCase(),
+      fontSize: 12,
+      bold: true,
+      color: COLORS.accent,
+      margin: [15, 15, 0, 12] as [number, number, number, number],
+    },
+  ];
+
+  steps.forEach(step => {
+    content.push({
+      text: step.title,
+      fontSize: 12,
+      bold: true,
+      color: COLORS.text,
+      margin: [15, 0, 0, 4] as [number, number, number, number],
+    });
+    
+    content.push({
+      text: step.description,
+      fontSize: 11,
+      color: COLORS.textSecondary,
+      margin: [15, 0, 0, 8] as [number, number, number, number],
+    });
+    
+    if (step.prompt) {
+      content.push(...createTerminalBox(step.prompt, "PROMPT").map(c => ({
+        ...c,
+        margin: [15, 0, 0, 8] as [number, number, number, number],
+      })));
+    }
+    
+    if (step.tip) {
+      content.push({
+        ...createTipBox(step.tip),
+        margin: [15, 0, 0, 15] as [number, number, number, number],
+      });
+    }
+  });
+
+  return content;
+}
+
+function createModuleCard(title: string, items: string[]): Content {
+  return {
+    table: {
+      widths: ["*"],
+      body: [
+        [{
+          text: title,
+          fontSize: 11,
+          bold: true,
+          color: COLORS.text,
+          fillColor: COLORS.background,
+          margin: [10, 8, 10, 8] as [number, number, number, number],
+        }],
+        [{
+          ul: items.map(item => ({
+            text: item,
+            fontSize: 10,
+            color: COLORS.textSecondary,
+            margin: [0, 3, 0, 3] as [number, number, number, number],
+          })),
+          margin: [10, 10, 10, 10] as [number, number, number, number],
+        }],
+      ],
+    },
+    layout: {
+      hLineWidth: () => 1,
+      vLineWidth: () => 1,
+      hLineColor: () => COLORS.border,
+      vLineColor: () => COLORS.border,
+    },
+  };
+}
+
 export async function generateProposalPdf(project: Project): Promise<Buffer> {
   const scenarioA = project.scenarioA as Scenario | null;
   const scenarioB = project.scenarioB as Scenario | null;
@@ -45,144 +252,149 @@ export async function generateProposalPdf(project: Project): Promise<Buffer> {
     defaultStyle: {
       font: "Helvetica",
       fontSize: 11,
-      lineHeight: 1.4,
+      lineHeight: 1.5,
+      color: COLORS.text,
     },
-    pageMargins: [50, 60, 50, 60],
+    pageMargins: [40, 50, 40, 50],
     content: [
       {
-        text: "PROJECT PROPOSAL",
-        style: "header",
-        alignment: "center",
-        margin: [0, 0, 0, 10],
+        canvas: [
+          { type: "line", x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 3, lineColor: COLORS.primary }
+        ],
+        margin: [0, 0, 0, 15] as [number, number, number, number],
+      },
+      {
+        text: "PROJECT PROPOSAL // MENATECH",
+        fontSize: 9,
+        bold: true,
+        color: COLORS.accent,
+        letterSpacing: 2,
+        margin: [0, 0, 0, 5] as [number, number, number, number],
       },
       {
         text: project.title,
-        style: "title",
-        alignment: "center",
-        margin: [0, 0, 0, 30],
+        fontSize: 22,
+        bold: true,
+        color: COLORS.primary,
+        margin: [0, 0, 0, 25] as [number, number, number, number],
       },
       {
-        text: `Prepared for: ${project.clientName || "Valued Client"}`,
-        alignment: "center",
-        margin: [0, 0, 0, 5],
+        text: `This proposal presents our strategic approach for ${project.title}. After careful analysis of your requirements and market conditions, we recommend ${selectedScenario?.name || "a tailored solution"} that balances innovation with practical implementation.`,
+        fontSize: 12,
+        color: COLORS.textSecondary,
+        margin: [0, 0, 0, 20] as [number, number, number, number],
       },
       {
-        text: `Date: ${new Date().toLocaleDateString()}`,
-        alignment: "center",
-        margin: [0, 0, 0, 40],
+        columns: [
+          { text: `Prepared for: ${project.clientName || "Valued Client"}`, width: "*", fontSize: 10 },
+          { text: `Date: ${new Date().toLocaleDateString()}`, width: "auto", fontSize: 10, alignment: "right" },
+        ],
+        margin: [0, 0, 0, 30] as [number, number, number, number],
       },
-      { text: "Executive Summary", style: "sectionHeader" },
+      createSectionHeader("Recommended Approach"),
       {
-        text: `This proposal presents our recommended approach for ${project.title}. After careful analysis, we recommend ${selectedScenario?.name || "the selected approach"} which balances time-to-market with long-term scalability.`,
-        margin: [0, 0, 0, 20],
+        table: {
+          widths: ["35%", "*"],
+          body: [
+            [
+              { text: "Approach", bold: true, fillColor: COLORS.background, margin: [8, 6, 8, 6] as [number, number, number, number] },
+              { text: selectedScenario?.name || "Selected Scenario", bold: true, margin: [8, 6, 8, 6] as [number, number, number, number] },
+            ],
+            [
+              { text: "Timeline", bold: true, fillColor: COLORS.background, margin: [8, 6, 8, 6] as [number, number, number, number] },
+              { text: selectedScenario?.timeline || "To be determined", margin: [8, 6, 8, 6] as [number, number, number, number] },
+            ],
+            [
+              { text: "Investment", bold: true, fillColor: COLORS.background, margin: [8, 6, 8, 6] as [number, number, number, number] },
+              { text: selectedScenario?.totalCost ? `$${selectedScenario.totalCost.toLocaleString()}` : "To be discussed", margin: [8, 6, 8, 6] as [number, number, number, number] },
+            ],
+            [
+              { text: "Estimated Hours", bold: true, fillColor: COLORS.background, margin: [8, 6, 8, 6] as [number, number, number, number] },
+              { text: selectedScenario?.totalHours?.toString() || "TBD", margin: [8, 6, 8, 6] as [number, number, number, number] },
+            ],
+          ],
+        },
+        layout: {
+          hLineWidth: () => 1,
+          vLineWidth: () => 1,
+          hLineColor: () => COLORS.border,
+          vLineColor: () => COLORS.border,
+        },
+        margin: [0, 0, 0, 20] as [number, number, number, number],
       },
-      { text: "Recommended Approach", style: "sectionHeader" },
+      createSectionHeader("Key Features"),
+      {
+        ul: (selectedScenario?.features || ["Feature details to be defined"]).map(f => ({
+          text: f,
+          margin: [0, 3, 0, 3] as [number, number, number, number],
+        })),
+        margin: [0, 0, 0, 20] as [number, number, number, number],
+      },
+      createSectionHeader("Technology Stack"),
+      {
+        text: selectedScenario?.techStack?.join(" | ") || "To be determined based on requirements",
+        fontSize: 11,
+        color: COLORS.textSecondary,
+        margin: [0, 0, 0, 20] as [number, number, number, number],
+      },
+      createSectionHeader("ROI Analysis"),
       {
         table: {
           widths: ["*", "*"],
           body: [
             [
-              { text: "Approach", style: "tableHeader" },
-              { text: selectedScenario?.name || "Selected Scenario", style: "tableValue" },
+              { text: "Metric", bold: true, fillColor: COLORS.primary, color: "#fff", margin: [8, 6, 8, 6] as [number, number, number, number] },
+              { text: "Value", bold: true, fillColor: COLORS.primary, color: "#fff", margin: [8, 6, 8, 6] as [number, number, number, number] },
             ],
             [
-              { text: "Timeline", style: "tableHeader" },
-              { text: selectedScenario?.timeline || "To be determined", style: "tableValue" },
+              { text: "Cost of Doing Nothing", margin: [8, 6, 8, 6] as [number, number, number, number] },
+              { text: roiAnalysis?.costOfDoingNothing ? `$${roiAnalysis.costOfDoingNothing.toLocaleString()}/year` : "N/A", margin: [8, 6, 8, 6] as [number, number, number, number] },
             ],
             [
-              { text: "Investment", style: "tableHeader" },
-              { text: selectedScenario?.totalCost ? `$${selectedScenario.totalCost.toLocaleString()}` : "To be discussed", style: "tableValue" },
+              { text: "Projected Annual Savings", fillColor: COLORS.background, margin: [8, 6, 8, 6] as [number, number, number, number] },
+              { text: roiAnalysis?.projectedSavings ? `$${roiAnalysis.projectedSavings.toLocaleString()}/year` : "N/A", fillColor: COLORS.background, margin: [8, 6, 8, 6] as [number, number, number, number] },
             ],
             [
-              { text: "Estimated Hours", style: "tableHeader" },
-              { text: selectedScenario?.totalHours?.toString() || "TBD", style: "tableValue" },
+              { text: "Payback Period", margin: [8, 6, 8, 6] as [number, number, number, number] },
+              { text: roiAnalysis?.paybackPeriodMonths ? `${roiAnalysis.paybackPeriodMonths} months` : "N/A", margin: [8, 6, 8, 6] as [number, number, number, number] },
+            ],
+            [
+              { text: "3-Year ROI", fillColor: COLORS.background, margin: [8, 6, 8, 6] as [number, number, number, number] },
+              { text: roiAnalysis?.threeYearROI ? `${roiAnalysis.threeYearROI}%` : "N/A", fillColor: COLORS.background, margin: [8, 6, 8, 6] as [number, number, number, number] },
             ],
           ],
         },
-        margin: [0, 0, 0, 20],
-      },
-      { text: "Key Features", style: "sectionHeader" },
-      {
-        ul: selectedScenario?.features || ["Feature details to be defined"],
-        margin: [0, 0, 0, 20],
-      },
-      { text: "Technology Stack", style: "sectionHeader" },
-      {
-        text: selectedScenario?.techStack?.join(", ") || "To be determined based on requirements",
-        margin: [0, 0, 0, 20],
-      },
-      { text: "ROI Analysis", style: "sectionHeader" },
-      {
-        table: {
-          widths: ["*", "*"],
-          body: [
-            [
-              { text: "Metric", style: "tableHeader" },
-              { text: "Value", style: "tableHeader" },
-            ],
-            [
-              "Cost of Doing Nothing",
-              roiAnalysis?.costOfDoingNothing ? `$${roiAnalysis.costOfDoingNothing.toLocaleString()}/year` : "N/A",
-            ],
-            [
-              "Projected Annual Savings",
-              roiAnalysis?.projectedSavings ? `$${roiAnalysis.projectedSavings.toLocaleString()}/year` : "N/A",
-            ],
-            [
-              "Payback Period",
-              roiAnalysis?.paybackPeriodMonths ? `${roiAnalysis.paybackPeriodMonths} months` : "N/A",
-            ],
-            [
-              "3-Year ROI",
-              roiAnalysis?.threeYearROI ? `${roiAnalysis.threeYearROI}%` : "N/A",
-            ],
-          ],
+        layout: {
+          hLineWidth: () => 1,
+          vLineWidth: () => 1,
+          hLineColor: () => COLORS.border,
+          vLineColor: () => COLORS.border,
         },
-        margin: [0, 0, 0, 30],
+        margin: [0, 0, 0, 25] as [number, number, number, number],
       },
-      { text: "Next Steps", style: "sectionHeader" },
+      createSectionHeader("Next Steps"),
       {
         ol: [
-          "Review this proposal and provide feedback",
-          "Schedule a kickoff meeting to align on requirements",
-          "Sign statement of work to begin development",
-          "Weekly progress updates throughout development",
+          { text: "Review this proposal and provide feedback", margin: [0, 3, 0, 3] as [number, number, number, number] },
+          { text: "Schedule a kickoff meeting to align on requirements", margin: [0, 3, 0, 3] as [number, number, number, number] },
+          { text: "Sign statement of work to begin development", margin: [0, 3, 0, 3] as [number, number, number, number] },
+          { text: "Weekly progress updates throughout development", margin: [0, 3, 0, 3] as [number, number, number, number] },
         ],
-        margin: [0, 0, 0, 30],
+        margin: [0, 0, 0, 40] as [number, number, number, number],
       },
       {
-        text: "Generated by ISI Agent",
+        canvas: [
+          { type: "line", x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: COLORS.border }
+        ],
+        margin: [0, 0, 0, 10] as [number, number, number, number],
+      },
+      {
+        text: `Generated by Menatech AI Workflow | Confidential | ${new Date().getFullYear()}`,
         alignment: "center",
         fontSize: 9,
-        color: "#888888",
-        margin: [0, 20, 0, 0],
+        color: COLORS.textMuted,
       },
     ],
-    styles: {
-      header: {
-        fontSize: 12,
-        bold: true,
-        color: "#666666",
-      },
-      title: {
-        fontSize: 24,
-        bold: true,
-        color: "#333333",
-      },
-      sectionHeader: {
-        fontSize: 14,
-        bold: true,
-        margin: [0, 15, 0, 10] as [number, number, number, number],
-        color: "#2563eb",
-      },
-      tableHeader: {
-        bold: true,
-        fillColor: "#f3f4f6",
-      },
-      tableValue: {
-        bold: true,
-      },
-    },
   };
 
   return new Promise((resolve, reject) => {
@@ -209,143 +421,344 @@ export async function generateInternalReportPdf(project: Project): Promise<Buffe
     defaultStyle: {
       font: "Helvetica",
       fontSize: 10,
-      lineHeight: 1.3,
+      lineHeight: 1.4,
+      color: COLORS.text,
     },
     pageMargins: [40, 50, 40, 50],
     content: [
       {
-        text: "INTERNAL PROJECT REPORT",
-        style: "header",
-        alignment: "center",
-        margin: [0, 0, 0, 5],
+        canvas: [
+          { type: "line", x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 3, lineColor: COLORS.primary }
+        ],
+        margin: [0, 0, 0, 15] as [number, number, number, number],
+      },
+      {
+        text: "INTERNAL PROJECT REPORT // MENATECH",
+        fontSize: 9,
+        bold: true,
+        color: COLORS.accent,
+        letterSpacing: 2,
+        margin: [0, 0, 0, 5] as [number, number, number, number],
       },
       {
         text: project.title,
-        style: "title",
-        alignment: "center",
-        margin: [0, 0, 0, 20],
+        fontSize: 18,
+        bold: true,
+        color: COLORS.primary,
+        margin: [0, 0, 0, 15] as [number, number, number, number],
       },
       {
         columns: [
-          { text: `Client: ${project.clientName || "TBD"}`, width: "*" },
-          { text: `Status: ${project.status}`, width: "*", alignment: "right" },
+          { text: `Client: ${project.clientName || "TBD"}`, width: "*", fontSize: 10 },
+          { text: `Status: ${project.status}`, width: "*", alignment: "right", fontSize: 10 },
         ],
-        margin: [0, 0, 0, 5],
+        margin: [0, 0, 0, 5] as [number, number, number, number],
       },
       {
         columns: [
-          { text: `Stage: ${project.currentStage}/5`, width: "*" },
-          { text: `Date: ${new Date().toLocaleDateString()}`, width: "*", alignment: "right" },
+          { text: `Stage: ${project.currentStage}/5`, width: "*", fontSize: 10 },
+          { text: `Date: ${new Date().toLocaleDateString()}`, width: "*", alignment: "right", fontSize: 10 },
         ],
-        margin: [0, 0, 0, 20],
+        margin: [0, 0, 0, 20] as [number, number, number, number],
       },
-      { text: "Scenario Comparison", style: "sectionHeader" },
+      createSectionHeader("Scenario Comparison"),
       {
         table: {
           widths: ["*", "*", "*"],
           body: [
             [
-              { text: "Metric", style: "tableHeader" },
-              { text: "Scenario A (High-Code)", style: "tableHeader" },
-              { text: "Scenario B (No-Code)", style: "tableHeader" },
+              { text: "Metric", bold: true, fillColor: COLORS.primary, color: "#fff", margin: [6, 5, 6, 5] as [number, number, number, number] },
+              { text: "Scenario A (High-Code)", bold: true, fillColor: COLORS.primary, color: "#fff", margin: [6, 5, 6, 5] as [number, number, number, number] },
+              { text: "Scenario B (No-Code)", bold: true, fillColor: COLORS.primary, color: "#fff", margin: [6, 5, 6, 5] as [number, number, number, number] },
             ],
             [
-              "Total Cost",
-              scenarioA?.totalCost ? `$${scenarioA.totalCost.toLocaleString()}` : "N/A",
-              scenarioB?.totalCost ? `$${scenarioB.totalCost.toLocaleString()}` : "N/A",
+              { text: "Total Cost", margin: [6, 5, 6, 5] as [number, number, number, number] },
+              { text: scenarioA?.totalCost ? `$${scenarioA.totalCost.toLocaleString()}` : "N/A", margin: [6, 5, 6, 5] as [number, number, number, number] },
+              { text: scenarioB?.totalCost ? `$${scenarioB.totalCost.toLocaleString()}` : "N/A", margin: [6, 5, 6, 5] as [number, number, number, number] },
             ],
             [
-              "Timeline",
-              scenarioA?.timeline || "N/A",
-              scenarioB?.timeline || "N/A",
+              { text: "Timeline", fillColor: COLORS.background, margin: [6, 5, 6, 5] as [number, number, number, number] },
+              { text: scenarioA?.timeline || "N/A", fillColor: COLORS.background, margin: [6, 5, 6, 5] as [number, number, number, number] },
+              { text: scenarioB?.timeline || "N/A", fillColor: COLORS.background, margin: [6, 5, 6, 5] as [number, number, number, number] },
             ],
             [
-              "Hours",
-              scenarioA?.totalHours?.toString() || "N/A",
-              scenarioB?.totalHours?.toString() || "N/A",
+              { text: "Hours", margin: [6, 5, 6, 5] as [number, number, number, number] },
+              { text: scenarioA?.totalHours?.toString() || "N/A", margin: [6, 5, 6, 5] as [number, number, number, number] },
+              { text: scenarioB?.totalHours?.toString() || "N/A", margin: [6, 5, 6, 5] as [number, number, number, number] },
             ],
             [
-              "Hourly Rate",
-              scenarioA?.hourlyRate ? `$${scenarioA.hourlyRate}` : "N/A",
-              scenarioB?.hourlyRate ? `$${scenarioB.hourlyRate}` : "N/A",
+              { text: "Hourly Rate", fillColor: COLORS.background, margin: [6, 5, 6, 5] as [number, number, number, number] },
+              { text: scenarioA?.hourlyRate ? `$${scenarioA.hourlyRate}` : "N/A", fillColor: COLORS.background, margin: [6, 5, 6, 5] as [number, number, number, number] },
+              { text: scenarioB?.hourlyRate ? `$${scenarioB.hourlyRate}` : "N/A", fillColor: COLORS.background, margin: [6, 5, 6, 5] as [number, number, number, number] },
             ],
             [
-              "Recommended",
-              scenarioA?.recommended ? "Yes" : "No",
-              scenarioB?.recommended ? "Yes" : "No",
+              { text: "Recommended", margin: [6, 5, 6, 5] as [number, number, number, number] },
+              { text: scenarioA?.recommended ? "Yes" : "No", margin: [6, 5, 6, 5] as [number, number, number, number] },
+              { text: scenarioB?.recommended ? "Yes" : "No", margin: [6, 5, 6, 5] as [number, number, number, number] },
             ],
           ],
         },
-        margin: [0, 0, 0, 20],
+        layout: {
+          hLineWidth: () => 1,
+          vLineWidth: () => 1,
+          hLineColor: () => COLORS.border,
+          vLineColor: () => COLORS.border,
+        },
+        margin: [0, 0, 0, 20] as [number, number, number, number],
       },
-      { text: "Selected Approach", style: "sectionHeader" },
+      createSectionHeader("Selected Approach"),
       {
         text: project.selectedScenario === "A" 
           ? `Scenario A: ${scenarioA?.name || "High-Code"}` 
           : `Scenario B: ${scenarioB?.name || "No-Code"}`,
         bold: true,
-        margin: [0, 0, 0, 15],
+        fontSize: 12,
+        color: COLORS.accent,
+        margin: [0, 0, 0, 15] as [number, number, number, number],
       },
-      { text: "ROI Summary", style: "sectionHeader" },
+      createSectionHeader("ROI Summary"),
       {
         table: {
           widths: ["*", "*"],
           body: [
             [
-              { text: "Metric", style: "tableHeader" },
-              { text: "Value", style: "tableHeader" },
+              { text: "Metric", bold: true, fillColor: COLORS.primary, color: "#fff", margin: [6, 5, 6, 5] as [number, number, number, number] },
+              { text: "Value", bold: true, fillColor: COLORS.primary, color: "#fff", margin: [6, 5, 6, 5] as [number, number, number, number] },
             ],
-            ["Cost of Doing Nothing", roiAnalysis?.costOfDoingNothing ? `$${roiAnalysis.costOfDoingNothing.toLocaleString()}/year` : "N/A"],
-            ["Manual Operational Cost", roiAnalysis?.manualOperationalCost ? `$${roiAnalysis.manualOperationalCost.toLocaleString()}/year` : "N/A"],
-            ["Projected Savings", roiAnalysis?.projectedSavings ? `$${roiAnalysis.projectedSavings.toLocaleString()}/year` : "N/A"],
-            ["Payback Period", roiAnalysis?.paybackPeriodMonths ? `${roiAnalysis.paybackPeriodMonths} months` : "N/A"],
-            ["3-Year ROI", roiAnalysis?.threeYearROI ? `${roiAnalysis.threeYearROI}%` : "N/A"],
+            [
+              { text: "Cost of Doing Nothing", margin: [6, 5, 6, 5] as [number, number, number, number] },
+              { text: roiAnalysis?.costOfDoingNothing ? `$${roiAnalysis.costOfDoingNothing.toLocaleString()}/year` : "N/A", margin: [6, 5, 6, 5] as [number, number, number, number] },
+            ],
+            [
+              { text: "Manual Operational Cost", fillColor: COLORS.background, margin: [6, 5, 6, 5] as [number, number, number, number] },
+              { text: roiAnalysis?.manualOperationalCost ? `$${roiAnalysis.manualOperationalCost.toLocaleString()}/year` : "N/A", fillColor: COLORS.background, margin: [6, 5, 6, 5] as [number, number, number, number] },
+            ],
+            [
+              { text: "Projected Savings", margin: [6, 5, 6, 5] as [number, number, number, number] },
+              { text: roiAnalysis?.projectedSavings ? `$${roiAnalysis.projectedSavings.toLocaleString()}/year` : "N/A", margin: [6, 5, 6, 5] as [number, number, number, number] },
+            ],
+            [
+              { text: "Payback Period", fillColor: COLORS.background, margin: [6, 5, 6, 5] as [number, number, number, number] },
+              { text: roiAnalysis?.paybackPeriodMonths ? `${roiAnalysis.paybackPeriodMonths} months` : "N/A", fillColor: COLORS.background, margin: [6, 5, 6, 5] as [number, number, number, number] },
+            ],
+            [
+              { text: "3-Year ROI", margin: [6, 5, 6, 5] as [number, number, number, number] },
+              { text: roiAnalysis?.threeYearROI ? `${roiAnalysis.threeYearROI}%` : "N/A", margin: [6, 5, 6, 5] as [number, number, number, number] },
+            ],
           ],
         },
-        margin: [0, 0, 0, 20],
+        layout: {
+          hLineWidth: () => 1,
+          vLineWidth: () => 1,
+          hLineColor: () => COLORS.border,
+          vLineColor: () => COLORS.border,
+        },
+        margin: [0, 0, 0, 20] as [number, number, number, number],
       },
-      { text: "Project Timeline", style: "sectionHeader" },
+      createSectionHeader("Project Timeline"),
       {
         ul: [
-          `Stage 1 (Estimate): ${project.estimateMarkdown ? "Complete" : "Pending"}`,
-          `Stage 2 (Assets): ${project.proposalPdfUrl ? "Complete" : "Pending"}`,
-          `Stage 3 (Email): ${project.emailSentAt ? "Sent" : "Pending"}`,
-          `Stage 4 (Vibe Guide): ${project.vibecodeGuideA ? "Complete" : "Pending"}`,
-          `Stage 5 (PM Breakdown): ${project.pmBreakdown ? "Complete" : "Pending"}`,
+          { text: `Stage 1 (Estimate): ${project.estimateMarkdown ? "Complete" : "Pending"}`, margin: [0, 3, 0, 3] as [number, number, number, number] },
+          { text: `Stage 2 (Assets): ${project.proposalPdfUrl ? "Complete" : "Pending"}`, margin: [0, 3, 0, 3] as [number, number, number, number] },
+          { text: `Stage 3 (Email): ${project.emailSentAt ? "Sent" : "Pending"}`, margin: [0, 3, 0, 3] as [number, number, number, number] },
+          { text: `Stage 4 (Vibe Guide): ${project.vibecodeGuideA ? "Complete" : "Pending"}`, margin: [0, 3, 0, 3] as [number, number, number, number] },
+          { text: `Stage 5 (PM Breakdown): ${project.pmBreakdown ? "Complete" : "Pending"}`, margin: [0, 3, 0, 3] as [number, number, number, number] },
         ],
-        margin: [0, 0, 0, 20],
+        margin: [0, 0, 0, 30] as [number, number, number, number],
+      },
+      {
+        canvas: [
+          { type: "line", x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: COLORS.border }
+        ],
+        margin: [0, 0, 0, 10] as [number, number, number, number],
       },
       {
         text: "CONFIDENTIAL - Internal Use Only",
         alignment: "center",
         fontSize: 8,
-        color: "#cc0000",
-        margin: [0, 30, 0, 0],
+        bold: true,
+        color: COLORS.error,
+      },
+      {
+        text: `Generated by Menatech AI Workflow | ${new Date().getFullYear()}`,
+        alignment: "center",
+        fontSize: 8,
+        color: COLORS.textMuted,
+        margin: [0, 5, 0, 0] as [number, number, number, number],
       },
     ],
-    styles: {
-      header: {
-        fontSize: 10,
-        bold: true,
-        color: "#666666",
-      },
-      title: {
-        fontSize: 18,
-        bold: true,
-        color: "#333333",
-      },
-      sectionHeader: {
-        fontSize: 12,
-        bold: true,
-        margin: [0, 10, 0, 8] as [number, number, number, number],
-        color: "#1e40af",
-      },
-      tableHeader: {
-        bold: true,
-        fillColor: "#e5e7eb",
-        fontSize: 9,
-      },
+  };
+
+  return new Promise((resolve, reject) => {
+    try {
+      const pdfDoc = printer.createPdfKitDocument(docDefinition);
+      const chunks: Buffer[] = [];
+      
+      pdfDoc.on("data", (chunk: Buffer) => chunks.push(chunk));
+      pdfDoc.on("end", () => resolve(Buffer.concat(chunks)));
+      pdfDoc.on("error", reject);
+      pdfDoc.end();
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+export async function generateExecutionManualPdf(project: Project): Promise<Buffer> {
+  const scenarioA = project.scenarioA as Scenario | null;
+  const scenarioB = project.scenarioB as Scenario | null;
+  const vibeGuideA = project.vibecodeGuideA as string | null;
+  const vibeGuideB = project.vibecodeGuideB as string | null;
+  const pmBreakdown = project.pmBreakdown as { phases?: PMPhase[] } | null;
+
+  const content: Content[] = [
+    {
+      canvas: [
+        { type: "line", x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 3, lineColor: COLORS.primary }
+      ],
+      margin: [0, 0, 0, 15] as [number, number, number, number],
     },
+    {
+      text: "TECHNICAL EXECUTION MANUAL // MENATECH",
+      fontSize: 9,
+      bold: true,
+      color: COLORS.accent,
+      letterSpacing: 2,
+      margin: [0, 0, 0, 5] as [number, number, number, number],
+    },
+    {
+      text: project.title,
+      fontSize: 22,
+      bold: true,
+      color: COLORS.primary,
+      margin: [0, 0, 0, 20] as [number, number, number, number],
+    },
+    {
+      text: "This document contains the detailed technical roadmap for project implementation. Includes engineering prompts for code generation and configuration logic for no-code tools.",
+      fontSize: 12,
+      color: COLORS.textSecondary,
+      margin: [0, 0, 0, 30] as [number, number, number, number],
+    },
+  ];
+
+  content.push(createSectionHeader(scenarioA?.title || scenarioA?.name || "Manual A: High-Code Approach", "CURSOR | REPLIT | WINDSURF"));
+
+  if (vibeGuideA) {
+    const lines = vibeGuideA.split("\n");
+    let currentPhase = "";
+    let currentSteps: { title: string; description: string; prompt?: string; tip?: string }[] = [];
+
+    lines.forEach(line => {
+      if (line.startsWith("## ")) {
+        if (currentPhase && currentSteps.length > 0) {
+          content.push(...createPhaseBlock(currentPhase, currentSteps));
+          currentSteps = [];
+        }
+        currentPhase = line.replace("## ", "");
+      } else if (line.startsWith("### ")) {
+        currentSteps.push({
+          title: line.replace("### ", ""),
+          description: "",
+        });
+      } else if (line.startsWith("```") && currentSteps.length > 0) {
+      } else if (line.startsWith("$ ") && currentSteps.length > 0) {
+        currentSteps[currentSteps.length - 1].prompt = line.replace("$ ", "");
+      } else if (line.startsWith("> ") && currentSteps.length > 0) {
+        currentSteps[currentSteps.length - 1].tip = line.replace("> ", "");
+      } else if (line.trim() && currentSteps.length > 0) {
+        currentSteps[currentSteps.length - 1].description += (currentSteps[currentSteps.length - 1].description ? " " : "") + line.trim();
+      }
+    });
+
+    if (currentPhase && currentSteps.length > 0) {
+      content.push(...createPhaseBlock(currentPhase, currentSteps));
+    }
+  } else {
+    content.push({
+      text: "High-code execution guide will be generated after the vibe guide stage.",
+      fontSize: 11,
+      color: COLORS.textSecondary,
+      margin: [0, 0, 0, 20] as [number, number, number, number],
+    });
+  }
+
+  content.push({ text: "", pageBreak: "before" });
+
+  const noCodeHeader = createSectionHeader(scenarioB?.title || scenarioB?.name || "Manual B: No-Code Approach", "AIRTABLE | MAKE | SOFTR") as any;
+  noCodeHeader.layout.fillColor = () => "#0891b2";
+  content.push(noCodeHeader);
+
+  if (vibeGuideB) {
+    const modules: { title: string; items: string[] }[] = [];
+    let currentModule = "";
+    let currentItems: string[] = [];
+
+    vibeGuideB.split("\n").forEach(line => {
+      if (line.startsWith("## ")) {
+        if (currentModule && currentItems.length > 0) {
+          modules.push({ title: currentModule, items: currentItems });
+          currentItems = [];
+        }
+        currentModule = line.replace("## ", "");
+      } else if (line.startsWith("- ") || line.startsWith("* ")) {
+        currentItems.push(line.replace(/^[-*]\s*/, ""));
+      }
+    });
+
+    if (currentModule && currentItems.length > 0) {
+      modules.push({ title: currentModule, items: currentItems });
+    }
+
+    if (modules.length > 0) {
+      const rows: Content[] = [];
+      for (let i = 0; i < modules.length; i += 2) {
+        const row: Content = {
+          columns: [
+            { width: "*", ...createModuleCard(modules[i].title, modules[i].items) },
+            { width: 15, text: "" },
+            modules[i + 1] 
+              ? { width: "*", ...createModuleCard(modules[i + 1].title, modules[i + 1].items) }
+              : { width: "*", text: "" },
+          ],
+          margin: [0, 0, 0, 15] as [number, number, number, number],
+        };
+        rows.push(row);
+      }
+      content.push(...rows);
+    }
+  } else {
+    content.push({
+      text: "No-code execution guide will be generated after the vibe guide stage.",
+      fontSize: 11,
+      color: COLORS.textSecondary,
+      margin: [0, 0, 0, 20] as [number, number, number, number],
+    });
+  }
+
+  content.push(
+    {
+      canvas: [
+        { type: "line", x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: COLORS.border }
+      ],
+      margin: [0, 30, 0, 10] as [number, number, number, number],
+    },
+    {
+      text: `Generated by Menatech AI Workflow | Confidential Internal Use | ${new Date().getFullYear()}`,
+      alignment: "center",
+      fontSize: 9,
+      color: COLORS.textMuted,
+    }
+  );
+
+  const docDefinition: TDocumentDefinitions = {
+    defaultStyle: {
+      font: "Helvetica",
+      fontSize: 11,
+      lineHeight: 1.5,
+      color: COLORS.text,
+    },
+    pageMargins: [40, 50, 40, 50],
+    content,
   };
 
   return new Promise((resolve, reject) => {
