@@ -105,7 +105,8 @@ describe('PDF Generator', () => {
       const docString = JSON.stringify(docDefinition);
       
       expect(docString).toContain('hrs');
-      expect(docString).toContain('estimatedHours');
+      // The formatted output shows hours, not the raw field name
+      expect(docString).toMatch(/\d+ hrs/);
     });
   });
   

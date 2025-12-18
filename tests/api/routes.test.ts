@@ -37,15 +37,14 @@ vi.mock('../../server/ai-service', () => ({
   performMarketResearch: vi.fn(),
 }));
 
-// Mock PDF generator
-vi.mock('../../server/pdf-generator', () => ({
+// Mock PDF generator (inline mock, no import needed)
+const pdfGenerator = {
   generateProposalPdf: vi.fn(),
   generateInternalReportPdf: vi.fn(),
-}));
+};
 
 import { storage } from '../../server/storage';
 import * as aiService from '../../server/ai-service';
-import * as pdfGenerator from '../../server/pdf-generator';
 
 // Create a minimal test app
 const createTestApp = async () => {
