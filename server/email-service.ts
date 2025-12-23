@@ -17,7 +17,8 @@ interface Scenario {
 export async function sendProposalEmail(
   project: Project,
   emailContent: string,
-  recipientEmail?: string
+  recipientEmail?: string,
+  emailSubject?: string
 ): Promise<EmailResult> {
   const resendApiKey = process.env.RESEND_API_KEY;
   const startTime = Date.now();
@@ -36,6 +37,7 @@ export async function sendProposalEmail(
       : project.scenarioB as Scenario;
 
     const htmlContent = generateHtmlEmail(project, selectedScenario, emailContent);
+    const subject = emailSubject || `Project Proposal: ${project.title}`;
 
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -46,7 +48,7 @@ export async function sendProposalEmail(
       body: JSON.stringify({
         from: "ISI Agent <onboarding@resend.dev>",
         to: recipientEmail || project.clientEmail || "client@example.com",
-        subject: `Project Proposal: ${project.title}`,
+        subject,
         html: htmlContent,
         text: emailContent,
         headers: {

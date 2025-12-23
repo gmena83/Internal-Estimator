@@ -524,7 +524,7 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Project not found" });
       }
 
-      const { recipientEmail } = req.body;
+      const { recipientEmail, emailSubject, emailBody } = req.body;
       
       // Validate that we have a client email before proceeding
       const emailToUse = recipientEmail || project.clientEmail;
@@ -536,17 +536,24 @@ export async function registerRoutes(
         });
       }
 
-      // Generate email content
+      // Use provided email body or generate AI content
       let emailContent: string;
-      try {
-        emailContent = await aiService.generateEmail(project);
-      } catch (err) {
-        console.error("AI email generation failed, using fallback:", err);
-        emailContent = `Dear ${project.clientName || "Team"},\n\nThank you for the opportunity to discuss your project. I'm excited to share our proposal for ${project.title}.\n\nPlease find the attached proposal with detailed information about our recommended approach, timeline, and investment.\n\nI'd love to schedule a call to walk you through the proposal and answer any questions.\n\nBest regards,\nISI Agent`;
+      if (emailBody && emailBody.trim()) {
+        emailContent = emailBody;
+      } else {
+        try {
+          emailContent = await aiService.generateEmail(project);
+        } catch (err) {
+          console.error("AI email generation failed, using fallback:", err);
+          emailContent = `Dear ${project.clientName || "Team"},\n\nThank you for the opportunity to discuss your project. I'm excited to share our proposal for ${project.title}.\n\nPlease find the attached proposal with detailed information about our recommended approach, timeline, and investment.\n\nI'd love to schedule a call to walk you through the proposal and answer any questions.\n\nBest regards,\nISI Agent`;
+        }
       }
 
+      // Use provided subject or default
+      const subjectToUse = emailSubject?.trim() || `Project Proposal: ${project.title}`;
+
       // Attempt to send email via Resend
-      const emailResult = await sendProposalEmail(project, emailContent, emailToUse);
+      const emailResult = await sendProposalEmail(project, emailContent, emailToUse, subjectToUse);
       
       if (!emailResult.success) {
         console.warn("Email send failed, but continuing with stage advancement:", emailResult.error);
@@ -842,13 +849,26 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Project not found" });
       }
 
+      const startTime = Date.now();
       const pdfBuffer = await generateProposalPdf(project);
+      const latencyMs = Date.now() - startTime;
+      
+      await storage.updateApiHealth({
+        service: "pdfmake",
+        status: "online",
+        latencyMs,
+      });
       
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="${project.title.replace(/[^a-z0-9]/gi, '_')}_proposal.pdf"`);
       res.send(pdfBuffer);
     } catch (error) {
       console.error("Error generating proposal PDF:", error);
+      await storage.updateApiHealth({
+        service: "pdfmake",
+        status: "error",
+        latencyMs: 0,
+      });
       res.status(500).json({ error: "Failed to generate proposal PDF" });
     }
   });
@@ -861,14 +881,64 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Project not found" });
       }
 
+      const startTime = Date.now();
       const pdfBuffer = await generateInternalReportPdf(project);
+      const latencyMs = Date.now() - startTime;
+      
+      await storage.updateApiHealth({
+        service: "pdfmake",
+        status: "online",
+        latencyMs,
+      });
       
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="${project.title.replace(/[^a-z0-9]/gi, '_')}_internal_report.pdf"`);
       res.send(pdfBuffer);
     } catch (error) {
       console.error("Error generating internal report PDF:", error);
+      await storage.updateApiHealth({
+        service: "pdfmake",
+        status: "error",
+        latencyMs: 0,
+      });
       res.status(500).json({ error: "Failed to generate internal report PDF" });
+    }
+  });
+
+  // PDF Generation - Consolidated (proposal PDF - main document for sharing)
+  app.get("/api/projects/:id/consolidated.pdf", async (req, res) => {
+    try {
+      const project = await storage.getProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+
+      const startTime = Date.now();
+      
+      // Generate the proposal PDF which is the main comprehensive document
+      // Note: True PDF merging would require pdf-lib or similar library
+      // For now, we provide the proposal as the consolidated document
+      const proposalBuffer = await generateProposalPdf(project);
+      
+      const latencyMs = Date.now() - startTime;
+      
+      await storage.updateApiHealth({
+        service: "pdfmake",
+        status: "online",
+        latencyMs,
+      });
+      
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${project.title.replace(/[^a-z0-9]/gi, '_')}_complete.pdf"`);
+      res.send(proposalBuffer);
+    } catch (error) {
+      console.error("Error generating consolidated PDF:", error);
+      await storage.updateApiHealth({
+        service: "pdfmake",
+        status: "error",
+        latencyMs: 0,
+      });
+      res.status(500).json({ error: "Failed to generate consolidated PDF" });
     }
   });
 
@@ -1065,6 +1135,7 @@ function getServiceDisplayName(service: string): string {
     openai: "OpenAI",
     perplexity: "Perplexity",
     pdf_co: "PDF.co",
+    pdfmake: "PDFmake (Local)",
     resend: "Resend",
     gamma: "Gamma",
     nano_banana: "Nano Banana",

@@ -48,8 +48,10 @@ export function MainWorkspace({ projectId }: MainWorkspaceProps) {
   }
 
   const currentStage = project?.currentStage || 1;
+  // When project is complete, include stage 5 in completed stages
+  const isProjectComplete = project?.status === "complete";
   const completedStages = Array.from(
-    { length: currentStage - 1 },
+    { length: isProjectComplete ? 5 : currentStage - 1 },
     (_, i) => i + 1
   );
 
@@ -410,14 +412,38 @@ function ProjectFilesView({ project }: { project?: Project }) {
     );
   }
 
+  const safeName = project.title.replace(/[^a-zA-Z0-9]/g, '_');
+
   const generateMarkdownFile = (title: string, content: string) => {
     const blob = new Blob([content], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${project.title.replace(/\s+/g, '_')}_${title}.md`;
+    a.download = `${safeName}_${title}.md`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const generateConsolidatedMarkdown = () => {
+    let consolidated = `# ${project.title} - Complete Project Documentation\n\n`;
+    consolidated += `**Client:** ${project.clientName || 'N/A'}\n`;
+    consolidated += `**Generated:** ${new Date().toLocaleDateString()}\n\n`;
+    consolidated += `---\n\n`;
+    
+    if (project.estimateMarkdown) {
+      consolidated += `# Part 1: Project Proposal\n\n${project.estimateMarkdown}\n\n---\n\n`;
+    }
+    if (project.vibecodeGuideA) {
+      consolidated += `# Part 2: High-Code Execution Guide\n\n${project.vibecodeGuideA}\n\n---\n\n`;
+    }
+    if (project.vibecodeGuideB) {
+      consolidated += `# Part 3: No-Code Execution Guide\n\n${project.vibecodeGuideB}\n\n---\n\n`;
+    }
+    if (project.pmBreakdown) {
+      consolidated += `# Part 4: Project Management Breakdown\n\n${generatePMMarkdown(project.pmBreakdown as any)}\n`;
+    }
+    
+    return consolidated;
   };
 
   const files = [
@@ -427,6 +453,15 @@ function ProjectFilesView({ project }: { project?: Project }) {
       available: !!project.estimateMarkdown,
       content: project.estimateMarkdown || "",
       description: "Complete project proposal with estimates and ROI analysis",
+      pdfUrl: project.proposalPdfUrl,
+    },
+    {
+      name: "Internal_Report",
+      icon: FileText,
+      available: !!project.internalReportPdfUrl,
+      content: "",
+      description: "Internal project report with scenario comparison",
+      pdfUrl: project.internalReportPdfUrl,
     },
     {
       name: "Guide_A_HighCode",
@@ -434,6 +469,7 @@ function ProjectFilesView({ project }: { project?: Project }) {
       available: !!project.vibecodeGuideA,
       content: project.vibecodeGuideA || "",
       description: "High-code execution manual with prompts and best practices",
+      pdfUrl: `/api/projects/${project.id}/execution-manual.pdf`,
     },
     {
       name: "Guide_B_NoCode",
@@ -441,6 +477,7 @@ function ProjectFilesView({ project }: { project?: Project }) {
       available: !!project.vibecodeGuideB,
       content: project.vibecodeGuideB || "",
       description: "No-code execution manual with step-by-step instructions",
+      pdfUrl: null,
     },
     {
       name: "PM_Breakdown",
@@ -448,6 +485,7 @@ function ProjectFilesView({ project }: { project?: Project }) {
       available: !!project.pmBreakdown,
       content: generatePMMarkdown(project.pmBreakdown as any),
       description: "Project management breakdown with phases, tasks, and checklists",
+      pdfUrl: null,
     },
   ];
 
@@ -457,6 +495,41 @@ function ProjectFilesView({ project }: { project?: Project }) {
         <FolderOpen className="h-6 w-6 text-primary" />
         <h2 className="text-lg font-semibold">Project Files</h2>
       </div>
+
+      <Card className="p-4 border-primary/30 bg-primary/5">
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+            <FileText className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm">Complete Project Package</p>
+            <p className="text-xs text-muted-foreground mt-1">Markdown: All documents combined. PDF: Main proposal document.</p>
+          </div>
+        </div>
+        <div className="mt-4 flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 gap-2"
+            onClick={() => generateMarkdownFile("Complete", generateConsolidatedMarkdown())}
+            data-testid="download-consolidated-md"
+          >
+            <Download className="h-4 w-4" />
+            All (Markdown)
+          </Button>
+          <Button
+            size="sm"
+            className="flex-1 gap-2"
+            asChild
+            data-testid="download-consolidated-pdf"
+          >
+            <a href={`/api/projects/${project.id}/consolidated.pdf`} download>
+              <Download className="h-4 w-4" />
+              Proposal (PDF)
+            </a>
+          </Button>
+        </div>
+      </Card>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {files.map((file) => {
@@ -472,21 +545,38 @@ function ProjectFilesView({ project }: { project?: Project }) {
                   <p className="text-xs text-muted-foreground mt-1">{file.description}</p>
                 </div>
               </div>
-              <div className="mt-4">
-                {file.available ? (
+              <div className="mt-4 flex gap-2">
+                {file.available && file.content ? (
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full gap-2"
+                    className="flex-1 gap-2"
                     onClick={() => generateMarkdownFile(file.name, file.content)}
-                    data-testid={`download-${file.name}`}
+                    data-testid={`download-${file.name}-md`}
                   >
                     <Download className="h-4 w-4" />
-                    Download Markdown
+                    Markdown
                   </Button>
                 ) : (
-                  <Button variant="outline" size="sm" className="w-full" disabled>
-                    Not Available
+                  <Button variant="outline" size="sm" className="flex-1" disabled>
+                    No Markdown
+                  </Button>
+                )}
+                {file.available && file.pdfUrl ? (
+                  <Button
+                    size="sm"
+                    className="flex-1 gap-2"
+                    asChild
+                    data-testid={`download-${file.name}-pdf`}
+                  >
+                    <a href={file.pdfUrl} download>
+                      <Download className="h-4 w-4" />
+                      PDF
+                    </a>
+                  </Button>
+                ) : (
+                  <Button size="sm" className="flex-1" disabled>
+                    No PDF
                   </Button>
                 )}
               </div>
