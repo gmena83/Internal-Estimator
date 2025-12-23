@@ -1,0 +1,110 @@
+{
+  "colorScheme": "light",
+  "fonts": [
+    {
+      "family": "__primaryFont_ad2006",
+      "count": 31
+    },
+    {
+      "family": "__primaryFont_Fallback_ad2006",
+      "count": 31
+    },
+    {
+      "family": "Times New Roman",
+      "count": 23
+    },
+    {
+      "family": "__Lora_d3ecc7",
+      "count": 16
+    },
+    {
+      "family": "__Lora_Fallback_d3ecc7",
+      "count": 16
+    },
+    {
+      "family": "system-ui",
+      "count": 1
+    },
+    {
+      "family": "Segoe UI",
+      "count": 1
+    },
+    {
+      "family": "Roboto",
+      "count": 1
+    },
+    {
+      "family": "Helvetica",
+      "count": 1
+    },
+    {
+      "family": "Arial",
+      "count": 1
+    }
+  ],
+  "colors": {
+    "primary": "#121827",
+    "accent": "#F16625",
+    "background": "#FFFEFE",
+    "textPrimary": "#F16625",
+    "link": "#F16625"
+  },
+  "typography": {
+    "fontFamilies": {
+      "primary": "Times New Roman",
+      "heading": "__Lora_d3ecc7"
+    },
+    "fontStacks": {
+      "body": [
+        "Times New Roman"
+      ],
+      "heading": [
+        "__Lora_d3ecc7",
+        "__Lora_Fallback_d3ecc7"
+      ],
+      "paragraph": [
+        "__primaryFont_ad2006",
+        "__primaryFont_Fallback_ad2006"
+      ]
+    },
+    "fontSizes": {
+      "h1": "48px",
+      "h2": "48px",
+      "body": "20px"
+    }
+  },
+  "spacing": {
+    "baseUnit": 4,
+    "borderRadius": "24px"
+  },
+  "components": {},
+  "images": {
+    "logo": "File saved at: attached_assets/logo.svg",
+    "favicon": null,
+    "ogImage": "File saved at: attached_assets/ogImage.jpg"
+  },
+  "__framework_hints": [],
+  "__llm_logo_reasoning": {
+    "selectedIndex": 0,
+    "reasoning": "Strong indicators: header logo linking to homepage, header location, visible, top-left position, highest logo on page, alt matches logo/brand, src contains logo, alt contains brand name \"PDF.co\", src contains brand name \"PDF.co\", reasonable size. Score: 143 (clear winner by 121 points)",
+    "confidence": 0.9
+  },
+  "__llm_button_reasoning": {
+    "primary": {
+      "index": -1,
+      "text": "N/A",
+      "reasoning": "LLM failed"
+    },
+    "secondary": {
+      "index": -1,
+      "text": "N/A",
+      "reasoning": "LLM failed"
+    },
+    "confidence": 0
+  },
+  "confidence": {
+    "buttons": 0,
+    "colors": 0,
+    "overall": 0
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "colorScheme": "dark",
+  "fonts": [
+    {
+      "family": "sans-serif",
+      "count": 75
+    },
+    {
+      "family": "Inter",
+      "count": 73
+    },
+    {
+      "family": "system-ui",
+      "count": 73
+    }
+  ],
+  "colors": {
+    "primary": "#818898",
+    "accent": "#1AD5E6",
+    "background": "#0E0F11",
+    "textPrimary": "#0E0F11",
+    "link": "#1AD5E6"
+  },
+  "typography": {
+    "fontFamilies": {
+      "primary": "Inter",
+      "heading": "Inter"
+    },
+    "fontStacks": {
+      "body": [
+        "Inter",
+        "system-ui",
+        "sans-serif"
+      ],
+      "heading": [
+        "Inter",
+        "system-ui",
+        "sans-serif"
+      ],
+      "paragraph": [
+        "Inter",
+        "system-ui",
+        "sans-serif"
+      ]
+    },
+    "fontSizes": {
+      "h1": "60px",
+      "h2": "48px",
+      "body": "20px"
+    }
+  },
+  "spacing": {
+    "baseUnit": 4,
+    "borderRadius": "2px"
+  },
+  "components": {
+    "input": {
+      "background": "#181A1E",
+      "textColor": "#F6F7F8",
+      "borderColor": "#1C1E22",
+      "borderRadius": "10px",
+      "borderRadiusCorners": {
+        "topLeft": "10px",
+        "topRight": "10px",
+        "bottomRight": "10px",
+        "bottomLeft": "10px"
+      },
+      "shadow": "none"
+    }
+  },
+  "images": {
+    "logo": null,
+    "favicon": null,
+    "ogImage": "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a1341bea-8dcc-4809-baf2-73399b649354/id-preview-27a4cc4b--bc45dbee-17dd-466d-80f4-4fe77ca3709d.lovable.app-1764709257080.png"
+  },
+  "__framework_hints": [],
+  "__llm_button_reasoning": {
+    "primary": {
+      "index": -1,
+      "text": "N/A",
+      "reasoning": "LLM failed"
+    },
+    "secondary": {
+      "index": -1,
+      "text": "N/A",
+      "reasoning": "LLM failed"
+    },
+    "confidence": 0
+  },
+  "confidence": {
+    "buttons": 0,
+    "colors": 0,
+    "overall": 0
+  }
+}
