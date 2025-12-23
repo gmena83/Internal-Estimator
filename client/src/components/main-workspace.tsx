@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { MessageSquare, FileText, Presentation, Code2, ClipboardList, Paperclip, Download, FileIcon, Image } from "lucide-react";
+import { MessageSquare, FileText, Presentation, Code2, ClipboardList, Paperclip, Download, FileIcon, Image, FolderOpen, CheckCircle2, Circle, CheckSquare } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,8 +10,11 @@ import { MarkdownViewer } from "@/components/markdown-viewer";
 import { ActionButtons } from "@/components/action-buttons";
 import { ScenarioComparison } from "@/components/scenario-comparison";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Project, Scenario, ROIAnalysis, Attachment } from "@shared/schema";
+import type { Project, Scenario, ROIAnalysis, Attachment, PMTaskChecklistItem } from "@shared/schema";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface MainWorkspaceProps {
   projectId: string | null;
@@ -116,6 +119,12 @@ export function MainWorkspace({ projectId }: MainWorkspaceProps) {
                   <span className="hidden sm:inline">Docs</span>
                 </TabsTrigger>
               )}
+              {project?.status === 'complete' && (
+                <TabsTrigger value="files" className="gap-2" data-testid="tab-files">
+                  <FolderOpen className="h-4 w-4" />
+                  <span className="hidden sm:inline">Files</span>
+                </TabsTrigger>
+              )}
             </TabsList>
           </div>
         </Tabs>
@@ -170,13 +179,23 @@ export function MainWorkspace({ projectId }: MainWorkspaceProps) {
 
           <TabsContent value="pm" className="h-full m-0 overflow-auto data-[state=inactive]:hidden">
             <div className="p-6">
-              <PMBreakdownView breakdown={project?.pmBreakdown as any} />
+              <PMBreakdownView 
+                breakdown={project?.pmBreakdown as any} 
+                project={project}
+                onApproval={() => setActiveTab("files")}
+              />
             </div>
           </TabsContent>
 
           <TabsContent value="docs" className="h-full m-0 overflow-auto data-[state=inactive]:hidden">
             <div className="p-6">
               <DocumentsView attachments={(project?.attachments as Attachment[]) || []} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="files" className="h-full m-0 overflow-auto data-[state=inactive]:hidden">
+            <div className="p-6">
+              <ProjectFilesView project={project} />
             </div>
           </TabsContent>
         </Tabs>
@@ -193,7 +212,31 @@ export function MainWorkspace({ projectId }: MainWorkspaceProps) {
   );
 }
 
-function PMBreakdownView({ breakdown }: { breakdown: any }) {
+function PMBreakdownView({ breakdown, project, onApproval }: { breakdown: any; project?: Project; onApproval?: () => void }) {
+  const { toast } = useToast();
+  const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
+  
+  const finalApproval = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", `/api/projects/${project?.id}/final-approval`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", project?.id] });
+      toast({
+        title: "Project Completed",
+        description: "All documents are now available in the Files tab.",
+      });
+      onApproval?.();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to complete project. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (!breakdown) {
     return (
       <div className="text-center py-12 text-muted-foreground">
@@ -211,6 +254,18 @@ function PMBreakdownView({ breakdown }: { breakdown: any }) {
       </div>
     );
   }
+
+  const toggleTask = (taskId: string) => {
+    setExpandedTasks(prev => {
+      const next = new Set(prev);
+      if (next.has(taskId)) {
+        next.delete(taskId);
+      } else {
+        next.add(taskId);
+      }
+      return next;
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -243,24 +298,68 @@ function PMBreakdownView({ breakdown }: { breakdown: any }) {
             <div>
               <p className="text-sm font-medium mb-2">Tasks</p>
               <div className="space-y-2">
-                {phase.tasks.map((task: any, i: number) => (
-                  <div
-                    key={i}
-                    className="p-3 rounded-lg bg-muted flex items-center justify-between"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">{task.name || task}</p>
-                      {task.description && (
-                        <p className="text-xs text-muted-foreground">{task.description}</p>
-                      )}
-                    </div>
-                    {task.estimatedHours && (
-                      <span className="text-xs text-muted-foreground">
-                        {task.estimatedHours}h
-                      </span>
-                    )}
-                  </div>
-                ))}
+                {phase.tasks.map((task: any, i: number) => {
+                  const taskId = task.id || `${index}-${i}`;
+                  const isExpanded = expandedTasks.has(taskId);
+                  const checklist = task.checklist || [];
+                  
+                  return (
+                    <Collapsible key={i} open={isExpanded} onOpenChange={() => toggleTask(taskId)}>
+                      <div className="rounded-lg bg-muted overflow-hidden">
+                        <CollapsibleTrigger asChild>
+                          <button
+                            className="w-full p-3 flex items-center justify-between text-left hover-elevate"
+                            data-testid={`task-${taskId}`}
+                          >
+                            <div className="flex-1">
+                              <p className="text-sm font-medium">{task.name || task}</p>
+                              {task.description && (
+                                <p className="text-xs text-muted-foreground mt-1">{task.description}</p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3">
+                              {checklist.length > 0 && (
+                                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                  <CheckSquare className="h-3 w-3" />
+                                  {checklist.length} items
+                                </span>
+                              )}
+                              {task.estimatedHours && (
+                                <span className="text-xs text-muted-foreground">
+                                  {task.estimatedHours}h
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          {checklist.length > 0 && (
+                            <div className="px-3 pb-3 pt-1 border-t border-border/50">
+                              <p className="text-xs font-medium text-muted-foreground mb-2">Completion Checklist:</p>
+                              <div className="space-y-2">
+                                {checklist.map((item: PMTaskChecklistItem, ci: number) => (
+                                  <div key={ci} className="flex items-start gap-2">
+                                    <Checkbox
+                                      id={`check-${taskId}-${ci}`}
+                                      checked={item.completed}
+                                      className="mt-0.5"
+                                    />
+                                    <label
+                                      htmlFor={`check-${taskId}-${ci}`}
+                                      className="text-xs text-muted-foreground cursor-pointer"
+                                    >
+                                      {item.action}
+                                    </label>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </CollapsibleContent>
+                      </div>
+                    </Collapsible>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -282,8 +381,172 @@ function PMBreakdownView({ breakdown }: { breakdown: any }) {
           )}
         </Card>
       ))}
+
+      {project && project.status !== 'complete' && (
+        <div className="flex justify-center pt-4">
+          <Button
+            size="lg"
+            onClick={() => finalApproval.mutate()}
+            disabled={finalApproval.isPending}
+            className="gap-2"
+            data-testid="btn-final-approval"
+          >
+            <CheckCircle2 className="h-5 w-5" />
+            {finalApproval.isPending ? "Processing..." : "Final Approval"}
+          </Button>
+        </div>
+      )}
     </div>
   );
+}
+
+function ProjectFilesView({ project }: { project?: Project }) {
+  if (!project || project.status !== 'complete') {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        <FolderOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
+        <p>Project files will be available after final approval.</p>
+      </div>
+    );
+  }
+
+  const generateMarkdownFile = (title: string, content: string) => {
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${project.title.replace(/\s+/g, '_')}_${title}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const files = [
+    {
+      name: "Proposal",
+      icon: FileText,
+      available: !!project.estimateMarkdown,
+      content: project.estimateMarkdown || "",
+      description: "Complete project proposal with estimates and ROI analysis",
+    },
+    {
+      name: "Guide_A_HighCode",
+      icon: Code2,
+      available: !!project.vibecodeGuideA,
+      content: project.vibecodeGuideA || "",
+      description: "High-code execution manual with prompts and best practices",
+    },
+    {
+      name: "Guide_B_NoCode",
+      icon: Code2,
+      available: !!project.vibecodeGuideB,
+      content: project.vibecodeGuideB || "",
+      description: "No-code execution manual with step-by-step instructions",
+    },
+    {
+      name: "PM_Breakdown",
+      icon: ClipboardList,
+      available: !!project.pmBreakdown,
+      content: generatePMMarkdown(project.pmBreakdown as any),
+      description: "Project management breakdown with phases, tasks, and checklists",
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3 mb-6">
+        <FolderOpen className="h-6 w-6 text-primary" />
+        <h2 className="text-lg font-semibold">Project Files</h2>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {files.map((file) => {
+          const Icon = file.icon;
+          return (
+            <Card key={file.name} className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Icon className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm">{file.name.replace(/_/g, ' ')}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{file.description}</p>
+                </div>
+              </div>
+              <div className="mt-4">
+                {file.available ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-2"
+                    onClick={() => generateMarkdownFile(file.name, file.content)}
+                    data-testid={`download-${file.name}`}
+                  >
+                    <Download className="h-4 w-4" />
+                    Download Markdown
+                  </Button>
+                ) : (
+                  <Button variant="outline" size="sm" className="w-full" disabled>
+                    Not Available
+                  </Button>
+                )}
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function generatePMMarkdown(breakdown: any): string {
+  if (!breakdown) return "";
+  
+  const phases = breakdown.phases || breakdown || [];
+  if (!Array.isArray(phases)) return "";
+  
+  let md = "# Project Management Breakdown\n\n";
+  
+  phases.forEach((phase: any, index: number) => {
+    md += `## Phase ${phase.phaseNumber || index + 1}: ${phase.phaseName}\n\n`;
+    md += `**Duration:** ${phase.durationDays} days\n\n`;
+    
+    if (phase.objectives?.length) {
+      md += "### Objectives\n";
+      phase.objectives.forEach((obj: string) => {
+        md += `- ${obj}\n`;
+      });
+      md += "\n";
+    }
+    
+    if (phase.tasks?.length) {
+      md += "### Tasks\n\n";
+      phase.tasks.forEach((task: any) => {
+        md += `#### ${task.name || task}\n`;
+        if (task.description) md += `${task.description}\n`;
+        if (task.estimatedHours) md += `**Estimated Hours:** ${task.estimatedHours}h\n`;
+        
+        if (task.checklist?.length) {
+          md += "\n**Completion Checklist:**\n";
+          task.checklist.forEach((item: any) => {
+            md += `- [ ] ${item.action}\n`;
+          });
+        }
+        md += "\n";
+      });
+    }
+    
+    if (phase.deliverables?.length) {
+      md += "### Deliverables\n";
+      phase.deliverables.forEach((del: string) => {
+        md += `- ${del}\n`;
+      });
+      md += "\n";
+    }
+    
+    md += "---\n\n";
+  });
+  
+  return md;
 }
 
 function DocumentsView({ attachments }: { attachments: Attachment[] }) {

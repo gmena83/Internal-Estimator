@@ -272,6 +272,12 @@ export type PMPhase = {
   dependencies: string[];
 };
 
+export type PMTaskChecklistItem = {
+  id: string;
+  action: string;
+  completed: boolean;
+};
+
 export type PMTask = {
   id: string;
   name: string;
@@ -280,6 +286,7 @@ export type PMTask = {
   assignee?: string;
   status: 'pending' | 'in_progress' | 'completed';
   subtasks: PMSubtask[];
+  checklist: PMTaskChecklistItem[];
 };
 
 export type PMSubtask = {

@@ -174,7 +174,10 @@ export function LeftSidebar({ selectedProjectId, onSelectProject, onNewProject }
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <span className="text-primary-foreground font-semibold text-sm">ISI</span>
             </div>
-            <span className="font-semibold text-sidebar-foreground">ISI Agent</span>
+            <div className="flex flex-col">
+              <span className="font-semibold text-sidebar-foreground">ISI Agent</span>
+              <span className="text-[10px] text-muted-foreground leading-tight">Intelligent Strategy Interface</span>
+            </div>
           </div>
         </div>
         <Button

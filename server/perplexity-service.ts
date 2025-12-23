@@ -63,7 +63,7 @@ Be specific with numbers and cite your sources.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "llama-3.1-sonar-large-128k-online",
+        model: "sonar-deep-research",
         messages: [
           {
             role: "system",
@@ -75,10 +75,7 @@ Be specific with numbers and cite your sources.`;
           },
         ],
         temperature: 0.2,
-        max_tokens: 2000,
-        return_images: false,
-        return_related_questions: false,
-        search_recency_filter: "year",
+        max_tokens: 4000,
       }),
     });
 
@@ -105,7 +102,7 @@ Be specific with numbers and cite your sources.`;
       await logApiUsage({
         projectId,
         provider: "perplexity",
-        model: "llama-3.1-sonar-large-128k-online",
+        model: "sonar-deep-research",
         inputTokens,
         outputTokens,
         operation: "market_research",

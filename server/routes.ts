@@ -661,6 +661,35 @@ export async function registerRoutes(
     }
   });
 
+  // Final Approval - Mark project as complete
+  app.post("/api/projects/:id/final-approval", async (req, res) => {
+    try {
+      const project = await storage.getProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+
+      // Mark project as complete
+      const updated = await storage.updateProject(req.params.id, {
+        status: "complete",
+        currentStage: 5,
+      });
+
+      // Add a message about project completion
+      await storage.createMessage({
+        projectId: project.id,
+        role: "assistant",
+        content: "Project has been marked as complete. All documents are now available in the Files tab for download in markdown format.",
+        stage: 5,
+      });
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error finalizing project:", error);
+      res.status(500).json({ error: "Failed to finalize project" });
+    }
+  });
+
   // Generate Execution Manual PDF
   app.get("/api/projects/:id/execution-manual.pdf", async (req, res) => {
     try {

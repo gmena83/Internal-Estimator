@@ -527,37 +527,97 @@ Keep it concise (under 300 words) and end with a clear next step.`,
       try {
         const response = await anthropic.messages.create({
           model: "claude-sonnet-4-5",
-          max_tokens: 4096,
+          max_tokens: 8192,
           messages: [
             {
               role: "user",
-              content: `You are creating "Vibecoding" execution guides - developer cheat sheets with copy-paste prompts for AI coding assistants like Cursor, Windsurf, or Replit.
+              content: `You are creating comprehensive "Vibecoding" execution manuals - detailed developer guides with step-by-step instructions, copy-paste prompts for AI coding assistants, code snippets, tips, recommendations, and best practices.
 
 Project: ${project.title}
 Mission: ${(project.parsedData as any)?.mission || "Build a software solution"}
+Client Requirements: ${JSON.stringify((project.parsedData as any)?.requirements || [])}
 
-Create TWO separate guides:
+Create TWO detailed execution manuals:
 
-MANUAL A (High-Code Approach):
+=== MANUAL A (High-Code Approach) ===
 Tech Stack: ${JSON.stringify(scenarioA?.techStack || ["React", "Node.js", "PostgreSQL"])}
 Features: ${JSON.stringify(scenarioA?.features || [])}
+Timeline: ${scenarioA?.timeline || "8-12 weeks"}
 
-MANUAL B (No-Code Approach):
+=== MANUAL B (No-Code Approach) ===
 Tech Stack: ${JSON.stringify(scenarioB?.techStack || ["Airtable", "Zapier", "Webflow"])}
 Features: ${JSON.stringify(scenarioB?.features || [])}
+Timeline: ${scenarioB?.timeline || "2-4 weeks"}
 
-For each manual, provide:
-1. Project setup instructions
-2. Step-by-step implementation guide
-3. "Vibecode Prompts" - exact prompts to paste into AI coding assistants
-4. Testing checklist
+Each manual MUST include these detailed sections:
 
-Format each vibecode prompt in a code block with the label "VIBECODE PROMPT:"
+## 1. Executive Summary
+- Project overview and goals
+- Key success metrics
+- Timeline overview
+
+## 2. Environment Setup
+- Required tools and accounts
+- Step-by-step installation instructions
+- Environment variables and configuration
+- Code snippets for initial setup
+
+## 3. Architecture Overview
+- System design diagram description
+- Component breakdown
+- Data flow explanation
+- Best practices for the chosen stack
+
+## 4. Implementation Guide (Feature by Feature)
+For EACH feature, provide:
+- Feature description and user story
+- Step-by-step implementation instructions
+- VIBECODE PROMPT: Exact prompt to paste into AI coding assistant (in a code block)
+- Code snippets showing expected output
+- Testing instructions for this feature
+- Common pitfalls and how to avoid them
+
+## 5. Integration & API Setup
+- Third-party service configurations
+- API connection prompts
+- Authentication setup
+- Error handling patterns
+
+## 6. Testing Checklist
+- Unit test prompts
+- Integration test checklist
+- User acceptance testing scenarios
+- Performance testing recommendations
+
+## 7. Deployment Guide
+- Deployment platform recommendations
+- Step-by-step deployment instructions
+- Environment configuration
+- Monitoring and logging setup
+
+## 8. Best Practices & Tips
+- Security considerations
+- Performance optimization tips
+- Scalability recommendations
+- Maintenance guidelines
+
+## 9. Troubleshooting Guide
+- Common issues and solutions
+- Debug prompts for AI assistants
+- Where to get help
+
+IMPORTANT FORMATTING:
+- Use clear markdown headers (##, ###)
+- Put all AI prompts in code blocks labeled "VIBECODE PROMPT:"
+- Include actual code snippets where helpful
+- Add tip boxes with > TIP: prefix
+- Add warning boxes with > WARNING: prefix
+- Make the guide comprehensive enough to execute the entire project
 
 Return as JSON:
 {
-  "guideA": "# Manual A: High-Code Approach\\n...",
-  "guideB": "# Manual B: No-Code Approach\\n..."
+  "guideA": "# Manual A: High-Code Approach\\n\\n## Executive Summary\\n...",
+  "guideB": "# Manual B: No-Code Approach\\n\\n## Executive Summary\\n..."
 }`,
             },
           ],
@@ -610,9 +670,11 @@ Timeline: ${(selectedScenario as Scenario)?.timeline || "8 weeks"}
 Create phases with:
 - Phase number and name
 - Objectives list
-- Tasks with estimated hours
+- Tasks with estimated hours AND completion checklist for each task
 - Deliverables
 - Dependencies
+
+IMPORTANT: Each task must include a "checklist" array with specific action items to complete that task.
 
 Return as JSON:
 {
@@ -623,8 +685,29 @@ Return as JSON:
       "objectives": ["Gather requirements", "Define scope"],
       "durationDays": 5,
       "tasks": [
-        {"id": "1.1", "name": "Stakeholder interviews", "estimatedHours": 8},
-        {"id": "1.2", "name": "Requirements documentation", "estimatedHours": 12}
+        {
+          "id": "1.1",
+          "name": "Stakeholder interviews",
+          "description": "Meet with key stakeholders to understand requirements",
+          "estimatedHours": 8,
+          "checklist": [
+            {"id": "1.1.1", "action": "Schedule meetings with product owner", "completed": false},
+            {"id": "1.1.2", "action": "Prepare interview questions", "completed": false},
+            {"id": "1.1.3", "action": "Document meeting notes", "completed": false},
+            {"id": "1.1.4", "action": "Share summary with team", "completed": false}
+          ]
+        },
+        {
+          "id": "1.2",
+          "name": "Requirements documentation",
+          "description": "Create comprehensive requirements document",
+          "estimatedHours": 12,
+          "checklist": [
+            {"id": "1.2.1", "action": "Draft functional requirements", "completed": false},
+            {"id": "1.2.2", "action": "Document non-functional requirements", "completed": false},
+            {"id": "1.2.3", "action": "Get stakeholder sign-off", "completed": false}
+          ]
+        }
       ],
       "deliverables": ["Project brief", "Technical spec"],
       "dependencies": []
@@ -1202,7 +1285,7 @@ ${scenarioB?.techStack?.map(t => `- ${t}`).join('\n') || '- Airtable\n- Zapier\n
   return { guideA, guideB };
 }
 
-// Fallback PM breakdown
+// Fallback PM breakdown with task checklists
 function generateDefaultPMBreakdown(project: Project): any {
   return {
     phases: [
@@ -1212,9 +1295,42 @@ function generateDefaultPMBreakdown(project: Project): any {
         objectives: ["Define project scope", "Gather requirements", "Create project roadmap"],
         durationDays: 5,
         tasks: [
-          { id: "1.1", name: "Stakeholder interviews", estimatedHours: 8 },
-          { id: "1.2", name: "Requirements documentation", estimatedHours: 12 },
-          { id: "1.3", name: "Technical specification", estimatedHours: 16 },
+          { 
+            id: "1.1", 
+            name: "Stakeholder interviews", 
+            description: "Meet with key stakeholders to understand business requirements",
+            estimatedHours: 8,
+            checklist: [
+              { id: "1.1.1", action: "Schedule meetings with product owner", completed: false },
+              { id: "1.1.2", action: "Prepare interview questions", completed: false },
+              { id: "1.1.3", action: "Document meeting notes", completed: false },
+              { id: "1.1.4", action: "Share summary with team", completed: false },
+            ]
+          },
+          { 
+            id: "1.2", 
+            name: "Requirements documentation", 
+            description: "Create comprehensive requirements document",
+            estimatedHours: 12,
+            checklist: [
+              { id: "1.2.1", action: "Draft functional requirements", completed: false },
+              { id: "1.2.2", action: "Document non-functional requirements", completed: false },
+              { id: "1.2.3", action: "Define acceptance criteria", completed: false },
+              { id: "1.2.4", action: "Get stakeholder sign-off", completed: false },
+            ]
+          },
+          { 
+            id: "1.3", 
+            name: "Technical specification", 
+            description: "Define technical architecture and constraints",
+            estimatedHours: 16,
+            checklist: [
+              { id: "1.3.1", action: "Evaluate technology options", completed: false },
+              { id: "1.3.2", action: "Document system constraints", completed: false },
+              { id: "1.3.3", action: "Create technical spec document", completed: false },
+              { id: "1.3.4", action: "Review with engineering team", completed: false },
+            ]
+          },
         ],
         deliverables: ["Project brief", "Technical spec", "Timeline"],
         dependencies: [],
@@ -1225,9 +1341,40 @@ function generateDefaultPMBreakdown(project: Project): any {
         objectives: ["Create system design", "Define data models", "UI/UX design"],
         durationDays: 7,
         tasks: [
-          { id: "2.1", name: "System architecture design", estimatedHours: 16 },
-          { id: "2.2", name: "Database schema design", estimatedHours: 8 },
-          { id: "2.3", name: "UI/UX wireframes", estimatedHours: 12 },
+          { 
+            id: "2.1", 
+            name: "System architecture design", 
+            description: "Design overall system architecture",
+            estimatedHours: 16,
+            checklist: [
+              { id: "2.1.1", action: "Create architecture diagrams", completed: false },
+              { id: "2.1.2", action: "Define API contracts", completed: false },
+              { id: "2.1.3", action: "Plan service boundaries", completed: false },
+              { id: "2.1.4", action: "Document integration points", completed: false },
+            ]
+          },
+          { 
+            id: "2.2", 
+            name: "Database schema design", 
+            description: "Design database structure and relationships",
+            estimatedHours: 8,
+            checklist: [
+              { id: "2.2.1", action: "Create entity relationship diagram", completed: false },
+              { id: "2.2.2", action: "Define table schemas", completed: false },
+              { id: "2.2.3", action: "Plan indexing strategy", completed: false },
+            ]
+          },
+          { 
+            id: "2.3", 
+            name: "UI/UX wireframes", 
+            description: "Create user interface designs",
+            estimatedHours: 12,
+            checklist: [
+              { id: "2.3.1", action: "Create user flow diagrams", completed: false },
+              { id: "2.3.2", action: "Design wireframes for key screens", completed: false },
+              { id: "2.3.3", action: "Get design approval", completed: false },
+            ]
+          },
         ],
         deliverables: ["Architecture document", "Database design", "Wireframes"],
         dependencies: ["Phase 1"],
@@ -1238,10 +1385,55 @@ function generateDefaultPMBreakdown(project: Project): any {
         objectives: ["Build core features", "Implement integrations", "Code review"],
         durationDays: 15,
         tasks: [
-          { id: "3.1", name: "Backend development", estimatedHours: 60 },
-          { id: "3.2", name: "Frontend development", estimatedHours: 48 },
-          { id: "3.3", name: "API integration", estimatedHours: 24 },
-          { id: "3.4", name: "Code review & refactoring", estimatedHours: 12 },
+          { 
+            id: "3.1", 
+            name: "Backend development", 
+            description: "Build server-side application and APIs",
+            estimatedHours: 60,
+            checklist: [
+              { id: "3.1.1", action: "Set up development environment", completed: false },
+              { id: "3.1.2", action: "Implement database models", completed: false },
+              { id: "3.1.3", action: "Build API endpoints", completed: false },
+              { id: "3.1.4", action: "Implement authentication", completed: false },
+              { id: "3.1.5", action: "Add input validation", completed: false },
+            ]
+          },
+          { 
+            id: "3.2", 
+            name: "Frontend development", 
+            description: "Build user interface components",
+            estimatedHours: 48,
+            checklist: [
+              { id: "3.2.1", action: "Set up frontend project", completed: false },
+              { id: "3.2.2", action: "Create reusable components", completed: false },
+              { id: "3.2.3", action: "Implement page layouts", completed: false },
+              { id: "3.2.4", action: "Connect to backend APIs", completed: false },
+              { id: "3.2.5", action: "Add responsive styling", completed: false },
+            ]
+          },
+          { 
+            id: "3.3", 
+            name: "API integration", 
+            description: "Integrate third-party services",
+            estimatedHours: 24,
+            checklist: [
+              { id: "3.3.1", action: "Set up API credentials", completed: false },
+              { id: "3.3.2", action: "Implement API clients", completed: false },
+              { id: "3.3.3", action: "Add error handling", completed: false },
+              { id: "3.3.4", action: "Test integration flows", completed: false },
+            ]
+          },
+          { 
+            id: "3.4", 
+            name: "Code review & refactoring", 
+            description: "Review and improve code quality",
+            estimatedHours: 12,
+            checklist: [
+              { id: "3.4.1", action: "Review code for best practices", completed: false },
+              { id: "3.4.2", action: "Refactor complex functions", completed: false },
+              { id: "3.4.3", action: "Add code documentation", completed: false },
+            ]
+          },
         ],
         deliverables: ["Working application", "API documentation", "Code repository"],
         dependencies: ["Phase 2"],
@@ -1252,10 +1444,50 @@ function generateDefaultPMBreakdown(project: Project): any {
         objectives: ["Quality assurance", "Bug fixing", "Performance testing"],
         durationDays: 5,
         tasks: [
-          { id: "4.1", name: "Unit testing", estimatedHours: 12 },
-          { id: "4.2", name: "Integration testing", estimatedHours: 8 },
-          { id: "4.3", name: "Bug fixes", estimatedHours: 16 },
-          { id: "4.4", name: "Performance optimization", estimatedHours: 8 },
+          { 
+            id: "4.1", 
+            name: "Unit testing", 
+            description: "Write and run unit tests",
+            estimatedHours: 12,
+            checklist: [
+              { id: "4.1.1", action: "Write unit tests for critical functions", completed: false },
+              { id: "4.1.2", action: "Achieve 80% code coverage", completed: false },
+              { id: "4.1.3", action: "Set up CI/CD test pipeline", completed: false },
+            ]
+          },
+          { 
+            id: "4.2", 
+            name: "Integration testing", 
+            description: "Test component interactions",
+            estimatedHours: 8,
+            checklist: [
+              { id: "4.2.1", action: "Test API endpoint flows", completed: false },
+              { id: "4.2.2", action: "Test database operations", completed: false },
+              { id: "4.2.3", action: "Test third-party integrations", completed: false },
+            ]
+          },
+          { 
+            id: "4.3", 
+            name: "Bug fixes", 
+            description: "Address discovered issues",
+            estimatedHours: 16,
+            checklist: [
+              { id: "4.3.1", action: "Triage and prioritize bugs", completed: false },
+              { id: "4.3.2", action: "Fix critical bugs", completed: false },
+              { id: "4.3.3", action: "Verify fixes in staging", completed: false },
+            ]
+          },
+          { 
+            id: "4.4", 
+            name: "Performance optimization", 
+            description: "Optimize application performance",
+            estimatedHours: 8,
+            checklist: [
+              { id: "4.4.1", action: "Run performance benchmarks", completed: false },
+              { id: "4.4.2", action: "Optimize slow queries", completed: false },
+              { id: "4.4.3", action: "Add caching where needed", completed: false },
+            ]
+          },
         ],
         deliverables: ["Test report", "Bug-free application"],
         dependencies: ["Phase 3"],
@@ -1266,10 +1498,51 @@ function generateDefaultPMBreakdown(project: Project): any {
         objectives: ["Deploy to production", "User training", "Go-live support"],
         durationDays: 3,
         tasks: [
-          { id: "5.1", name: "Production deployment", estimatedHours: 8 },
-          { id: "5.2", name: "User documentation", estimatedHours: 6 },
-          { id: "5.3", name: "Training session", estimatedHours: 4 },
-          { id: "5.4", name: "Launch support", estimatedHours: 6 },
+          { 
+            id: "5.1", 
+            name: "Production deployment", 
+            description: "Deploy application to production environment",
+            estimatedHours: 8,
+            checklist: [
+              { id: "5.1.1", action: "Prepare production environment", completed: false },
+              { id: "5.1.2", action: "Configure production database", completed: false },
+              { id: "5.1.3", action: "Deploy application code", completed: false },
+              { id: "5.1.4", action: "Verify deployment success", completed: false },
+            ]
+          },
+          { 
+            id: "5.2", 
+            name: "User documentation", 
+            description: "Create end-user documentation",
+            estimatedHours: 6,
+            checklist: [
+              { id: "5.2.1", action: "Write user guide", completed: false },
+              { id: "5.2.2", action: "Create FAQ document", completed: false },
+              { id: "5.2.3", action: "Add help tooltips in UI", completed: false },
+            ]
+          },
+          { 
+            id: "5.3", 
+            name: "Training session", 
+            description: "Train users on the new system",
+            estimatedHours: 4,
+            checklist: [
+              { id: "5.3.1", action: "Prepare training materials", completed: false },
+              { id: "5.3.2", action: "Conduct training session", completed: false },
+              { id: "5.3.3", action: "Record training for future reference", completed: false },
+            ]
+          },
+          { 
+            id: "5.4", 
+            name: "Launch support", 
+            description: "Provide go-live support",
+            estimatedHours: 6,
+            checklist: [
+              { id: "5.4.1", action: "Monitor application health", completed: false },
+              { id: "5.4.2", action: "Address user issues quickly", completed: false },
+              { id: "5.4.3", action: "Document lessons learned", completed: false },
+            ]
+          },
         ],
         deliverables: ["Live application", "User guide", "Training materials"],
         dependencies: ["Phase 4"],

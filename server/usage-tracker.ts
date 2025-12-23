@@ -21,9 +21,10 @@ const PRICING: Record<AIProvider, Record<string, { inputPer1M: number; outputPer
     default: { inputPer1M: 2.5, outputPer1M: 10.0 },
   },
   perplexity: {
+    "sonar-deep-research": { inputPer1M: 2.0, outputPer1M: 8.0 },
     "llama-3.1-sonar-large-128k-online": { inputPer1M: 1.0, outputPer1M: 1.0 },
     "llama-3.1-sonar-small-128k-online": { inputPer1M: 0.20, outputPer1M: 0.20 },
-    default: { inputPer1M: 1.0, outputPer1M: 1.0 },
+    default: { inputPer1M: 2.0, outputPer1M: 8.0 },
   },
 };
 
@@ -88,7 +89,7 @@ export function getModelForProvider(provider: AIProvider): string {
     case "openai":
       return "gpt-4o";
     case "perplexity":
-      return "llama-3.1-sonar-large-128k-online";
+      return "sonar-deep-research";
     default:
       return "unknown";
   }
