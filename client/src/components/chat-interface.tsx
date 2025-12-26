@@ -75,22 +75,28 @@ export function ChatInterface({ projectId, onMessageSent }: ChatInterfaceProps) 
     mutationFn: async (files: File[]) => {
       const formData = new FormData();
       files.forEach((file) => formData.append("files", file));
-      
+
       const response = await fetch(`/api/projects/${projectId}/upload`, {
         method: "POST",
         body: formData,
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to upload files");
       }
-      
+
       return response.json() as Promise<{ attachments: Attachment[] }>;
     },
   });
 
   const sendMessage = useMutation({
-    mutationFn: async ({ content, attachments }: { content: string; attachments?: Attachment[] }) => {
+    mutationFn: async ({
+      content,
+      attachments,
+    }: {
+      content: string;
+      attachments?: Attachment[];
+    }) => {
       const response = await apiRequest("POST", `/api/projects/${projectId}/messages`, {
         content,
         role: "user",
@@ -122,9 +128,9 @@ export function ChatInterface({ projectId, onMessageSent }: ChatInterfaceProps) 
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    
+
     const validFiles: PendingFile[] = [];
-    
+
     files.forEach((file) => {
       if (!ALLOWED_TYPES.includes(file.type)) {
         toast({
@@ -134,7 +140,7 @@ export function ChatInterface({ projectId, onMessageSent }: ChatInterfaceProps) 
         });
         return;
       }
-      
+
       if (file.size > MAX_FILE_SIZE) {
         toast({
           title: "File too large",
@@ -143,18 +149,18 @@ export function ChatInterface({ projectId, onMessageSent }: ChatInterfaceProps) 
         });
         return;
       }
-      
+
       const pendingFile: PendingFile = { file };
-      
+
       if (file.type.startsWith("image/")) {
         pendingFile.preview = URL.createObjectURL(file);
       }
-      
+
       validFiles.push(pendingFile);
     });
-    
+
     setPendingFiles((prev) => [...prev, ...validFiles]);
-    
+
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -173,13 +179,17 @@ export function ChatInterface({ projectId, onMessageSent }: ChatInterfaceProps) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if ((!input.trim() && pendingFiles.length === 0) || sendMessage.isPending || uploadFiles.isPending) {
+
+    if (
+      (!input.trim() && pendingFiles.length === 0) ||
+      sendMessage.isPending ||
+      uploadFiles.isPending
+    ) {
       return;
     }
-    
+
     let attachments: Attachment[] | undefined;
-    
+
     if (pendingFiles.length > 0) {
       try {
         const result = await uploadFiles.mutateAsync(pendingFiles.map((pf) => pf.file));
@@ -188,7 +198,7 @@ export function ChatInterface({ projectId, onMessageSent }: ChatInterfaceProps) 
         return;
       }
     }
-    
+
     sendMessage.mutate({
       content: input.trim() || (attachments ? "Attached reference documents" : ""),
       attachments,
@@ -212,8 +222,8 @@ export function ChatInterface({ projectId, onMessageSent }: ChatInterfaceProps) 
         </div>
         <h3 className="text-lg font-medium mb-2">Welcome to ISI</h3>
         <p className="text-muted-foreground text-sm max-w-md">
-          Select a project from the sidebar or create a new one to start generating
-          estimates, proposals, and execution guides.
+          Select a project from the sidebar or create a new one to start generating estimates,
+          proposals, and execution guides.
         </p>
       </div>
     );
@@ -244,11 +254,7 @@ export function ChatInterface({ projectId, onMessageSent }: ChatInterfaceProps) 
             </div>
           ) : (
             messages?.map((message) => (
-              <div
-                key={message.id}
-                className="flex gap-3"
-                data-testid={`message-${message.id}`}
-              >
+              <div key={message.id} className="flex gap-3" data-testid={`message-${message.id}`}>
                 <Avatar className="h-8 w-8 flex-shrink-0">
                   <AvatarFallback
                     className={
@@ -270,20 +276,16 @@ export function ChatInterface({ projectId, onMessageSent }: ChatInterfaceProps) 
                       {message.role === "user" ? "You" : "ISI"}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {message.createdAt
-                        ? format(new Date(message.createdAt), "h:mm a")
-                        : ""}
+                      {message.createdAt ? format(new Date(message.createdAt), "h:mm a") : ""}
                     </span>
                   </div>
                   <div
                     className={`rounded-lg p-3 ${
-                      message.role === "user"
-                        ? "bg-muted"
-                        : "bg-card border border-card-border"
+                      message.role === "user" ? "bg-muted" : "bg-card border border-card-border"
                     }`}
                   >
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                    
+
                     {message.attachments && message.attachments.length > 0 && (
                       <div className="mt-3 flex flex-wrap gap-2">
                         {message.attachments.map((attachment: Attachment) => (
@@ -296,7 +298,9 @@ export function ChatInterface({ projectId, onMessageSent }: ChatInterfaceProps) 
                             data-testid={`attachment-${attachment.id}`}
                           >
                             {getFileIcon(attachment.mimeType)}
-                            <span className="truncate max-w-[120px]">{attachment.originalName}</span>
+                            <span className="truncate max-w-[120px]">
+                              {attachment.originalName}
+                            </span>
                             <Badge variant="secondary" className="text-xs">
                               {formatFileSize(attachment.size)}
                             </Badge>
@@ -370,7 +374,7 @@ export function ChatInterface({ projectId, onMessageSent }: ChatInterfaceProps) 
               ))}
             </div>
           )}
-          
+
           <div className="relative">
             <Textarea
               ref={textareaRef}

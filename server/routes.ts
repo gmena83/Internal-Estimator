@@ -4,9 +4,18 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { storage } from "./storage";
-import { insertProjectSchema, insertMessageSchema, type ServiceStatus, type Attachment } from "@shared/schema";
+import {
+  insertProjectSchema,
+  insertMessageSchema,
+  type ServiceStatus,
+  type Attachment,
+} from "@shared/schema";
 import { aiService } from "./ai-service";
-import { generateProposalPdf, generateInternalReportPdf, generateExecutionManualPdf } from "./pdf-service";
+import {
+  generateProposalPdf,
+  generateInternalReportPdf,
+  generateExecutionManualPdf,
+} from "./pdf-service";
 import { htmlToPdf, generateExecutionManualHtml } from "./pdfco-service";
 import { sendProposalEmail } from "./email-service";
 import { generateCoverImageWithApproval } from "./image-service";
@@ -63,10 +72,7 @@ const upload = multer({
   },
 });
 
-export async function registerRoutes(
-  httpServer: Server,
-  app: Express
-): Promise<Server> {
+export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
   // Projects - Get all
   app.get("/api/projects", async (req, res) => {
     try {
@@ -111,13 +117,13 @@ export async function registerRoutes(
         return res.status(400).json({ error: parsed.error.message });
       }
       const project = await storage.createProject(parsed.data);
-      
+
       // If raw input was provided, start processing it
       if (parsed.data.rawInput) {
         // Process asynchronously
         aiService.processRawInput(project.id, parsed.data.rawInput).catch(console.error);
       }
-      
+
       res.json(project);
     } catch (error) {
       console.error("Error creating project:", error);
@@ -182,11 +188,8 @@ export async function registerRoutes(
 
       // Process with AI and generate response
       try {
-        const response = await aiService.processMessage(
-          project,
-          parsed.data.content
-        );
-        
+        const response = await aiService.processMessage(project, parsed.data.content);
+
         // Save assistant message
         const assistantMessage = await storage.createMessage({
           projectId: req.params.id,
@@ -238,7 +241,7 @@ export async function registerRoutes(
       // Merge with existing attachments and save to project
       const existingAttachments = (project.attachments as Attachment[]) || [];
       const allAttachments = [...existingAttachments, ...newAttachments];
-      
+
       await storage.updateProject(req.params.id, {
         attachments: allAttachments,
       });
@@ -369,7 +372,7 @@ export async function registerRoutes(
 
       // Regenerate the estimate using AI
       const result = await aiService.generateEstimate(project);
-      
+
       const updated = await storage.updateProject(req.params.id, {
         estimateMarkdown: result.markdown,
         scenarioA: result.scenarioA,
@@ -389,18 +392,18 @@ export async function registerRoutes(
   app.post("/api/projects/:id/update-client-email", async (req, res) => {
     try {
       const { email } = req.body;
-      if (!email || typeof email !== 'string' || !email.includes('@')) {
+      if (!email || typeof email !== "string" || !email.includes("@")) {
         return res.status(400).json({ error: "Valid email address is required" });
       }
-      
+
       const updated = await storage.updateProject(req.params.id, {
         clientEmail: email,
       });
-      
+
       if (!updated) {
         return res.status(404).json({ error: "Project not found" });
       }
-      
+
       res.json({ project: updated, success: true });
     } catch (error) {
       console.error("Error updating client email:", error);
@@ -442,13 +445,14 @@ export async function registerRoutes(
         project.title,
         parsedData?.mission || project.title,
         industry,
-        project.id
+        project.id,
       );
 
       res.json({
         success: true,
         images,
-        message: "Please review and approve one of the generated images before creating the PDF and presentation.",
+        message:
+          "Please review and approve one of the generated images before creating the PDF and presentation.",
       });
     } catch (error) {
       console.error("Error generating images:", error);
@@ -505,7 +509,9 @@ export async function registerRoutes(
       const updated = await storage.updateProject(req.params.id, {
         proposalPdfUrl: `/api/projects/${req.params.id}/proposal.pdf`,
         internalReportPdfUrl: `/api/projects/${req.params.id}/internal-report.pdf`,
-        presentationUrl: presentationUrl || (project.coverImageUrl ? `https://gamma.app/embed/demo-presentation` : null),
+        presentationUrl:
+          presentationUrl ||
+          (project.coverImageUrl ? `https://gamma.app/embed/demo-presentation` : null),
         status: "assets_ready",
       });
 
@@ -525,14 +531,14 @@ export async function registerRoutes(
       }
 
       const { recipientEmail, emailSubject, emailBody } = req.body;
-      
+
       // Validate that we have a client email before proceeding
       const emailToUse = recipientEmail || project.clientEmail;
       if (!emailToUse) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: "Client email is required",
           missingField: "clientEmail",
-          message: "Please provide the client's email address before sending the proposal."
+          message: "Please provide the client's email address before sending the proposal.",
         });
       }
 
@@ -554,9 +560,12 @@ export async function registerRoutes(
 
       // Attempt to send email via Resend
       const emailResult = await sendProposalEmail(project, emailContent, emailToUse, subjectToUse);
-      
+
       if (!emailResult.success) {
-        console.warn("Email send failed, but continuing with stage advancement:", emailResult.error);
+        console.warn(
+          "Email send failed, but continuing with stage advancement:",
+          emailResult.error,
+        );
       }
 
       // Advance to stage 3
@@ -647,9 +656,33 @@ export async function registerRoutes(
         console.error("AI PM breakdown failed, using fallback:", err);
         breakdown = {
           phases: [
-            { phaseNumber: 1, phaseName: "Planning", objectives: ["Define scope"], durationDays: 5, tasks: [{ id: "1.1", name: "Requirements gathering", estimatedHours: 16 }], deliverables: ["Project plan"], dependencies: [] },
-            { phaseNumber: 2, phaseName: "Development", objectives: ["Build features"], durationDays: 15, tasks: [{ id: "2.1", name: "Core development", estimatedHours: 80 }], deliverables: ["Working application"], dependencies: ["Phase 1"] },
-            { phaseNumber: 3, phaseName: "Launch", objectives: ["Deploy"], durationDays: 3, tasks: [{ id: "3.1", name: "Deployment", estimatedHours: 8 }], deliverables: ["Live application"], dependencies: ["Phase 2"] },
+            {
+              phaseNumber: 1,
+              phaseName: "Planning",
+              objectives: ["Define scope"],
+              durationDays: 5,
+              tasks: [{ id: "1.1", name: "Requirements gathering", estimatedHours: 16 }],
+              deliverables: ["Project plan"],
+              dependencies: [],
+            },
+            {
+              phaseNumber: 2,
+              phaseName: "Development",
+              objectives: ["Build features"],
+              durationDays: 15,
+              tasks: [{ id: "2.1", name: "Core development", estimatedHours: 80 }],
+              deliverables: ["Working application"],
+              dependencies: ["Phase 1"],
+            },
+            {
+              phaseNumber: 3,
+              phaseName: "Launch",
+              objectives: ["Deploy"],
+              durationDays: 3,
+              tasks: [{ id: "3.1", name: "Deployment", estimatedHours: 8 }],
+              deliverables: ["Live application"],
+              dependencies: ["Phase 2"],
+            },
           ],
         };
       }
@@ -686,7 +719,8 @@ export async function registerRoutes(
       await storage.createMessage({
         projectId: project.id,
         role: "assistant",
-        content: "Project has been marked as complete. All documents are now available in the Files tab for download in markdown format.",
+        content:
+          "Project has been marked as complete. All documents are now available in the Files tab for download in markdown format.",
         stage: 5,
       });
 
@@ -710,14 +744,18 @@ export async function registerRoutes(
       const vibeGuideA = project.vibecodeGuideA as string | null;
       const vibeGuideB = project.vibecodeGuideB as string | null;
 
-      const phasesA: { phaseTitle: string; steps: { title: string; description: string; prompt?: string; tip?: string }[] }[] = [];
+      const phasesA: {
+        phaseTitle: string;
+        steps: { title: string; description: string; prompt?: string; tip?: string }[];
+      }[] = [];
       const modulesB: { title: string; items: string[] }[] = [];
 
       if (vibeGuideA) {
         let currentPhase = "";
-        let currentSteps: { title: string; description: string; prompt?: string; tip?: string }[] = [];
-        
-        vibeGuideA.split("\n").forEach(line => {
+        let currentSteps: { title: string; description: string; prompt?: string; tip?: string }[] =
+          [];
+
+        vibeGuideA.split("\n").forEach((line) => {
           if (line.startsWith("## ")) {
             if (currentPhase && currentSteps.length > 0) {
               phasesA.push({ phaseTitle: currentPhase, steps: currentSteps });
@@ -731,10 +769,11 @@ export async function registerRoutes(
           } else if (line.startsWith("> ") && currentSteps.length > 0) {
             currentSteps[currentSteps.length - 1].tip = line.replace("> ", "");
           } else if (line.trim() && currentSteps.length > 0) {
-            currentSteps[currentSteps.length - 1].description += (currentSteps[currentSteps.length - 1].description ? " " : "") + line.trim();
+            currentSteps[currentSteps.length - 1].description +=
+              (currentSteps[currentSteps.length - 1].description ? " " : "") + line.trim();
           }
         });
-        
+
         if (currentPhase && currentSteps.length > 0) {
           phasesA.push({ phaseTitle: currentPhase, steps: currentSteps });
         }
@@ -743,8 +782,8 @@ export async function registerRoutes(
       if (vibeGuideB) {
         let currentModule = "";
         let currentItems: string[] = [];
-        
-        vibeGuideB.split("\n").forEach(line => {
+
+        vibeGuideB.split("\n").forEach((line) => {
           if (line.startsWith("## ")) {
             if (currentModule && currentItems.length > 0) {
               modulesB.push({ title: currentModule, items: currentItems });
@@ -755,7 +794,7 @@ export async function registerRoutes(
             currentItems.push(line.replace(/^[-*]\s*/, ""));
           }
         });
-        
+
         if (currentModule && currentItems.length > 0) {
           modulesB.push({ title: currentModule, items: currentItems });
         }
@@ -769,7 +808,7 @@ export async function registerRoutes(
           scenarioA?.title || scenarioA?.name || "Manual A: High-Code Approach",
           scenarioB?.title || scenarioB?.name || "Manual B: No-Code Approach",
           phasesA,
-          modulesB
+          modulesB,
         );
         pdfBuffer = await htmlToPdf(html, project.id);
       }
@@ -779,7 +818,10 @@ export async function registerRoutes(
       }
 
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename="${project.title.replace(/[^a-zA-Z0-9]/g, "_")}_execution_manual.pdf"`);
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${project.title.replace(/[^a-zA-Z0-9]/g, "_")}_execution_manual.pdf"`,
+      );
       res.send(pdfBuffer);
     } catch (error) {
       console.error("Error generating execution manual PDF:", error);
@@ -813,7 +855,7 @@ export async function registerRoutes(
       if (!project) {
         return res.status(404).json({ error: "Project not found" });
       }
-      
+
       const usageStats = await storage.getProjectApiUsageStats(req.params.id);
       res.json(usageStats);
     } catch (error) {
@@ -827,13 +869,13 @@ export async function registerRoutes(
     try {
       const { category, q } = req.query;
       let entries;
-      
+
       if (q && typeof q === "string") {
         entries = await storage.searchKnowledgeEntries(q, category as string);
       } else {
         entries = await storage.getKnowledgeEntries(category as string);
       }
-      
+
       res.json(entries);
     } catch (error) {
       console.error("Error fetching knowledge entries:", error);
@@ -852,15 +894,18 @@ export async function registerRoutes(
       const startTime = Date.now();
       const pdfBuffer = await generateProposalPdf(project);
       const latencyMs = Date.now() - startTime;
-      
+
       await storage.updateApiHealth({
         service: "pdfmake",
         status: "online",
         latencyMs,
       });
-      
+
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename="${project.title.replace(/[^a-z0-9]/gi, '_')}_proposal.pdf"`);
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${project.title.replace(/[^a-z0-9]/gi, "_")}_proposal.pdf"`,
+      );
       res.send(pdfBuffer);
     } catch (error) {
       console.error("Error generating proposal PDF:", error);
@@ -884,15 +929,18 @@ export async function registerRoutes(
       const startTime = Date.now();
       const pdfBuffer = await generateInternalReportPdf(project);
       const latencyMs = Date.now() - startTime;
-      
+
       await storage.updateApiHealth({
         service: "pdfmake",
         status: "online",
         latencyMs,
       });
-      
+
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename="${project.title.replace(/[^a-z0-9]/gi, '_')}_internal_report.pdf"`);
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${project.title.replace(/[^a-z0-9]/gi, "_")}_internal_report.pdf"`,
+      );
       res.send(pdfBuffer);
     } catch (error) {
       console.error("Error generating internal report PDF:", error);
@@ -914,22 +962,25 @@ export async function registerRoutes(
       }
 
       const startTime = Date.now();
-      
+
       // Generate the proposal PDF which is the main comprehensive document
       // Note: True PDF merging would require pdf-lib or similar library
       // For now, we provide the proposal as the consolidated document
       const proposalBuffer = await generateProposalPdf(project);
-      
+
       const latencyMs = Date.now() - startTime;
-      
+
       await storage.updateApiHealth({
         service: "pdfmake",
         status: "online",
         latencyMs,
       });
-      
+
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename="${project.title.replace(/[^a-z0-9]/gi, '_')}_complete.pdf"`);
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${project.title.replace(/[^a-z0-9]/gi, "_")}_complete.pdf"`,
+      );
       res.send(proposalBuffer);
     } catch (error) {
       console.error("Error generating consolidated PDF:", error);
@@ -958,7 +1009,10 @@ export async function registerRoutes(
       };
 
       res.setHeader("Content-Type", "application/json");
-      res.setHeader("Content-Disposition", `attachment; filename="${project.title.replace(/[^a-z0-9]/gi, '_')}_export.json"`);
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${project.title.replace(/[^a-z0-9]/gi, "_")}_export.json"`,
+      );
       res.json(exportData);
     } catch (error) {
       console.error("Error exporting project:", error);
@@ -985,7 +1039,11 @@ export async function registerRoutes(
         ["Timeline", scenarioA?.timeline || "", scenarioB?.timeline || ""],
         ["Hours", scenarioA?.totalHours || "", scenarioB?.totalHours || ""],
         ["Hourly Rate", scenarioA?.hourlyRate || "", scenarioB?.hourlyRate || ""],
-        ["Recommended", scenarioA?.recommended ? "Yes" : "No", scenarioB?.recommended ? "Yes" : "No"],
+        [
+          "Recommended",
+          scenarioA?.recommended ? "Yes" : "No",
+          scenarioB?.recommended ? "Yes" : "No",
+        ],
         [],
         ["ROI Metric", "Value"],
         ["Cost of Doing Nothing", roiAnalysis?.costOfDoingNothing || ""],
@@ -995,10 +1053,15 @@ export async function registerRoutes(
         ["3-Year ROI (%)", roiAnalysis?.threeYearROI || ""],
       ];
 
-      const csvContent = csvRows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+      const csvContent = csvRows
+        .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+        .join("\n");
 
       res.setHeader("Content-Type", "text/csv");
-      res.setHeader("Content-Disposition", `attachment; filename="${project.title.replace(/[^a-z0-9]/gi, '_')}_estimates.csv"`);
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${project.title.replace(/[^a-z0-9]/gi, "_")}_estimates.csv"`,
+      );
       res.send(csvContent);
     } catch (error) {
       console.error("Error exporting CSV:", error);
@@ -1010,30 +1073,30 @@ export async function registerRoutes(
   app.post("/api/diagnostics", async (req, res) => {
     try {
       const { repoUrl } = req.body;
-      
+
       if (!repoUrl || typeof repoUrl !== "string") {
         return res.status(400).json({ error: "Repository URL is required" });
       }
-      
-      const match = repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+
+      const match = repoUrl.match(/github\.com\/([^/]+)\/([^/]+)/);
       if (!match) {
         return res.status(400).json({ error: "Invalid GitHub URL format" });
       }
-      
+
       const [, owner, repoName] = match;
       const cleanRepoName = repoName.replace(/\.git$/, "");
-      
+
       const report = await storage.createDiagnosticReport({
         repoUrl,
         repoOwner: owner,
         repoName: cleanRepoName,
         status: "analyzing",
       });
-      
+
       (async () => {
         try {
           const results = await runDiagnostics(repoUrl);
-          
+
           await storage.updateDiagnosticReport(report.id, {
             status: "completed",
             healthAssessment: results.healthAssessment,
@@ -1054,7 +1117,7 @@ export async function registerRoutes(
           });
         }
       })();
-      
+
       res.json(report);
     } catch (error) {
       console.error("Error creating diagnostic report:", error);
@@ -1092,29 +1155,30 @@ export async function registerRoutes(
     try {
       const { query } = req.params;
       const { status, stage } = req.query;
-      
+
       let projects = await storage.getProjects();
-      
+
       // Text search
       if (query && query !== "*") {
         const lowerQuery = query.toLowerCase();
-        projects = projects.filter(p => 
-          p.title.toLowerCase().includes(lowerQuery) ||
-          (p.clientName && p.clientName.toLowerCase().includes(lowerQuery)) ||
-          (p.rawInput && p.rawInput.toLowerCase().includes(lowerQuery))
+        projects = projects.filter(
+          (p) =>
+            p.title.toLowerCase().includes(lowerQuery) ||
+            (p.clientName && p.clientName.toLowerCase().includes(lowerQuery)) ||
+            (p.rawInput && p.rawInput.toLowerCase().includes(lowerQuery)),
         );
       }
 
       // Filter by status
       if (status && typeof status === "string") {
-        projects = projects.filter(p => p.status === status);
+        projects = projects.filter((p) => p.status === status);
       }
 
       // Filter by stage
       if (stage && typeof stage === "string") {
         const stageNum = parseInt(stage, 10);
         if (!isNaN(stageNum)) {
-          projects = projects.filter(p => p.currentStage === stageNum);
+          projects = projects.filter((p) => p.currentStage === stageNum);
         }
       }
 

@@ -65,7 +65,7 @@ interface PMPhase {
 
 function createTerminalBox(command: string, label?: string): Content[] {
   const content: Content[] = [];
-  
+
   if (label) {
     content.push({
       text: label.toUpperCase(),
@@ -75,20 +75,22 @@ function createTerminalBox(command: string, label?: string): Content[] {
       margin: [0, 10, 0, 3] as [number, number, number, number],
     });
   }
-  
+
   content.push({
     table: {
       widths: ["*"],
-      body: [[
-        {
-          text: `$ ${command}`,
-          font: "Helvetica",
-          fontSize: 10,
-          color: COLORS.terminalText,
-          fillColor: COLORS.terminalBg,
-          margin: [12, 10, 12, 10] as [number, number, number, number],
-        }
-      ]],
+      body: [
+        [
+          {
+            text: `$ ${command}`,
+            font: "Helvetica",
+            fontSize: 10,
+            color: COLORS.terminalText,
+            fillColor: COLORS.terminalBg,
+            margin: [12, 10, 12, 10] as [number, number, number, number],
+          },
+        ],
+      ],
     },
     layout: {
       hLineWidth: () => 1,
@@ -98,7 +100,7 @@ function createTerminalBox(command: string, label?: string): Content[] {
     },
     margin: [0, 0, 0, 10] as [number, number, number, number],
   });
-  
+
   return content;
 }
 
@@ -106,16 +108,18 @@ function createTipBox(text: string): Content {
   return {
     table: {
       widths: [3, "*"],
-      body: [[
-        { text: "", fillColor: COLORS.tipBorder },
-        {
-          text: text,
-          fontSize: 11,
-          color: COLORS.tipText,
-          fillColor: COLORS.tipBg,
-          margin: [8, 8, 8, 8] as [number, number, number, number],
-        }
-      ]],
+      body: [
+        [
+          { text: "", fillColor: COLORS.tipBorder },
+          {
+            text: text,
+            fontSize: 11,
+            color: COLORS.tipText,
+            fillColor: COLORS.tipBg,
+            margin: [8, 8, 8, 8] as [number, number, number, number],
+          },
+        ],
+      ],
     },
     layout: "noBorders",
     margin: [0, 5, 0, 15] as [number, number, number, number],
@@ -123,14 +127,16 @@ function createTipBox(text: string): Content {
 }
 
 function createSectionHeader(text: string, subtitle?: string): Content {
-  const headerContent: any[][] = [[
-    {
-      text: text.toUpperCase(),
-      fontSize: 12,
-      bold: true,
-      color: "#ffffff",
-    },
-  ]];
+  const headerContent: any[][] = [
+    [
+      {
+        text: text.toUpperCase(),
+        fontSize: 12,
+        bold: true,
+        color: "#ffffff",
+      },
+    ],
+  ];
 
   if (subtitle) {
     headerContent[0].push({
@@ -159,11 +165,14 @@ function createSectionHeader(text: string, subtitle?: string): Content {
   };
 }
 
-function createPhaseBlock(phaseTitle: string, steps: { title: string; description: string; prompt?: string; tip?: string }[]): Content[] {
+function createPhaseBlock(
+  phaseTitle: string,
+  steps: { title: string; description: string; prompt?: string; tip?: string }[],
+): Content[] {
   const content: Content[] = [
     {
       canvas: [
-        { type: "line", x1: 0, y1: 0, x2: 2, y2: 0, lineWidth: 2, lineColor: COLORS.border }
+        { type: "line", x1: 0, y1: 0, x2: 2, y2: 0, lineWidth: 2, lineColor: COLORS.border },
       ],
     },
     {
@@ -175,7 +184,7 @@ function createPhaseBlock(phaseTitle: string, steps: { title: string; descriptio
     },
   ];
 
-  steps.forEach(step => {
+  steps.forEach((step) => {
     content.push({
       text: step.title,
       fontSize: 12,
@@ -183,21 +192,23 @@ function createPhaseBlock(phaseTitle: string, steps: { title: string; descriptio
       color: COLORS.text,
       margin: [15, 0, 0, 4] as [number, number, number, number],
     });
-    
+
     content.push({
       text: step.description,
       fontSize: 11,
       color: COLORS.textSecondary,
       margin: [15, 0, 0, 8] as [number, number, number, number],
     });
-    
+
     if (step.prompt) {
-      content.push(...createTerminalBox(step.prompt, "PROMPT").map(c => ({
-        ...c,
-        margin: [15, 0, 0, 8] as [number, number, number, number],
-      })));
+      content.push(
+        ...createTerminalBox(step.prompt, "PROMPT").map((c) => ({
+          ...c,
+          margin: [15, 0, 0, 8] as [number, number, number, number],
+        })),
+      );
     }
-    
+
     if (step.tip) {
       content.push({
         ...createTipBox(step.tip),
@@ -214,23 +225,27 @@ function createModuleCard(title: string, items: string[]): Content {
     table: {
       widths: ["*"],
       body: [
-        [{
-          text: title,
-          fontSize: 11,
-          bold: true,
-          color: COLORS.text,
-          fillColor: COLORS.background,
-          margin: [10, 8, 10, 8] as [number, number, number, number],
-        }],
-        [{
-          ul: items.map(item => ({
-            text: item,
-            fontSize: 10,
-            color: COLORS.textSecondary,
-            margin: [0, 3, 0, 3] as [number, number, number, number],
-          })),
-          margin: [10, 10, 10, 10] as [number, number, number, number],
-        }],
+        [
+          {
+            text: title,
+            fontSize: 11,
+            bold: true,
+            color: COLORS.text,
+            fillColor: COLORS.background,
+            margin: [10, 8, 10, 8] as [number, number, number, number],
+          },
+        ],
+        [
+          {
+            ul: items.map((item) => ({
+              text: item,
+              fontSize: 10,
+              color: COLORS.textSecondary,
+              margin: [0, 3, 0, 3] as [number, number, number, number],
+            })),
+            margin: [10, 10, 10, 10] as [number, number, number, number],
+          },
+        ],
       ],
     },
     layout: {
@@ -259,7 +274,7 @@ export async function generateProposalPdf(project: Project): Promise<Buffer> {
     content: [
       {
         canvas: [
-          { type: "line", x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 3, lineColor: COLORS.primary }
+          { type: "line", x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 3, lineColor: COLORS.primary },
         ],
         margin: [0, 0, 0, 15] as [number, number, number, number],
       },
@@ -286,8 +301,17 @@ export async function generateProposalPdf(project: Project): Promise<Buffer> {
       },
       {
         columns: [
-          { text: `Prepared for: ${project.clientName || "Valued Client"}`, width: "*", fontSize: 10 },
-          { text: `Date: ${new Date().toLocaleDateString()}`, width: "auto", fontSize: 10, alignment: "right" },
+          {
+            text: `Prepared for: ${project.clientName || "Valued Client"}`,
+            width: "*",
+            fontSize: 10,
+          },
+          {
+            text: `Date: ${new Date().toLocaleDateString()}`,
+            width: "auto",
+            fontSize: 10,
+            alignment: "right",
+          },
         ],
         margin: [0, 0, 0, 30] as [number, number, number, number],
       },
@@ -297,20 +321,55 @@ export async function generateProposalPdf(project: Project): Promise<Buffer> {
           widths: ["35%", "*"],
           body: [
             [
-              { text: "Approach", bold: true, fillColor: COLORS.background, margin: [8, 6, 8, 6] as [number, number, number, number] },
-              { text: selectedScenario?.name || "Selected Scenario", bold: true, margin: [8, 6, 8, 6] as [number, number, number, number] },
+              {
+                text: "Approach",
+                bold: true,
+                fillColor: COLORS.background,
+                margin: [8, 6, 8, 6] as [number, number, number, number],
+              },
+              {
+                text: selectedScenario?.name || "Selected Scenario",
+                bold: true,
+                margin: [8, 6, 8, 6] as [number, number, number, number],
+              },
             ],
             [
-              { text: "Timeline", bold: true, fillColor: COLORS.background, margin: [8, 6, 8, 6] as [number, number, number, number] },
-              { text: selectedScenario?.timeline || "To be determined", margin: [8, 6, 8, 6] as [number, number, number, number] },
+              {
+                text: "Timeline",
+                bold: true,
+                fillColor: COLORS.background,
+                margin: [8, 6, 8, 6] as [number, number, number, number],
+              },
+              {
+                text: selectedScenario?.timeline || "To be determined",
+                margin: [8, 6, 8, 6] as [number, number, number, number],
+              },
             ],
             [
-              { text: "Investment", bold: true, fillColor: COLORS.background, margin: [8, 6, 8, 6] as [number, number, number, number] },
-              { text: selectedScenario?.totalCost ? `$${selectedScenario.totalCost.toLocaleString()}` : "To be discussed", margin: [8, 6, 8, 6] as [number, number, number, number] },
+              {
+                text: "Investment",
+                bold: true,
+                fillColor: COLORS.background,
+                margin: [8, 6, 8, 6] as [number, number, number, number],
+              },
+              {
+                text: selectedScenario?.totalCost
+                  ? `$${selectedScenario.totalCost.toLocaleString()}`
+                  : "To be discussed",
+                margin: [8, 6, 8, 6] as [number, number, number, number],
+              },
             ],
             [
-              { text: "Estimated Hours", bold: true, fillColor: COLORS.background, margin: [8, 6, 8, 6] as [number, number, number, number] },
-              { text: selectedScenario?.totalHours?.toString() || "TBD", margin: [8, 6, 8, 6] as [number, number, number, number] },
+              {
+                text: "Estimated Hours",
+                bold: true,
+                fillColor: COLORS.background,
+                margin: [8, 6, 8, 6] as [number, number, number, number],
+              },
+              {
+                text: selectedScenario?.totalHours?.toString() || "TBD",
+                margin: [8, 6, 8, 6] as [number, number, number, number],
+              },
             ],
           ],
         },
@@ -324,7 +383,7 @@ export async function generateProposalPdf(project: Project): Promise<Buffer> {
       },
       createSectionHeader("Key Features"),
       {
-        ul: (selectedScenario?.features || ["Feature details to be defined"]).map(f => ({
+        ul: (selectedScenario?.features || ["Feature details to be defined"]).map((f) => ({
           text: f,
           margin: [0, 3, 0, 3] as [number, number, number, number],
         })),
@@ -343,24 +402,67 @@ export async function generateProposalPdf(project: Project): Promise<Buffer> {
           widths: ["*", "*"],
           body: [
             [
-              { text: "Metric", bold: true, fillColor: COLORS.primary, color: "#fff", margin: [8, 6, 8, 6] as [number, number, number, number] },
-              { text: "Value", bold: true, fillColor: COLORS.primary, color: "#fff", margin: [8, 6, 8, 6] as [number, number, number, number] },
+              {
+                text: "Metric",
+                bold: true,
+                fillColor: COLORS.primary,
+                color: "#fff",
+                margin: [8, 6, 8, 6] as [number, number, number, number],
+              },
+              {
+                text: "Value",
+                bold: true,
+                fillColor: COLORS.primary,
+                color: "#fff",
+                margin: [8, 6, 8, 6] as [number, number, number, number],
+              },
             ],
             [
-              { text: "Cost of Doing Nothing", margin: [8, 6, 8, 6] as [number, number, number, number] },
-              { text: roiAnalysis?.costOfDoingNothing ? `$${roiAnalysis.costOfDoingNothing.toLocaleString()}/year` : "N/A", margin: [8, 6, 8, 6] as [number, number, number, number] },
+              {
+                text: "Cost of Doing Nothing",
+                margin: [8, 6, 8, 6] as [number, number, number, number],
+              },
+              {
+                text: roiAnalysis?.costOfDoingNothing
+                  ? `$${roiAnalysis.costOfDoingNothing.toLocaleString()}/year`
+                  : "N/A",
+                margin: [8, 6, 8, 6] as [number, number, number, number],
+              },
             ],
             [
-              { text: "Projected Annual Savings", fillColor: COLORS.background, margin: [8, 6, 8, 6] as [number, number, number, number] },
-              { text: roiAnalysis?.projectedSavings ? `$${roiAnalysis.projectedSavings.toLocaleString()}/year` : "N/A", fillColor: COLORS.background, margin: [8, 6, 8, 6] as [number, number, number, number] },
+              {
+                text: "Projected Annual Savings",
+                fillColor: COLORS.background,
+                margin: [8, 6, 8, 6] as [number, number, number, number],
+              },
+              {
+                text: roiAnalysis?.projectedSavings
+                  ? `$${roiAnalysis.projectedSavings.toLocaleString()}/year`
+                  : "N/A",
+                fillColor: COLORS.background,
+                margin: [8, 6, 8, 6] as [number, number, number, number],
+              },
             ],
             [
               { text: "Payback Period", margin: [8, 6, 8, 6] as [number, number, number, number] },
-              { text: roiAnalysis?.paybackPeriodMonths ? `${roiAnalysis.paybackPeriodMonths} months` : "N/A", margin: [8, 6, 8, 6] as [number, number, number, number] },
+              {
+                text: roiAnalysis?.paybackPeriodMonths
+                  ? `${roiAnalysis.paybackPeriodMonths} months`
+                  : "N/A",
+                margin: [8, 6, 8, 6] as [number, number, number, number],
+              },
             ],
             [
-              { text: "3-Year ROI", fillColor: COLORS.background, margin: [8, 6, 8, 6] as [number, number, number, number] },
-              { text: roiAnalysis?.threeYearROI ? `${roiAnalysis.threeYearROI}%` : "N/A", fillColor: COLORS.background, margin: [8, 6, 8, 6] as [number, number, number, number] },
+              {
+                text: "3-Year ROI",
+                fillColor: COLORS.background,
+                margin: [8, 6, 8, 6] as [number, number, number, number],
+              },
+              {
+                text: roiAnalysis?.threeYearROI ? `${roiAnalysis.threeYearROI}%` : "N/A",
+                fillColor: COLORS.background,
+                margin: [8, 6, 8, 6] as [number, number, number, number],
+              },
             ],
           ],
         },
@@ -375,16 +477,28 @@ export async function generateProposalPdf(project: Project): Promise<Buffer> {
       createSectionHeader("Next Steps"),
       {
         ol: [
-          { text: "Review this proposal and provide feedback", margin: [0, 3, 0, 3] as [number, number, number, number] },
-          { text: "Schedule a kickoff meeting to align on requirements", margin: [0, 3, 0, 3] as [number, number, number, number] },
-          { text: "Sign statement of work to begin development", margin: [0, 3, 0, 3] as [number, number, number, number] },
-          { text: "Weekly progress updates throughout development", margin: [0, 3, 0, 3] as [number, number, number, number] },
+          {
+            text: "Review this proposal and provide feedback",
+            margin: [0, 3, 0, 3] as [number, number, number, number],
+          },
+          {
+            text: "Schedule a kickoff meeting to align on requirements",
+            margin: [0, 3, 0, 3] as [number, number, number, number],
+          },
+          {
+            text: "Sign statement of work to begin development",
+            margin: [0, 3, 0, 3] as [number, number, number, number],
+          },
+          {
+            text: "Weekly progress updates throughout development",
+            margin: [0, 3, 0, 3] as [number, number, number, number],
+          },
         ],
         margin: [0, 0, 0, 40] as [number, number, number, number],
       },
       {
         canvas: [
-          { type: "line", x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: COLORS.border }
+          { type: "line", x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: COLORS.border },
         ],
         margin: [0, 0, 0, 10] as [number, number, number, number],
       },
@@ -401,7 +515,7 @@ export async function generateProposalPdf(project: Project): Promise<Buffer> {
     try {
       const pdfDoc = printer.createPdfKitDocument(docDefinition);
       const chunks: Buffer[] = [];
-      
+
       pdfDoc.on("data", (chunk: Buffer) => chunks.push(chunk));
       pdfDoc.on("end", () => resolve(Buffer.concat(chunks)));
       pdfDoc.on("error", reject);
@@ -428,7 +542,7 @@ export async function generateInternalReportPdf(project: Project): Promise<Buffe
     content: [
       {
         canvas: [
-          { type: "line", x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 3, lineColor: COLORS.primary }
+          { type: "line", x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 3, lineColor: COLORS.primary },
         ],
         margin: [0, 0, 0, 15] as [number, number, number, number],
       },
@@ -457,7 +571,12 @@ export async function generateInternalReportPdf(project: Project): Promise<Buffe
       {
         columns: [
           { text: `Stage: ${project.currentStage}/5`, width: "*", fontSize: 10 },
-          { text: `Date: ${new Date().toLocaleDateString()}`, width: "*", alignment: "right", fontSize: 10 },
+          {
+            text: `Date: ${new Date().toLocaleDateString()}`,
+            width: "*",
+            alignment: "right",
+            fontSize: 10,
+          },
         ],
         margin: [0, 0, 0, 20] as [number, number, number, number],
       },
@@ -467,34 +586,94 @@ export async function generateInternalReportPdf(project: Project): Promise<Buffe
           widths: ["*", "*", "*"],
           body: [
             [
-              { text: "Metric", bold: true, fillColor: COLORS.primary, color: "#fff", margin: [6, 5, 6, 5] as [number, number, number, number] },
-              { text: "Scenario A (High-Code)", bold: true, fillColor: COLORS.primary, color: "#fff", margin: [6, 5, 6, 5] as [number, number, number, number] },
-              { text: "Scenario B (No-Code)", bold: true, fillColor: COLORS.primary, color: "#fff", margin: [6, 5, 6, 5] as [number, number, number, number] },
+              {
+                text: "Metric",
+                bold: true,
+                fillColor: COLORS.primary,
+                color: "#fff",
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
+              {
+                text: "Scenario A (High-Code)",
+                bold: true,
+                fillColor: COLORS.primary,
+                color: "#fff",
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
+              {
+                text: "Scenario B (No-Code)",
+                bold: true,
+                fillColor: COLORS.primary,
+                color: "#fff",
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
             ],
             [
               { text: "Total Cost", margin: [6, 5, 6, 5] as [number, number, number, number] },
-              { text: scenarioA?.totalCost ? `$${scenarioA.totalCost.toLocaleString()}` : "N/A", margin: [6, 5, 6, 5] as [number, number, number, number] },
-              { text: scenarioB?.totalCost ? `$${scenarioB.totalCost.toLocaleString()}` : "N/A", margin: [6, 5, 6, 5] as [number, number, number, number] },
+              {
+                text: scenarioA?.totalCost ? `$${scenarioA.totalCost.toLocaleString()}` : "N/A",
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
+              {
+                text: scenarioB?.totalCost ? `$${scenarioB.totalCost.toLocaleString()}` : "N/A",
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
             ],
             [
-              { text: "Timeline", fillColor: COLORS.background, margin: [6, 5, 6, 5] as [number, number, number, number] },
-              { text: scenarioA?.timeline || "N/A", fillColor: COLORS.background, margin: [6, 5, 6, 5] as [number, number, number, number] },
-              { text: scenarioB?.timeline || "N/A", fillColor: COLORS.background, margin: [6, 5, 6, 5] as [number, number, number, number] },
+              {
+                text: "Timeline",
+                fillColor: COLORS.background,
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
+              {
+                text: scenarioA?.timeline || "N/A",
+                fillColor: COLORS.background,
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
+              {
+                text: scenarioB?.timeline || "N/A",
+                fillColor: COLORS.background,
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
             ],
             [
               { text: "Hours", margin: [6, 5, 6, 5] as [number, number, number, number] },
-              { text: scenarioA?.totalHours?.toString() || "N/A", margin: [6, 5, 6, 5] as [number, number, number, number] },
-              { text: scenarioB?.totalHours?.toString() || "N/A", margin: [6, 5, 6, 5] as [number, number, number, number] },
+              {
+                text: scenarioA?.totalHours?.toString() || "N/A",
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
+              {
+                text: scenarioB?.totalHours?.toString() || "N/A",
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
             ],
             [
-              { text: "Hourly Rate", fillColor: COLORS.background, margin: [6, 5, 6, 5] as [number, number, number, number] },
-              { text: scenarioA?.hourlyRate ? `$${scenarioA.hourlyRate}` : "N/A", fillColor: COLORS.background, margin: [6, 5, 6, 5] as [number, number, number, number] },
-              { text: scenarioB?.hourlyRate ? `$${scenarioB.hourlyRate}` : "N/A", fillColor: COLORS.background, margin: [6, 5, 6, 5] as [number, number, number, number] },
+              {
+                text: "Hourly Rate",
+                fillColor: COLORS.background,
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
+              {
+                text: scenarioA?.hourlyRate ? `$${scenarioA.hourlyRate}` : "N/A",
+                fillColor: COLORS.background,
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
+              {
+                text: scenarioB?.hourlyRate ? `$${scenarioB.hourlyRate}` : "N/A",
+                fillColor: COLORS.background,
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
             ],
             [
               { text: "Recommended", margin: [6, 5, 6, 5] as [number, number, number, number] },
-              { text: scenarioA?.recommended ? "Yes" : "No", margin: [6, 5, 6, 5] as [number, number, number, number] },
-              { text: scenarioB?.recommended ? "Yes" : "No", margin: [6, 5, 6, 5] as [number, number, number, number] },
+              {
+                text: scenarioA?.recommended ? "Yes" : "No",
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
+              {
+                text: scenarioB?.recommended ? "Yes" : "No",
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
             ],
           ],
         },
@@ -508,9 +687,10 @@ export async function generateInternalReportPdf(project: Project): Promise<Buffe
       },
       createSectionHeader("Selected Approach"),
       {
-        text: project.selectedScenario === "A" 
-          ? `Scenario A: ${scenarioA?.name || "High-Code"}` 
-          : `Scenario B: ${scenarioB?.name || "No-Code"}`,
+        text:
+          project.selectedScenario === "A"
+            ? `Scenario A: ${scenarioA?.name || "High-Code"}`
+            : `Scenario B: ${scenarioB?.name || "No-Code"}`,
         bold: true,
         fontSize: 12,
         color: COLORS.accent,
@@ -522,28 +702,79 @@ export async function generateInternalReportPdf(project: Project): Promise<Buffe
           widths: ["*", "*"],
           body: [
             [
-              { text: "Metric", bold: true, fillColor: COLORS.primary, color: "#fff", margin: [6, 5, 6, 5] as [number, number, number, number] },
-              { text: "Value", bold: true, fillColor: COLORS.primary, color: "#fff", margin: [6, 5, 6, 5] as [number, number, number, number] },
+              {
+                text: "Metric",
+                bold: true,
+                fillColor: COLORS.primary,
+                color: "#fff",
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
+              {
+                text: "Value",
+                bold: true,
+                fillColor: COLORS.primary,
+                color: "#fff",
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
             ],
             [
-              { text: "Cost of Doing Nothing", margin: [6, 5, 6, 5] as [number, number, number, number] },
-              { text: roiAnalysis?.costOfDoingNothing ? `$${roiAnalysis.costOfDoingNothing.toLocaleString()}/year` : "N/A", margin: [6, 5, 6, 5] as [number, number, number, number] },
+              {
+                text: "Cost of Doing Nothing",
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
+              {
+                text: roiAnalysis?.costOfDoingNothing
+                  ? `$${roiAnalysis.costOfDoingNothing.toLocaleString()}/year`
+                  : "N/A",
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
             ],
             [
-              { text: "Manual Operational Cost", fillColor: COLORS.background, margin: [6, 5, 6, 5] as [number, number, number, number] },
-              { text: roiAnalysis?.manualOperationalCost ? `$${roiAnalysis.manualOperationalCost.toLocaleString()}/year` : "N/A", fillColor: COLORS.background, margin: [6, 5, 6, 5] as [number, number, number, number] },
+              {
+                text: "Manual Operational Cost",
+                fillColor: COLORS.background,
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
+              {
+                text: roiAnalysis?.manualOperationalCost
+                  ? `$${roiAnalysis.manualOperationalCost.toLocaleString()}/year`
+                  : "N/A",
+                fillColor: COLORS.background,
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
             ],
             [
-              { text: "Projected Savings", margin: [6, 5, 6, 5] as [number, number, number, number] },
-              { text: roiAnalysis?.projectedSavings ? `$${roiAnalysis.projectedSavings.toLocaleString()}/year` : "N/A", margin: [6, 5, 6, 5] as [number, number, number, number] },
+              {
+                text: "Projected Savings",
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
+              {
+                text: roiAnalysis?.projectedSavings
+                  ? `$${roiAnalysis.projectedSavings.toLocaleString()}/year`
+                  : "N/A",
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
             ],
             [
-              { text: "Payback Period", fillColor: COLORS.background, margin: [6, 5, 6, 5] as [number, number, number, number] },
-              { text: roiAnalysis?.paybackPeriodMonths ? `${roiAnalysis.paybackPeriodMonths} months` : "N/A", fillColor: COLORS.background, margin: [6, 5, 6, 5] as [number, number, number, number] },
+              {
+                text: "Payback Period",
+                fillColor: COLORS.background,
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
+              {
+                text: roiAnalysis?.paybackPeriodMonths
+                  ? `${roiAnalysis.paybackPeriodMonths} months`
+                  : "N/A",
+                fillColor: COLORS.background,
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
             ],
             [
               { text: "3-Year ROI", margin: [6, 5, 6, 5] as [number, number, number, number] },
-              { text: roiAnalysis?.threeYearROI ? `${roiAnalysis.threeYearROI}%` : "N/A", margin: [6, 5, 6, 5] as [number, number, number, number] },
+              {
+                text: roiAnalysis?.threeYearROI ? `${roiAnalysis.threeYearROI}%` : "N/A",
+                margin: [6, 5, 6, 5] as [number, number, number, number],
+              },
             ],
           ],
         },
@@ -558,17 +789,32 @@ export async function generateInternalReportPdf(project: Project): Promise<Buffe
       createSectionHeader("Project Timeline"),
       {
         ul: [
-          { text: `Stage 1 (Estimate): ${project.estimateMarkdown ? "Complete" : "Pending"}`, margin: [0, 3, 0, 3] as [number, number, number, number] },
-          { text: `Stage 2 (Assets): ${project.proposalPdfUrl ? "Complete" : "Pending"}`, margin: [0, 3, 0, 3] as [number, number, number, number] },
-          { text: `Stage 3 (Email): ${project.emailSentAt ? "Sent" : "Pending"}`, margin: [0, 3, 0, 3] as [number, number, number, number] },
-          { text: `Stage 4 (Vibe Guide): ${project.vibecodeGuideA ? "Complete" : "Pending"}`, margin: [0, 3, 0, 3] as [number, number, number, number] },
-          { text: `Stage 5 (PM Breakdown): ${project.pmBreakdown ? "Complete" : "Pending"}`, margin: [0, 3, 0, 3] as [number, number, number, number] },
+          {
+            text: `Stage 1 (Estimate): ${project.estimateMarkdown ? "Complete" : "Pending"}`,
+            margin: [0, 3, 0, 3] as [number, number, number, number],
+          },
+          {
+            text: `Stage 2 (Assets): ${project.proposalPdfUrl ? "Complete" : "Pending"}`,
+            margin: [0, 3, 0, 3] as [number, number, number, number],
+          },
+          {
+            text: `Stage 3 (Email): ${project.emailSentAt ? "Sent" : "Pending"}`,
+            margin: [0, 3, 0, 3] as [number, number, number, number],
+          },
+          {
+            text: `Stage 4 (Vibe Guide): ${project.vibecodeGuideA ? "Complete" : "Pending"}`,
+            margin: [0, 3, 0, 3] as [number, number, number, number],
+          },
+          {
+            text: `Stage 5 (PM Breakdown): ${project.pmBreakdown ? "Complete" : "Pending"}`,
+            margin: [0, 3, 0, 3] as [number, number, number, number],
+          },
         ],
         margin: [0, 0, 0, 30] as [number, number, number, number],
       },
       {
         canvas: [
-          { type: "line", x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: COLORS.border }
+          { type: "line", x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: COLORS.border },
         ],
         margin: [0, 0, 0, 10] as [number, number, number, number],
       },
@@ -593,7 +839,7 @@ export async function generateInternalReportPdf(project: Project): Promise<Buffe
     try {
       const pdfDoc = printer.createPdfKitDocument(docDefinition);
       const chunks: Buffer[] = [];
-      
+
       pdfDoc.on("data", (chunk: Buffer) => chunks.push(chunk));
       pdfDoc.on("end", () => resolve(Buffer.concat(chunks)));
       pdfDoc.on("error", reject);
@@ -614,7 +860,7 @@ export async function generateExecutionManualPdf(project: Project): Promise<Buff
   const content: Content[] = [
     {
       canvas: [
-        { type: "line", x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 3, lineColor: COLORS.primary }
+        { type: "line", x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 3, lineColor: COLORS.primary },
       ],
       margin: [0, 0, 0, 15] as [number, number, number, number],
     },
@@ -641,14 +887,19 @@ export async function generateExecutionManualPdf(project: Project): Promise<Buff
     },
   ];
 
-  content.push(createSectionHeader(scenarioA?.title || scenarioA?.name || "Manual A: High-Code Approach", "CURSOR | REPLIT | WINDSURF"));
+  content.push(
+    createSectionHeader(
+      scenarioA?.title || scenarioA?.name || "Manual A: High-Code Approach",
+      "CURSOR | REPLIT | WINDSURF",
+    ),
+  );
 
   if (vibeGuideA) {
     const lines = vibeGuideA.split("\n");
     let currentPhase = "";
     let currentSteps: { title: string; description: string; prompt?: string; tip?: string }[] = [];
 
-    lines.forEach(line => {
+    lines.forEach((line) => {
       if (line.startsWith("## ")) {
         if (currentPhase && currentSteps.length > 0) {
           content.push(...createPhaseBlock(currentPhase, currentSteps));
@@ -661,12 +912,14 @@ export async function generateExecutionManualPdf(project: Project): Promise<Buff
           description: "",
         });
       } else if (line.startsWith("```") && currentSteps.length > 0) {
+        // Skip code block markers in this parsing logic
       } else if (line.startsWith("$ ") && currentSteps.length > 0) {
         currentSteps[currentSteps.length - 1].prompt = line.replace("$ ", "");
       } else if (line.startsWith("> ") && currentSteps.length > 0) {
         currentSteps[currentSteps.length - 1].tip = line.replace("> ", "");
       } else if (line.trim() && currentSteps.length > 0) {
-        currentSteps[currentSteps.length - 1].description += (currentSteps[currentSteps.length - 1].description ? " " : "") + line.trim();
+        currentSteps[currentSteps.length - 1].description +=
+          (currentSteps[currentSteps.length - 1].description ? " " : "") + line.trim();
       }
     });
 
@@ -684,7 +937,10 @@ export async function generateExecutionManualPdf(project: Project): Promise<Buff
 
   content.push({ text: "", pageBreak: "before" });
 
-  const noCodeHeader = createSectionHeader(scenarioB?.title || scenarioB?.name || "Manual B: No-Code Approach", "AIRTABLE | MAKE | SOFTR") as any;
+  const noCodeHeader = createSectionHeader(
+    scenarioB?.title || scenarioB?.name || "Manual B: No-Code Approach",
+    "AIRTABLE | MAKE | SOFTR",
+  ) as any;
   noCodeHeader.layout.fillColor = () => "#0891b2";
   content.push(noCodeHeader);
 
@@ -693,7 +949,7 @@ export async function generateExecutionManualPdf(project: Project): Promise<Buff
     let currentModule = "";
     let currentItems: string[] = [];
 
-    vibeGuideB.split("\n").forEach(line => {
+    vibeGuideB.split("\n").forEach((line) => {
       if (line.startsWith("## ")) {
         if (currentModule && currentItems.length > 0) {
           modules.push({ title: currentModule, items: currentItems });
@@ -716,7 +972,7 @@ export async function generateExecutionManualPdf(project: Project): Promise<Buff
           columns: [
             { width: "*", ...createModuleCard(modules[i].title, modules[i].items) },
             { width: 15, text: "" },
-            modules[i + 1] 
+            modules[i + 1]
               ? { width: "*", ...createModuleCard(modules[i + 1].title, modules[i + 1].items) }
               : { width: "*", text: "" },
           ],
@@ -738,7 +994,7 @@ export async function generateExecutionManualPdf(project: Project): Promise<Buff
   content.push(
     {
       canvas: [
-        { type: "line", x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: COLORS.border }
+        { type: "line", x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: COLORS.border },
       ],
       margin: [0, 30, 0, 10] as [number, number, number, number],
     },
@@ -747,7 +1003,7 @@ export async function generateExecutionManualPdf(project: Project): Promise<Buff
       alignment: "center",
       fontSize: 9,
       color: COLORS.textMuted,
-    }
+    },
   );
 
   const docDefinition: TDocumentDefinitions = {
@@ -765,7 +1021,7 @@ export async function generateExecutionManualPdf(project: Project): Promise<Buff
     try {
       const pdfDoc = printer.createPdfKitDocument(docDefinition);
       const chunks: Buffer[] = [];
-      
+
       pdfDoc.on("data", (chunk: Buffer) => chunks.push(chunk));
       pdfDoc.on("end", () => resolve(Buffer.concat(chunks)));
       pdfDoc.on("error", reject);

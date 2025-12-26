@@ -80,7 +80,7 @@ function MarkdownContent({ content }: { content: string }) {
       }
 
       const firstMatch = matches.reduce((a, b) =>
-        (a.match?.index ?? Infinity) < (b.match?.index ?? Infinity) ? a : b
+        (a.match?.index ?? Infinity) < (b.match?.index ?? Infinity) ? a : b,
       );
 
       const matchIndex = firstMatch.match!.index!;
@@ -93,7 +93,7 @@ function MarkdownContent({ content }: { content: string }) {
           parts.push(
             <strong key={key++} className="font-semibold">
               {firstMatch.match![1]}
-            </strong>
+            </strong>,
           );
           remaining = remaining.slice(matchIndex + firstMatch.match![0].length);
           break;
@@ -101,18 +101,15 @@ function MarkdownContent({ content }: { content: string }) {
           parts.push(
             <em key={key++} className="italic">
               {firstMatch.match![1]}
-            </em>
+            </em>,
           );
           remaining = remaining.slice(matchIndex + firstMatch.match![0].length);
           break;
         case "code":
           parts.push(
-            <code
-              key={key++}
-              className="px-1.5 py-0.5 rounded bg-muted text-sm font-mono"
-            >
+            <code key={key++} className="px-1.5 py-0.5 rounded bg-muted text-sm font-mono">
               {firstMatch.match![1]}
-            </code>
+            </code>,
           );
           remaining = remaining.slice(matchIndex + firstMatch.match![0].length);
           break;
@@ -126,7 +123,7 @@ function MarkdownContent({ content }: { content: string }) {
               rel="noopener noreferrer"
             >
               {firstMatch.match![1]}
-            </a>
+            </a>,
           );
           remaining = remaining.slice(matchIndex + firstMatch.match![0].length);
           break;
@@ -150,7 +147,7 @@ function MarkdownContent({ content }: { content: string }) {
               {parseInline(item.content)}
             </li>
           ))}
-        </ListTag>
+        </ListTag>,
       );
       listItems = [];
     }
@@ -166,10 +163,7 @@ function MarkdownContent({ content }: { content: string }) {
               <thead>
                 <tr className="border-b border-border">
                   {tableHeaders.map((header, i) => (
-                    <th
-                      key={i}
-                      className="px-4 py-2 text-left text-sm font-semibold"
-                    >
+                    <th key={i} className="px-4 py-2 text-left text-sm font-semibold">
                       {parseInline(header.trim())}
                     </th>
                   ))}
@@ -178,10 +172,7 @@ function MarkdownContent({ content }: { content: string }) {
             )}
             <tbody>
               {tableRows.map((row, i) => (
-                <tr
-                  key={i}
-                  className="border-b border-border last:border-0 hover:bg-muted/50"
-                >
+                <tr key={i} className="border-b border-border last:border-0 hover:bg-muted/50">
                   {row.map((cell, j) => (
                     <td key={j} className="px-4 py-2 text-sm">
                       {parseInline(cell.trim())}
@@ -191,7 +182,7 @@ function MarkdownContent({ content }: { content: string }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </div>,
       );
       tableHeaders = [];
       tableRows = [];
@@ -214,7 +205,7 @@ function MarkdownContent({ content }: { content: string }) {
             <pre className="p-4 overflow-x-auto">
               <code className="text-sm font-mono">{codeBlockContent.join("\n")}</code>
             </pre>
-          </Card>
+          </Card>,
         );
         codeBlockContent = [];
         codeBlockLang = "";
@@ -236,11 +227,11 @@ function MarkdownContent({ content }: { content: string }) {
     if (line.includes("|") && line.trim().startsWith("|")) {
       flushList();
       const cells = line.split("|").filter((_, idx, arr) => idx > 0 && idx < arr.length - 1);
-      
+
       if (cells.every((c) => c.trim().match(/^-+$/))) {
         continue;
       }
-      
+
       if (!inTable) {
         inTable = true;
         tableHeaders = cells;
@@ -254,7 +245,7 @@ function MarkdownContent({ content }: { content: string }) {
 
     const unorderedListMatch = line.match(/^(\s*)[*-]\s+(.+)/);
     const orderedListMatch = line.match(/^(\s*)\d+\.\s+(.+)/);
-    
+
     if (unorderedListMatch || orderedListMatch) {
       flushTable();
       inList = true;
@@ -274,27 +265,30 @@ function MarkdownContent({ content }: { content: string }) {
 
     if (line.startsWith("# ")) {
       elements.push(
-        <h1 key={elements.length} className="text-2xl font-semibold mt-8 mb-4 pb-2 border-b border-border">
+        <h1
+          key={elements.length}
+          className="text-2xl font-semibold mt-8 mb-4 pb-2 border-b border-border"
+        >
           {parseInline(line.slice(2))}
-        </h1>
+        </h1>,
       );
     } else if (line.startsWith("## ")) {
       elements.push(
         <h2 key={elements.length} className="text-xl font-semibold mt-6 mb-3">
           {parseInline(line.slice(3))}
-        </h2>
+        </h2>,
       );
     } else if (line.startsWith("### ")) {
       elements.push(
         <h3 key={elements.length} className="text-lg font-medium mt-4 mb-2">
           {parseInline(line.slice(4))}
-        </h3>
+        </h3>,
       );
     } else if (line.startsWith("#### ")) {
       elements.push(
         <h4 key={elements.length} className="text-base font-medium mt-3 mb-1">
           {parseInline(line.slice(5))}
-        </h4>
+        </h4>,
       );
     } else if (line.startsWith("> ")) {
       elements.push(
@@ -303,7 +297,7 @@ function MarkdownContent({ content }: { content: string }) {
           className="pl-4 border-l-4 border-primary/50 italic text-muted-foreground my-4"
         >
           {parseInline(line.slice(2))}
-        </blockquote>
+        </blockquote>,
       );
     } else if (line.startsWith("---") || line.startsWith("***")) {
       elements.push(<hr key={elements.length} className="my-6 border-border" />);
@@ -313,7 +307,7 @@ function MarkdownContent({ content }: { content: string }) {
       elements.push(
         <p key={elements.length} className="my-2 leading-relaxed">
           {parseInline(line)}
-        </p>
+        </p>,
       );
     }
   }

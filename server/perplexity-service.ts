@@ -30,7 +30,7 @@ const hasPerplexityKey = !!process.env.PERPLEXITY_API_KEY;
 export async function conductMarketResearch(
   projectType: string,
   projectDescription: string,
-  projectId?: string
+  projectId?: string,
 ): Promise<MarketResearchResult | null> {
   if (!hasPerplexityKey) {
     console.log("Perplexity API key not configured, skipping market research");
@@ -38,7 +38,7 @@ export async function conductMarketResearch(
   }
 
   const startTime = Date.now();
-  
+
   try {
     const prompt = `Research the following for a ${projectType} project:
 
@@ -59,7 +59,7 @@ Be specific with numbers and cite your sources.`;
     const response = await fetch("https://api.perplexity.ai/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${process.env.PERPLEXITY_API_KEY}`,
+        Authorization: `Bearer ${process.env.PERPLEXITY_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -67,7 +67,8 @@ Be specific with numbers and cite your sources.`;
         messages: [
           {
             role: "system",
-            content: "You are a market research analyst providing factual, sourced information about software development pricing and business ROI. Always cite sources and provide specific numbers when available.",
+            content:
+              "You are a market research analyst providing factual, sourced information about software development pricing and business ROI. Always cite sources and provide specific numbers when available.",
           },
           {
             role: "user",
@@ -94,7 +95,7 @@ Be specific with numbers and cite your sources.`;
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || "";
     const citations = data.citations || [];
-    
+
     const inputTokens = data.usage?.prompt_tokens || 0;
     const outputTokens = data.usage?.completion_tokens || 0;
 
@@ -108,7 +109,7 @@ Be specific with numbers and cite your sources.`;
         operation: "market_research",
       });
     }
-    
+
     await storage.updateApiHealth({
       service: "perplexity",
       status: "online",
@@ -131,7 +132,7 @@ Be specific with numbers and cite your sources.`;
 function parseMarketResearchResponse(content: string, citations: string[]): MarketResearchResult {
   // Extract sections using heuristics
   const sections = content.split(/\d+\.\s+/);
-  
+
   // Default values
   const result: MarketResearchResult = {
     competitorPricing: {

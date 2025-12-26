@@ -55,17 +55,9 @@
       "heading": "__Lora_d3ecc7"
     },
     "fontStacks": {
-      "body": [
-        "Times New Roman"
-      ],
-      "heading": [
-        "__Lora_d3ecc7",
-        "__Lora_Fallback_d3ecc7"
-      ],
-      "paragraph": [
-        "__primaryFont_ad2006",
-        "__primaryFont_Fallback_ad2006"
-      ]
+      "body": ["Times New Roman"],
+      "heading": ["__Lora_d3ecc7", "__Lora_Fallback_d3ecc7"],
+      "paragraph": ["__primaryFont_ad2006", "__primaryFont_Fallback_ad2006"]
     },
     "fontSizes": {
       "h1": "48px",

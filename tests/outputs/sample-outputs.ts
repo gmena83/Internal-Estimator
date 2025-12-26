@@ -1,6 +1,6 @@
 /**
  * Sample Outputs for ISI Business Development Agent
- * 
+ *
  * This file contains expected outputs for evaluation testing.
  * Each output type has a sample that can be used for comparison.
  */
@@ -12,32 +12,32 @@ import {
   getMockRoiAnalysis,
   getMockPmBreakdown,
   getMockVibecodeGuide,
-} from '../fixtures';
+} from "../fixtures";
 
 // Sample parsed mission data
 export const sampleParsedData = {
-  mission: 'Build an AI-powered customer service automation platform',
+  mission: "Build an AI-powered customer service automation platform",
   objectives: [
-    'Automate customer inquiry routing and response',
-    'Implement natural language processing for ticket classification',
-    'Create real-time analytics dashboard for support metrics',
-    'Integrate with existing CRM and helpdesk systems',
+    "Automate customer inquiry routing and response",
+    "Implement natural language processing for ticket classification",
+    "Create real-time analytics dashboard for support metrics",
+    "Integrate with existing CRM and helpdesk systems",
   ],
   constraints: [
-    'Budget: $80,000 - $120,000',
-    'Timeline: 4-6 months',
-    'Must integrate with Salesforce CRM',
-    'GDPR and SOC2 compliance required',
+    "Budget: $80,000 - $120,000",
+    "Timeline: 4-6 months",
+    "Must integrate with Salesforce CRM",
+    "GDPR and SOC2 compliance required",
   ],
   techPreferences: [
-    'Python for backend',
-    'React for frontend',
-    'AWS for hosting',
-    'OpenAI for NLP',
+    "Python for backend",
+    "React for frontend",
+    "AWS for hosting",
+    "OpenAI for NLP",
   ],
-  timeline: '4-6 months',
-  estimatedBudget: '$100,000',
-  clientName: 'TechCorp Industries',
+  timeline: "4-6 months",
+  estimatedBudget: "$100,000",
+  clientName: "TechCorp Industries",
 };
 
 // Sample estimate markdown
@@ -279,119 +279,94 @@ export const samplePmBreakdown = {
   phases: [
     {
       phaseNumber: 1,
-      phaseName: 'Discovery & Planning',
+      phaseName: "Discovery & Planning",
       objectives: [
-        'Align on project scope and success criteria',
-        'Document detailed requirements',
-        'Design system architecture',
+        "Align on project scope and success criteria",
+        "Document detailed requirements",
+        "Design system architecture",
       ],
       deliverables: [
-        'Project Charter',
-        'Requirements Document',
-        'Technical Architecture Diagram',
-        'Sprint Plan',
+        "Project Charter",
+        "Requirements Document",
+        "Technical Architecture Diagram",
+        "Sprint Plan",
       ],
       durationDays: 10,
       dependencies: [],
       tasks: [
-        { id: '1.1', name: 'Stakeholder Interviews', estimatedHours: 16 },
-        { id: '1.2', name: 'Requirements Workshop', estimatedHours: 12 },
-        { id: '1.3', name: 'Current State Analysis', estimatedHours: 8 },
-        { id: '1.4', name: 'Architecture Design', estimatedHours: 16 },
-        { id: '1.5', name: 'Sprint Planning', estimatedHours: 8 },
+        { id: "1.1", name: "Stakeholder Interviews", estimatedHours: 16 },
+        { id: "1.2", name: "Requirements Workshop", estimatedHours: 12 },
+        { id: "1.3", name: "Current State Analysis", estimatedHours: 8 },
+        { id: "1.4", name: "Architecture Design", estimatedHours: 16 },
+        { id: "1.5", name: "Sprint Planning", estimatedHours: 8 },
       ],
     },
     {
       phaseNumber: 2,
-      phaseName: 'Core Development',
+      phaseName: "Core Development",
       objectives: [
-        'Build core NLP processing engine',
-        'Develop API infrastructure',
-        'Create database models',
+        "Build core NLP processing engine",
+        "Develop API infrastructure",
+        "Create database models",
       ],
-      deliverables: [
-        'NLP Processing Module',
-        'RESTful API',
-        'Database Schema',
-        'Unit Tests',
-      ],
+      deliverables: ["NLP Processing Module", "RESTful API", "Database Schema", "Unit Tests"],
       durationDays: 25,
       dependencies: [1],
       tasks: [
-        { id: '2.1', name: 'Backend API Development', estimatedHours: 80 },
-        { id: '2.2', name: 'NLP Model Integration', estimatedHours: 60 },
-        { id: '2.3', name: 'Database Design & Migration', estimatedHours: 24 },
-        { id: '2.4', name: 'Authentication & Security', estimatedHours: 32 },
-        { id: '2.5', name: 'Unit Testing', estimatedHours: 24 },
+        { id: "2.1", name: "Backend API Development", estimatedHours: 80 },
+        { id: "2.2", name: "NLP Model Integration", estimatedHours: 60 },
+        { id: "2.3", name: "Database Design & Migration", estimatedHours: 24 },
+        { id: "2.4", name: "Authentication & Security", estimatedHours: 32 },
+        { id: "2.5", name: "Unit Testing", estimatedHours: 24 },
       ],
     },
     {
       phaseNumber: 3,
-      phaseName: 'Frontend Development',
+      phaseName: "Frontend Development",
       objectives: [
-        'Build admin dashboard',
-        'Create analytics views',
-        'Implement real-time updates',
+        "Build admin dashboard",
+        "Create analytics views",
+        "Implement real-time updates",
       ],
-      deliverables: [
-        'Admin Dashboard',
-        'Analytics Module',
-        'Real-time Notification System',
-      ],
+      deliverables: ["Admin Dashboard", "Analytics Module", "Real-time Notification System"],
       durationDays: 20,
       dependencies: [2],
       tasks: [
-        { id: '3.1', name: 'Dashboard UI Development', estimatedHours: 60 },
-        { id: '3.2', name: 'Charts & Visualization', estimatedHours: 32 },
-        { id: '3.3', name: 'WebSocket Integration', estimatedHours: 16 },
-        { id: '3.4', name: 'Responsive Design', estimatedHours: 24 },
-        { id: '3.5', name: 'Frontend Testing', estimatedHours: 16 },
+        { id: "3.1", name: "Dashboard UI Development", estimatedHours: 60 },
+        { id: "3.2", name: "Charts & Visualization", estimatedHours: 32 },
+        { id: "3.3", name: "WebSocket Integration", estimatedHours: 16 },
+        { id: "3.4", name: "Responsive Design", estimatedHours: 24 },
+        { id: "3.5", name: "Frontend Testing", estimatedHours: 16 },
       ],
     },
     {
       phaseNumber: 4,
-      phaseName: 'Integration & Testing',
-      objectives: [
-        'Integrate with Salesforce CRM',
-        'Perform end-to-end testing',
-        'Security audit',
-      ],
-      deliverables: [
-        'Salesforce Connector',
-        'E2E Test Suite',
-        'Security Audit Report',
-      ],
+      phaseName: "Integration & Testing",
+      objectives: ["Integrate with Salesforce CRM", "Perform end-to-end testing", "Security audit"],
+      deliverables: ["Salesforce Connector", "E2E Test Suite", "Security Audit Report"],
       durationDays: 15,
       dependencies: [2, 3],
       tasks: [
-        { id: '4.1', name: 'Salesforce API Integration', estimatedHours: 48 },
-        { id: '4.2', name: 'Integration Testing', estimatedHours: 32 },
-        { id: '4.3', name: 'Performance Testing', estimatedHours: 24 },
-        { id: '4.4', name: 'Security Audit', estimatedHours: 24 },
-        { id: '4.5', name: 'Bug Fixes', estimatedHours: 32 },
+        { id: "4.1", name: "Salesforce API Integration", estimatedHours: 48 },
+        { id: "4.2", name: "Integration Testing", estimatedHours: 32 },
+        { id: "4.3", name: "Performance Testing", estimatedHours: 24 },
+        { id: "4.4", name: "Security Audit", estimatedHours: 24 },
+        { id: "4.5", name: "Bug Fixes", estimatedHours: 32 },
       ],
     },
     {
       phaseNumber: 5,
-      phaseName: 'Deployment & Training',
-      objectives: [
-        'Deploy to production',
-        'Train end users',
-        'Establish support processes',
-      ],
-      deliverables: [
-        'Production Environment',
-        'Training Materials',
-        'Operations Runbook',
-      ],
+      phaseName: "Deployment & Training",
+      objectives: ["Deploy to production", "Train end users", "Establish support processes"],
+      deliverables: ["Production Environment", "Training Materials", "Operations Runbook"],
       durationDays: 10,
       dependencies: [4],
       tasks: [
-        { id: '5.1', name: 'Production Setup', estimatedHours: 24 },
-        { id: '5.2', name: 'Data Migration', estimatedHours: 16 },
-        { id: '5.3', name: 'User Training', estimatedHours: 24 },
-        { id: '5.4', name: 'Documentation', estimatedHours: 16 },
-        { id: '5.5', name: 'Go-Live Support', estimatedHours: 20 },
+        { id: "5.1", name: "Production Setup", estimatedHours: 24 },
+        { id: "5.2", name: "Data Migration", estimatedHours: 16 },
+        { id: "5.3", name: "User Training", estimatedHours: 24 },
+        { id: "5.4", name: "Documentation", estimatedHours: 16 },
+        { id: "5.5", name: "Go-Live Support", estimatedHours: 20 },
       ],
     },
   ],
@@ -705,37 +680,37 @@ export const allSampleOutputs = {
 // Validation functions
 export function validateEstimate(estimate: any): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
-  
+
   if (!estimate.estimateMarkdown) {
-    errors.push('Missing estimate markdown');
+    errors.push("Missing estimate markdown");
   }
   if (!estimate.scenarioA) {
-    errors.push('Missing Scenario A');
+    errors.push("Missing Scenario A");
   }
   if (!estimate.scenarioB) {
-    errors.push('Missing Scenario B');
+    errors.push("Missing Scenario B");
   }
   if (!estimate.roiAnalysis) {
-    errors.push('Missing ROI analysis');
+    errors.push("Missing ROI analysis");
   }
   if (estimate.scenarioA && !estimate.scenarioA.totalCost) {
-    errors.push('Scenario A missing total cost');
+    errors.push("Scenario A missing total cost");
   }
   if (estimate.scenarioB && !estimate.scenarioB.totalCost) {
-    errors.push('Scenario B missing total cost');
+    errors.push("Scenario B missing total cost");
   }
-  
+
   return { valid: errors.length === 0, errors };
 }
 
 export function validatePmBreakdown(breakdown: any): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
-  
+
   if (!breakdown.phases || !Array.isArray(breakdown.phases)) {
-    errors.push('Missing or invalid phases array');
+    errors.push("Missing or invalid phases array");
     return { valid: false, errors };
   }
-  
+
   breakdown.phases.forEach((phase: any, index: number) => {
     if (!phase.phaseName) {
       errors.push(`Phase ${index + 1} missing name`);
@@ -747,22 +722,22 @@ export function validatePmBreakdown(breakdown: any): { valid: boolean; errors: s
       errors.push(`Phase ${index + 1} missing deliverables`);
     }
   });
-  
+
   return { valid: errors.length === 0, errors };
 }
 
 export function validateEmail(email: string): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
-  
-  if (!email.includes('Subject:')) {
-    errors.push('Missing subject line');
+
+  if (!email.includes("Subject:")) {
+    errors.push("Missing subject line");
   }
-  if (!email.includes('Dear')) {
-    errors.push('Missing greeting');
+  if (!email.includes("Dear")) {
+    errors.push("Missing greeting");
   }
-  if (!email.includes('$') && !email.includes('Investment')) {
-    errors.push('Missing pricing information');
+  if (!email.includes("$") && !email.includes("Investment")) {
+    errors.push("Missing pricing information");
   }
-  
+
   return { valid: errors.length === 0, errors };
 }

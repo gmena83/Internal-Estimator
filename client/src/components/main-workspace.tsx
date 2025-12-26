@@ -1,6 +1,20 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { MessageSquare, FileText, Presentation, Code2, ClipboardList, Paperclip, Download, FileIcon, Image, FolderOpen, CheckCircle2, Circle, CheckSquare } from "lucide-react";
+import {
+  MessageSquare,
+  FileText,
+  Presentation,
+  Code2,
+  ClipboardList,
+  Paperclip,
+  Download,
+  FileIcon,
+  Image,
+  FolderOpen,
+  CheckCircle2,
+  Circle,
+  CheckSquare,
+} from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,7 +24,13 @@ import { MarkdownViewer } from "@/components/markdown-viewer";
 import { ActionButtons } from "@/components/action-buttons";
 import { ScenarioComparison } from "@/components/scenario-comparison";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Project, Scenario, ROIAnalysis, Attachment, PMTaskChecklistItem } from "@shared/schema";
+import type {
+  Project,
+  Scenario,
+  ROIAnalysis,
+  Attachment,
+  PMTaskChecklistItem,
+} from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -52,7 +72,7 @@ export function MainWorkspace({ projectId }: MainWorkspaceProps) {
   const isProjectComplete = project?.status === "complete";
   const completedStages = Array.from(
     { length: isProjectComplete ? 5 : currentStage - 1 },
-    (_, i) => i + 1
+    (_, i) => i + 1,
   );
 
   const scenarioA = project?.scenarioA as Scenario | null;
@@ -72,16 +92,11 @@ export function MainWorkspace({ projectId }: MainWorkspaceProps) {
             <div className="flex items-center gap-4 mb-4">
               <h1 className="text-xl font-semibold">{project.title}</h1>
               {project.clientName && (
-                <span className="text-sm text-muted-foreground">
-                  for {project.clientName}
-                </span>
+                <span className="text-sm text-muted-foreground">for {project.clientName}</span>
               )}
             </div>
           ) : null}
-          <StageProgress
-            currentStage={currentStage}
-            completedStages={completedStages}
-          />
+          <StageProgress currentStage={currentStage} completedStages={completedStages} />
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -121,7 +136,7 @@ export function MainWorkspace({ projectId }: MainWorkspaceProps) {
                   <span className="hidden sm:inline">Docs</span>
                 </TabsTrigger>
               )}
-              {project?.status === 'complete' && (
+              {project?.status === "complete" && (
                 <TabsTrigger value="files" className="gap-2" data-testid="tab-files">
                   <FolderOpen className="h-4 w-4" />
                   <span className="hidden sm:inline">Files</span>
@@ -138,13 +153,19 @@ export function MainWorkspace({ projectId }: MainWorkspaceProps) {
             <ChatInterface projectId={projectId} />
           </TabsContent>
 
-          <TabsContent value="estimate" className="h-full m-0 overflow-auto data-[state=inactive]:hidden">
+          <TabsContent
+            value="estimate"
+            className="h-full m-0 overflow-auto data-[state=inactive]:hidden"
+          >
             <div className="p-6">
               <MarkdownViewer content={project?.estimateMarkdown} isLoading={isLoading} />
             </div>
           </TabsContent>
 
-          <TabsContent value="scenarios" className="h-full m-0 overflow-auto data-[state=inactive]:hidden">
+          <TabsContent
+            value="scenarios"
+            className="h-full m-0 overflow-auto data-[state=inactive]:hidden"
+          >
             <div className="p-6">
               <ScenarioComparison
                 scenarioA={scenarioA}
@@ -156,7 +177,10 @@ export function MainWorkspace({ projectId }: MainWorkspaceProps) {
             </div>
           </TabsContent>
 
-          <TabsContent value="guides" className="h-full m-0 overflow-auto data-[state=inactive]:hidden">
+          <TabsContent
+            value="guides"
+            className="h-full m-0 overflow-auto data-[state=inactive]:hidden"
+          >
             <div className="p-6 space-y-6">
               {project?.vibecodeGuideA && (
                 <Card className="p-6">
@@ -181,21 +205,27 @@ export function MainWorkspace({ projectId }: MainWorkspaceProps) {
 
           <TabsContent value="pm" className="h-full m-0 overflow-auto data-[state=inactive]:hidden">
             <div className="p-6">
-              <PMBreakdownView 
-                breakdown={project?.pmBreakdown as any} 
+              <PMBreakdownView
+                breakdown={project?.pmBreakdown as any}
                 project={project}
                 onApproval={() => setActiveTab("files")}
               />
             </div>
           </TabsContent>
 
-          <TabsContent value="docs" className="h-full m-0 overflow-auto data-[state=inactive]:hidden">
+          <TabsContent
+            value="docs"
+            className="h-full m-0 overflow-auto data-[state=inactive]:hidden"
+          >
             <div className="p-6">
               <DocumentsView attachments={(project?.attachments as Attachment[]) || []} />
             </div>
           </TabsContent>
 
-          <TabsContent value="files" className="h-full m-0 overflow-auto data-[state=inactive]:hidden">
+          <TabsContent
+            value="files"
+            className="h-full m-0 overflow-auto data-[state=inactive]:hidden"
+          >
             <div className="p-6">
               <ProjectFilesView project={project} />
             </div>
@@ -204,20 +234,24 @@ export function MainWorkspace({ projectId }: MainWorkspaceProps) {
       </div>
 
       <div className="border-t border-border bg-background p-4">
-        <ActionButtons
-          project={project}
-          currentStage={currentStage}
-          isLoading={isLoading}
-        />
+        <ActionButtons project={project} currentStage={currentStage} isLoading={isLoading} />
       </div>
     </div>
   );
 }
 
-function PMBreakdownView({ breakdown, project, onApproval }: { breakdown: any; project?: Project; onApproval?: () => void }) {
+function PMBreakdownView({
+  breakdown,
+  project,
+  onApproval,
+}: {
+  breakdown: any;
+  project?: Project;
+  onApproval?: () => void;
+}) {
   const { toast } = useToast();
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
-  
+
   const finalApproval = useMutation({
     mutationFn: async () => {
       return await apiRequest("POST", `/api/projects/${project?.id}/final-approval`);
@@ -258,7 +292,7 @@ function PMBreakdownView({ breakdown, project, onApproval }: { breakdown: any; p
   }
 
   const toggleTask = (taskId: string) => {
-    setExpandedTasks(prev => {
+    setExpandedTasks((prev) => {
       const next = new Set(prev);
       if (next.has(taskId)) {
         next.delete(taskId);
@@ -279,9 +313,7 @@ function PMBreakdownView({ breakdown, project, onApproval }: { breakdown: any; p
             </div>
             <div>
               <h3 className="font-semibold">{phase.phaseName}</h3>
-              <p className="text-sm text-muted-foreground">
-                {phase.durationDays} days
-              </p>
+              <p className="text-sm text-muted-foreground">{phase.durationDays} days</p>
             </div>
           </div>
 
@@ -290,7 +322,9 @@ function PMBreakdownView({ breakdown, project, onApproval }: { breakdown: any; p
               <p className="text-sm font-medium mb-2">Objectives</p>
               <ul className="list-disc ml-6 space-y-1">
                 {phase.objectives.map((obj: string, i: number) => (
-                  <li key={i} className="text-sm">{obj}</li>
+                  <li key={i} className="text-sm">
+                    {obj}
+                  </li>
                 ))}
               </ul>
             </div>
@@ -304,7 +338,7 @@ function PMBreakdownView({ breakdown, project, onApproval }: { breakdown: any; p
                   const taskId = task.id || `${index}-${i}`;
                   const isExpanded = expandedTasks.has(taskId);
                   const checklist = task.checklist || [];
-                  
+
                   return (
                     <Collapsible key={i} open={isExpanded} onOpenChange={() => toggleTask(taskId)}>
                       <div className="rounded-lg bg-muted overflow-hidden">
@@ -316,7 +350,9 @@ function PMBreakdownView({ breakdown, project, onApproval }: { breakdown: any; p
                             <div className="flex-1">
                               <p className="text-sm font-medium">{task.name || task}</p>
                               {task.description && (
-                                <p className="text-xs text-muted-foreground mt-1">{task.description}</p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {task.description}
+                                </p>
                               )}
                             </div>
                             <div className="flex items-center gap-3">
@@ -337,7 +373,9 @@ function PMBreakdownView({ breakdown, project, onApproval }: { breakdown: any; p
                         <CollapsibleContent>
                           {checklist.length > 0 && (
                             <div className="px-3 pb-3 pt-1 border-t border-border/50">
-                              <p className="text-xs font-medium text-muted-foreground mb-2">Completion Checklist:</p>
+                              <p className="text-xs font-medium text-muted-foreground mb-2">
+                                Completion Checklist:
+                              </p>
                               <div className="space-y-2">
                                 {checklist.map((item: PMTaskChecklistItem, ci: number) => (
                                   <div key={ci} className="flex items-start gap-2">
@@ -371,10 +409,7 @@ function PMBreakdownView({ breakdown, project, onApproval }: { breakdown: any; p
               <p className="text-sm font-medium mb-2">Deliverables</p>
               <div className="flex flex-wrap gap-2">
                 {phase.deliverables.map((del: string, i: number) => (
-                  <span
-                    key={i}
-                    className="px-2 py-1 rounded bg-primary/10 text-primary text-xs"
-                  >
+                  <span key={i} className="px-2 py-1 rounded bg-primary/10 text-primary text-xs">
                     {del}
                   </span>
                 ))}
@@ -384,7 +419,7 @@ function PMBreakdownView({ breakdown, project, onApproval }: { breakdown: any; p
         </Card>
       ))}
 
-      {project && project.status !== 'complete' && (
+      {project && project.status !== "complete" && (
         <div className="flex justify-center pt-4">
           <Button
             size="lg"
@@ -403,7 +438,7 @@ function PMBreakdownView({ breakdown, project, onApproval }: { breakdown: any; p
 }
 
 function ProjectFilesView({ project }: { project?: Project }) {
-  if (!project || project.status !== 'complete') {
+  if (!project || project.status !== "complete") {
     return (
       <div className="text-center py-12 text-muted-foreground">
         <FolderOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -412,12 +447,12 @@ function ProjectFilesView({ project }: { project?: Project }) {
     );
   }
 
-  const safeName = project.title.replace(/[^a-zA-Z0-9]/g, '_');
+  const safeName = project.title.replace(/[^a-zA-Z0-9]/g, "_");
 
   const generateMarkdownFile = (title: string, content: string) => {
-    const blob = new Blob([content], { type: 'text/markdown' });
+    const blob = new Blob([content], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = `${safeName}_${title}.md`;
     a.click();
@@ -426,10 +461,10 @@ function ProjectFilesView({ project }: { project?: Project }) {
 
   const generateConsolidatedMarkdown = () => {
     let consolidated = `# ${project.title} - Complete Project Documentation\n\n`;
-    consolidated += `**Client:** ${project.clientName || 'N/A'}\n`;
+    consolidated += `**Client:** ${project.clientName || "N/A"}\n`;
     consolidated += `**Generated:** ${new Date().toLocaleDateString()}\n\n`;
     consolidated += `---\n\n`;
-    
+
     if (project.estimateMarkdown) {
       consolidated += `# Part 1: Project Proposal\n\n${project.estimateMarkdown}\n\n---\n\n`;
     }
@@ -442,7 +477,7 @@ function ProjectFilesView({ project }: { project?: Project }) {
     if (project.pmBreakdown) {
       consolidated += `# Part 4: Project Management Breakdown\n\n${generatePMMarkdown(project.pmBreakdown as any)}\n`;
     }
-    
+
     return consolidated;
   };
 
@@ -503,7 +538,9 @@ function ProjectFilesView({ project }: { project?: Project }) {
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-sm">Complete Project Package</p>
-            <p className="text-xs text-muted-foreground mt-1">Markdown: All documents combined. PDF: Main proposal document.</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Markdown: All documents combined. PDF: Main proposal document.
+            </p>
           </div>
         </div>
         <div className="mt-4 flex gap-2">
@@ -530,7 +567,7 @@ function ProjectFilesView({ project }: { project?: Project }) {
           </Button>
         </div>
       </Card>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {files.map((file) => {
           const Icon = file.icon;
@@ -541,7 +578,7 @@ function ProjectFilesView({ project }: { project?: Project }) {
                   <Icon className="h-5 w-5 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm">{file.name.replace(/_/g, ' ')}</p>
+                  <p className="font-medium text-sm">{file.name.replace(/_/g, " ")}</p>
                   <p className="text-xs text-muted-foreground mt-1">{file.description}</p>
                 </div>
               </div>
@@ -590,16 +627,16 @@ function ProjectFilesView({ project }: { project?: Project }) {
 
 function generatePMMarkdown(breakdown: any): string {
   if (!breakdown) return "";
-  
+
   const phases = breakdown.phases || breakdown || [];
   if (!Array.isArray(phases)) return "";
-  
+
   let md = "# Project Management Breakdown\n\n";
-  
+
   phases.forEach((phase: any, index: number) => {
     md += `## Phase ${phase.phaseNumber || index + 1}: ${phase.phaseName}\n\n`;
     md += `**Duration:** ${phase.durationDays} days\n\n`;
-    
+
     if (phase.objectives?.length) {
       md += "### Objectives\n";
       phase.objectives.forEach((obj: string) => {
@@ -607,14 +644,14 @@ function generatePMMarkdown(breakdown: any): string {
       });
       md += "\n";
     }
-    
+
     if (phase.tasks?.length) {
       md += "### Tasks\n\n";
       phase.tasks.forEach((task: any) => {
         md += `#### ${task.name || task}\n`;
         if (task.description) md += `${task.description}\n`;
         if (task.estimatedHours) md += `**Estimated Hours:** ${task.estimatedHours}h\n`;
-        
+
         if (task.checklist?.length) {
           md += "\n**Completion Checklist:**\n";
           task.checklist.forEach((item: any) => {
@@ -624,7 +661,7 @@ function generatePMMarkdown(breakdown: any): string {
         md += "\n";
       });
     }
-    
+
     if (phase.deliverables?.length) {
       md += "### Deliverables\n";
       phase.deliverables.forEach((del: string) => {
@@ -632,10 +669,10 @@ function generatePMMarkdown(breakdown: any): string {
       });
       md += "\n";
     }
-    
+
     md += "---\n\n";
   });
-  
+
   return md;
 }
 
@@ -672,16 +709,12 @@ function DocumentsView({ attachments }: { attachments: Attachment[] }) {
         {attachments.map((attachment) => (
           <Card key={attachment.id} className="p-4" data-testid={`doc-${attachment.id}`}>
             <div className="flex items-start gap-3">
-              <div className="text-muted-foreground">
-                {getFileIcon(attachment.mimeType)}
-              </div>
+              <div className="text-muted-foreground">{getFileIcon(attachment.mimeType)}</div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm truncate" title={attachment.originalName}>
                   {attachment.originalName}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  {formatFileSize(attachment.size)}
-                </p>
+                <p className="text-xs text-muted-foreground">{formatFileSize(attachment.size)}</p>
               </div>
             </div>
             <div className="mt-3 flex gap-2">

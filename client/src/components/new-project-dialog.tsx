@@ -22,11 +22,7 @@ interface NewProjectDialogProps {
   onProjectCreated: (projectId: string) => void;
 }
 
-export function NewProjectDialog({
-  open,
-  onOpenChange,
-  onProjectCreated,
-}: NewProjectDialogProps) {
+export function NewProjectDialog({ open, onOpenChange, onProjectCreated }: NewProjectDialogProps) {
   const [title, setTitle] = useState("");
   const [clientName, setClientName] = useState("");
   const [rawInput, setRawInput] = useState("");
@@ -74,8 +70,8 @@ export function NewProjectDialog({
         <DialogHeader>
           <DialogTitle>Create New Project</DialogTitle>
           <DialogDescription>
-            Start a new project estimate by providing the basic details and pasting
-            client information.
+            Start a new project estimate by providing the basic details and pasting client
+            information.
           </DialogDescription>
         </DialogHeader>
 
@@ -103,9 +99,7 @@ export function NewProjectDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="rawInput">
-              Client Email / Meeting Notes (Optional)
-            </Label>
+            <Label htmlFor="rawInput">Client Email / Meeting Notes (Optional)</Label>
             <Textarea
               id="rawInput"
               value={rawInput}

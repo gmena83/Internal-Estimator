@@ -1,6 +1,19 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Clock, Archive, FolderOpen, Plus, Filter, Search, FileText, Presentation, FileCode, ClipboardList, Download, X } from "lucide-react";
+import {
+  Clock,
+  Archive,
+  FolderOpen,
+  Plus,
+  Filter,
+  Search,
+  FileText,
+  Presentation,
+  FileCode,
+  ClipboardList,
+  Download,
+  X,
+} from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +47,7 @@ interface ProjectFile {
 
 function getProjectFiles(project: Project): ProjectFile[] {
   const files: ProjectFile[] = [];
-  
+
   if (project.estimateMarkdown) {
     files.push({
       name: "Project Estimate",
@@ -44,7 +57,7 @@ function getProjectFiles(project: Project): ProjectFile[] {
       icon: FileText,
     });
   }
-  
+
   if (project.proposalPdfUrl) {
     files.push({
       name: "Proposal PDF",
@@ -54,7 +67,7 @@ function getProjectFiles(project: Project): ProjectFile[] {
       icon: FileText,
     });
   }
-  
+
   if (project.internalReportPdfUrl) {
     files.push({
       name: "Internal Report PDF",
@@ -64,7 +77,7 @@ function getProjectFiles(project: Project): ProjectFile[] {
       icon: FileText,
     });
   }
-  
+
   if (project.presentationUrl) {
     files.push({
       name: "Client Presentation",
@@ -74,7 +87,7 @@ function getProjectFiles(project: Project): ProjectFile[] {
       icon: Presentation,
     });
   }
-  
+
   if (project.vibecodeGuideA) {
     files.push({
       name: "Manual A (High-Code)",
@@ -84,7 +97,7 @@ function getProjectFiles(project: Project): ProjectFile[] {
       icon: FileCode,
     });
   }
-  
+
   if (project.vibecodeGuideB) {
     files.push({
       name: "Manual B (No-Code)",
@@ -94,7 +107,7 @@ function getProjectFiles(project: Project): ProjectFile[] {
       icon: FileCode,
     });
   }
-  
+
   if (project.pmBreakdown) {
     files.push({
       name: "PM Breakdown",
@@ -104,7 +117,7 @@ function getProjectFiles(project: Project): ProjectFile[] {
       icon: ClipboardList,
     });
   }
-  
+
   return files;
 }
 
@@ -134,7 +147,11 @@ const statusLabels: Record<string, string> = {
   completed: "Completed",
 };
 
-export function LeftSidebar({ selectedProjectId, onSelectProject, onNewProject }: LeftSidebarProps) {
+export function LeftSidebar({
+  selectedProjectId,
+  onSelectProject,
+  onNewProject,
+}: LeftSidebarProps) {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [filesDialogOpen, setFilesDialogOpen] = useState(false);
   const [selectedFilesProject, setSelectedFilesProject] = useState<Project | null>(null);
@@ -162,7 +179,8 @@ export function LeftSidebar({ selectedProjectId, onSelectProject, onNewProject }
       project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       project.clientName?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || project.status === statusFilter;
-    const matchesStage = stageFilter === "all" || project.currentStage === parseInt(stageFilter, 10);
+    const matchesStage =
+      stageFilter === "all" || project.currentStage === parseInt(stageFilter, 10);
     return matchesSearch && matchesStatus && matchesStage;
   });
 
@@ -176,7 +194,9 @@ export function LeftSidebar({ selectedProjectId, onSelectProject, onNewProject }
             </div>
             <div className="flex flex-col">
               <span className="font-semibold text-sidebar-foreground">ISI Agent</span>
-              <span className="text-[10px] text-muted-foreground leading-tight">Intelligent Strategy Interface</span>
+              <span className="text-[10px] text-muted-foreground leading-tight">
+                Intelligent Strategy Interface
+              </span>
             </div>
           </div>
         </div>
@@ -189,12 +209,7 @@ export function LeftSidebar({ selectedProjectId, onSelectProject, onNewProject }
           <Plus className="h-4 w-4 mr-2" />
           New Project
         </Button>
-        <Button
-          variant="outline"
-          className="w-full mt-2"
-          asChild
-          data-testid="link-diagnostician"
-        >
+        <Button variant="outline" className="w-full mt-2" asChild data-testid="link-diagnostician">
           <Link href="/diagnostician">
             <Search className="h-4 w-4 mr-2" />
             Repo Diagnostician
@@ -242,9 +257,7 @@ export function LeftSidebar({ selectedProjectId, onSelectProject, onNewProject }
                       </p>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-xs text-muted-foreground">
-                          {project.createdAt
-                            ? format(new Date(project.createdAt), "MMM d")
-                            : ""}
+                          {project.createdAt ? format(new Date(project.createdAt), "MMM d") : ""}
                         </span>
                         <Badge
                           variant="secondary"
@@ -260,7 +273,7 @@ export function LeftSidebar({ selectedProjectId, onSelectProject, onNewProject }
                       className="h-6 w-6 flex-shrink-0 flex items-center justify-center rounded-md hover-elevate active-elevate-2 cursor-pointer"
                       onClick={(e) => handleOpenFiles(e, project)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
+                        if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
                           handleOpenFiles(e as unknown as React.MouseEvent, project);
                         }
@@ -291,7 +304,8 @@ export function LeftSidebar({ selectedProjectId, onSelectProject, onNewProject }
                 No files generated yet. Complete workflow stages to generate assets.
               </div>
             ) : (
-              selectedFilesProject && getProjectFiles(selectedFilesProject).map((file, index) => (
+              selectedFilesProject &&
+              getProjectFiles(selectedFilesProject).map((file, index) => (
                 <div
                   key={index}
                   className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover-elevate"
@@ -308,11 +322,7 @@ export function LeftSidebar({ selectedProjectId, onSelectProject, onNewProject }
                     </div>
                   </div>
                   {file.url && (
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      asChild
-                    >
+                    <Button size="icon" variant="ghost" asChild>
                       <a href={file.url} download target="_blank" rel="noopener noreferrer">
                         <Download className="h-4 w-4" />
                       </a>
@@ -328,11 +338,7 @@ export function LeftSidebar({ selectedProjectId, onSelectProject, onNewProject }
       <div className="p-4 border-t border-sidebar-border">
         <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
           <DialogTrigger asChild>
-            <Button
-              variant="glass"
-              className="w-full"
-              data-testid="button-history"
-            >
+            <Button variant="glass" className="w-full" data-testid="button-history">
               <Archive className="h-4 w-4 mr-2" />
               History
             </Button>

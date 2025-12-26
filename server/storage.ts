@@ -53,7 +53,10 @@ export interface IStorage {
   getDiagnosticReport(id: string): Promise<DiagnosticReport | undefined>;
   getDiagnosticReports(): Promise<DiagnosticReport[]>;
   createDiagnosticReport(report: InsertDiagnosticReport): Promise<DiagnosticReport>;
-  updateDiagnosticReport(id: string, updates: Partial<InsertDiagnosticReport>): Promise<DiagnosticReport | undefined>;
+  updateDiagnosticReport(
+    id: string,
+    updates: Partial<InsertDiagnosticReport>,
+  ): Promise<DiagnosticReport | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -68,22 +71,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRecentProjects(limit: number = 5): Promise<Project[]> {
-    return await db
-      .select()
-      .from(projects)
-      .orderBy(desc(projects.updatedAt))
-      .limit(limit);
+    return await db.select().from(projects).orderBy(desc(projects.updatedAt)).limit(limit);
   }
 
   async createProject(project: InsertProject): Promise<Project> {
-    const [created] = await db.insert(projects).values(project).returning();
+    const [created] = await db
+      .insert(projects)
+      .values(project as any)
+      .returning();
     return created;
   }
 
   async updateProject(id: string, updates: Partial<InsertProject>): Promise<Project | undefined> {
     const [updated] = await db
       .update(projects)
-      .set({ ...updates, updatedAt: new Date() })
+      .set({ ...updates, updatedAt: new Date() } as any)
       .where(eq(projects.id, id))
       .returning();
     return updated || undefined;
@@ -103,7 +105,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createMessage(message: InsertMessage): Promise<Message> {
-    const [created] = await db.insert(messages).values(message).returning();
+    const [created] = await db
+      .insert(messages)
+      .values(message as any)
+      .returning();
     return created;
   }
 
@@ -126,17 +131,17 @@ export class DatabaseStorage implements IStorage {
 
   async searchKnowledgeEntries(query: string, category?: string): Promise<KnowledgeEntry[]> {
     const searchPattern = `%${query.toLowerCase()}%`;
-    
+
     if (category) {
       return await db
         .select()
         .from(knowledgeEntries)
         .where(
-          sql`LOWER(${knowledgeEntries.content}) LIKE ${searchPattern} AND ${knowledgeEntries.category} = ${category}`
+          sql`LOWER(${knowledgeEntries.content}) LIKE ${searchPattern} AND ${knowledgeEntries.category} = ${category}`,
         )
         .orderBy(desc(knowledgeEntries.createdAt));
     }
-    
+
     return await db
       .select()
       .from(knowledgeEntries)
@@ -146,9 +151,18 @@ export class DatabaseStorage implements IStorage {
 
   // API Health
   async getApiHealth(): Promise<ApiHealthLog[]> {
-    const services = ['gemini', 'claude', 'openai', 'perplexity', 'pdf_co', 'resend', 'gamma', 'nano_banana'];
+    const services = [
+      "gemini",
+      "claude",
+      "openai",
+      "perplexity",
+      "pdf_co",
+      "resend",
+      "gamma",
+      "nano_banana",
+    ];
     const results: ApiHealthLog[] = [];
-    
+
     for (const service of services) {
       const [log] = await db
         .select()
@@ -156,7 +170,7 @@ export class DatabaseStorage implements IStorage {
         .where(eq(apiHealthLogs.service, service))
         .orderBy(desc(apiHealthLogs.lastChecked))
         .limit(1);
-      
+
       if (log) {
         results.push(log);
       } else {
@@ -165,14 +179,14 @@ export class DatabaseStorage implements IStorage {
           .insert(apiHealthLogs)
           .values({
             service,
-            status: 'unknown',
+            status: "unknown",
             requestCount: 0,
           })
           .returning();
         results.push(created);
       }
     }
-    
+
     return results;
   }
 
@@ -182,7 +196,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(apiHealthLogs)
       .where(eq(apiHealthLogs.service, log.service));
-    
+
     if (existing) {
       const [updated] = await db
         .update(apiHealthLogs)
@@ -197,7 +211,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return updated;
     }
-    
+
     const [created] = await db.insert(apiHealthLogs).values(log).returning();
     return created;
   }
@@ -223,10 +237,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(apiUsageLogs.projectId, projectId));
 
     const providerDisplayNames: Record<string, string> = {
-      gemini: 'Google Gemini',
-      claude: 'Anthropic Claude',
-      openai: 'OpenAI',
-      perplexity: 'Perplexity',
+      gemini: "Google Gemini",
+      claude: "Anthropic Claude",
+      openai: "OpenAI",
+      perplexity: "Perplexity",
     };
 
     const statsMap = new Map<string, ProjectApiUsageStats>();
@@ -273,14 +287,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createDiagnosticReport(report: InsertDiagnosticReport): Promise<DiagnosticReport> {
-    const [created] = await db.insert(diagnosticReports).values(report).returning();
+    const [created] = await db
+      .insert(diagnosticReports)
+      .values(report as any)
+      .returning();
     return created;
   }
 
-  async updateDiagnosticReport(id: string, updates: Partial<InsertDiagnosticReport>): Promise<DiagnosticReport | undefined> {
+  async updateDiagnosticReport(
+    id: string,
+    updates: Partial<InsertDiagnosticReport>,
+  ): Promise<DiagnosticReport | undefined> {
     const [updated] = await db
       .update(diagnosticReports)
-      .set(updates)
+      .set(updates as any)
       .where(eq(diagnosticReports.id, id))
       .returning();
     return updated || undefined;

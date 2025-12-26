@@ -93,9 +93,7 @@ export function ScenarioComparison({
             </div>
             <div className="p-4 rounded-lg bg-muted">
               <p className="text-xs text-muted-foreground mb-1">Payback Period</p>
-              <p className="text-xl font-semibold">
-                {roiAnalysis.paybackPeriodMonths} months
-              </p>
+              <p className="text-xl font-semibold">{roiAnalysis.paybackPeriodMonths} months</p>
               <p className="text-xs text-muted-foreground mt-1">
                 3-Year ROI: {formatNumber(roiAnalysis.threeYearROI)}%
               </p>
@@ -139,13 +137,15 @@ function ScenarioCard({
           Recommended
         </Badge>
       )}
-      
+
       <div className="flex items-start gap-4 mb-4">
         <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
           <Icon className="h-6 w-6 text-muted-foreground" />
         </div>
         <div>
-          <h3 className="font-semibold text-lg">Scenario {variant}: {scenario.name}</h3>
+          <h3 className="font-semibold text-lg">
+            Scenario {variant}: {scenario.name}
+          </h3>
           <p className="text-sm text-muted-foreground">{scenario.description}</p>
         </div>
       </div>

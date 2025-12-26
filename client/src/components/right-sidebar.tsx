@@ -1,18 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
-import { 
-  Wifi, 
-  WifiOff, 
-  Activity, 
-  Brain, 
-  Code2, 
-  FileText, 
-  Mail, 
-  Presentation, 
+import {
+  Wifi,
+  WifiOff,
+  Activity,
+  Brain,
+  Code2,
+  FileText,
+  Mail,
+  Presentation,
   Image,
   RefreshCw,
   Search,
   DollarSign,
-  Zap
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -75,7 +75,11 @@ interface RightSidebarProps {
 }
 
 export function RightSidebar({ projectId }: RightSidebarProps) {
-  const { data: healthStatus, isLoading, refetch } = useQuery<ServiceStatus[]>({
+  const {
+    data: healthStatus,
+    isLoading,
+    refetch,
+  } = useQuery<ServiceStatus[]>({
     queryKey: ["/api/health"],
     refetchInterval: 30000,
   });
@@ -93,7 +97,7 @@ export function RightSidebar({ projectId }: RightSidebarProps) {
     }
   };
 
-  const lastUpdated = healthStatus?.[0]?.lastChecked 
+  const lastUpdated = healthStatus?.[0]?.lastChecked
     ? format(new Date(healthStatus[0].lastChecked), "h:mm:ss a")
     : null;
 
@@ -118,9 +122,7 @@ export function RightSidebar({ projectId }: RightSidebarProps) {
           </div>
         </div>
         {lastUpdated && (
-          <p className="text-xs text-muted-foreground mt-1">
-            Last updated: {lastUpdated}
-          </p>
+          <p className="text-xs text-muted-foreground mt-1">Last updated: {lastUpdated}</p>
         )}
       </div>
 
@@ -196,7 +198,7 @@ export function RightSidebar({ projectId }: RightSidebarProps) {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
               <h3 className="text-sm font-semibold text-sidebar-foreground">Project API Costs</h3>
             </div>
-            
+
             {usageLoading ? (
               <Card className="p-3">
                 <Skeleton className="h-12 w-full" />
@@ -206,14 +208,16 @@ export function RightSidebar({ projectId }: RightSidebarProps) {
                 <Card className="p-3 bg-accent/30">
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <span className="text-xs font-medium text-muted-foreground">Total Cost</span>
-                    <span className="text-sm font-bold text-foreground">${totalCost.toFixed(4)}</span>
+                    <span className="text-sm font-bold text-foreground">
+                      ${totalCost.toFixed(4)}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs text-muted-foreground">Total Tokens</span>
                     <span className="text-xs font-medium">{totalTokens.toLocaleString()}</span>
                   </div>
                 </Card>
-                
+
                 {usageStats.map((stat, idx) => {
                   const Icon = serviceIcons[stat.provider] || Zap;
                   return (
@@ -223,7 +227,9 @@ export function RightSidebar({ projectId }: RightSidebarProps) {
                         <span className="text-xs font-medium truncate flex-1">
                           {stat.displayName || serviceDisplayNames[stat.provider] || stat.provider}
                         </span>
-                        <span className="text-xs font-semibold text-foreground">${stat.totalCostUsd.toFixed(4)}</span>
+                        <span className="text-xs font-semibold text-foreground">
+                          ${stat.totalCostUsd.toFixed(4)}
+                        </span>
                       </div>
                       <div className="text-[10px] text-muted-foreground ml-5">
                         <span>{stat.model}</span>

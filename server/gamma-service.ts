@@ -11,9 +11,7 @@ interface GammaPresentationResult {
   error?: string;
 }
 
-export async function generatePresentation(
-  project: Project
-): Promise<GammaPresentationResult> {
+export async function generatePresentation(project: Project): Promise<GammaPresentationResult> {
   const startTime = Date.now();
 
   if (!gammaApiKey) {
@@ -23,8 +21,16 @@ export async function generatePresentation(
 
   try {
     const parsedData = project.parsedData as { mission?: string; objectives?: string[] } | null;
-    const scenarioA = project.scenarioA as { timeline?: string; investment?: string; features?: string[] } | null;
-    const scenarioB = project.scenarioB as { timeline?: string; investment?: string; features?: string[] } | null;
+    const scenarioA = project.scenarioA as {
+      timeline?: string;
+      investment?: string;
+      features?: string[];
+    } | null;
+    const scenarioB = project.scenarioB as {
+      timeline?: string;
+      investment?: string;
+      features?: string[];
+    } | null;
     const selectedScenario = project.selectedScenario === "A" ? scenarioA : scenarioB;
 
     const presentationContent = `
@@ -64,7 +70,7 @@ ${selectedScenario?.features?.map((f: string) => `- ${f}`).join("\n") || "- Core
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${gammaApiKey}`,
+        Authorization: `Bearer ${gammaApiKey}`,
       },
       body: JSON.stringify({
         title: project.title,
@@ -79,7 +85,7 @@ ${selectedScenario?.features?.map((f: string) => `- ${f}`).join("\n") || "- Core
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Gamma API error:", errorText);
-      
+
       await storage.updateApiHealth({
         service: "gamma",
         status: "error",
@@ -116,7 +122,7 @@ ${selectedScenario?.features?.map((f: string) => `- ${f}`).join("\n") || "- Core
     };
   } catch (error) {
     console.error("Error generating presentation:", error);
-    
+
     await storage.updateApiHealth({
       service: "gamma",
       status: "error",
@@ -137,7 +143,7 @@ export async function checkGammaHealth(): Promise<boolean> {
   try {
     const response = await fetch("https://api.gamma.app/v1/health", {
       headers: {
-        "Authorization": `Bearer ${gammaApiKey}`,
+        Authorization: `Bearer ${gammaApiKey}`,
       },
     });
 

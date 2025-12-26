@@ -13,6 +13,7 @@ The system orchestrates multiple AI services (Google Gemini, Anthropic Claude, O
 ## Key Features
 
 ### 5-Stage Autonomous Workflow
+
 1. **Mission Extraction** - AI parses client input to identify project scope, requirements, and deliverables
 2. **Dual-Scenario Estimates** - Generates High-Tech (custom development) vs No-Code solutions with detailed breakdowns
 3. **Production Assets** - Creates professional PDF proposals, internal reports, and presentations
@@ -20,69 +21,83 @@ The system orchestrates multiple AI services (Google Gemini, Anthropic Claude, O
 5. **Execution Planning** - Comprehensive guides with collapsible task checklists
 
 ### Multi-AI Orchestration
+
 - **Google Gemini** - Primary reasoning engine for deep analysis
 - **Anthropic Claude** - Alternative reasoning and content generation
 - **OpenAI** - General-purpose AI tasks
 - **Perplexity** - Real-time market research and competitive analysis
 
 ### Command Center Interface
+
 - **Three-Panel Layout** - Left sidebar for project navigation, main workspace for chat/documents, right sidebar for API health
 - **Glass Morphism UI** - Modern design with dark theme (#0E0F11 background, #1AD5E6 accent)
 - **Real-Time Monitoring** - Live API health status with latency tracking
 - **Dark/Light Theme** - Full theme support with consistent design tokens
 
 ### Document Generation
+
 - **PDF Proposals** - Professional styling (dark blue #0A3A5A, cyan #00B8D4 accents)
 - **Internal Reports** - Detailed analysis for internal stakeholders
 - **Execution Manuals** - 9-section guides with task breakdowns
 - **Markdown Export** - All documents available as Markdown
 
 ### Project Management
+
 - **Project-Specific API Usage Tracking** - Cost monitoring per project
 - **File Upload Support** - PDF, Word, Excel document processing
 - **Email Integration** - Preview, edit, and send with Resend API
 - **Knowledge Base** - RAG system for learning from past projects
 
+## Security & Vulnerabilities
+
+- **Known Issue**: `npm audit` reports high-severity vulnerabilities in `xlsx` (imported as `xlsx`). This is currently used in `server/pricing-matrix.ts` to read legacy pricing data.
+  - **Mitigation**: Access is limited to internal server-side reading of local files.
+  - **Recommendation**: Refactor to use `.json` or `exceljs`.
+
 ## Technology Stack
 
 ### Frontend
-| Technology | Purpose |
-|------------|---------|
-| React 18 | UI framework |
-| TypeScript | Type safety |
-| Vite | Build tool & dev server |
-| Tailwind CSS | Styling |
-| shadcn/ui | Component library |
-| Radix UI | Accessible primitives |
+
+| Technology     | Purpose                 |
+| -------------- | ----------------------- |
+| React 18       | UI framework            |
+| TypeScript     | Type safety             |
+| Vite           | Build tool & dev server |
+| Tailwind CSS   | Styling                 |
+| shadcn/ui      | Component library       |
+| Radix UI       | Accessible primitives   |
 | TanStack Query | Server state management |
-| Wouter | Lightweight routing |
-| Framer Motion | Animations |
+| Wouter         | Lightweight routing     |
+| Framer Motion  | Animations              |
 
 ### Backend
-| Technology | Purpose |
-|------------|---------|
-| Node.js | Runtime |
-| Express | HTTP server |
-| TypeScript | Type safety |
+
+| Technology  | Purpose         |
+| ----------- | --------------- |
+| Node.js     | Runtime         |
+| Express     | HTTP server     |
+| TypeScript  | Type safety     |
 | Drizzle ORM | Database access |
-| Zod | Validation |
-| pdfmake | PDF generation |
-| Resend | Email delivery |
+| Zod         | Validation      |
+| pdfmake     | PDF generation  |
+| Resend      | Email delivery  |
 
 ### Database
-| Technology | Purpose |
-|------------|---------|
-| PostgreSQL | Primary data store |
+
+| Technology  | Purpose                    |
+| ----------- | -------------------------- |
+| PostgreSQL  | Primary data store         |
 | Drizzle ORM | Query builder & migrations |
-| drizzle-zod | Schema validation |
+| drizzle-zod | Schema validation          |
 
 ### AI Services
-| Service | Purpose |
-|---------|---------|
-| Google Gemini | Primary reasoning |
-| Anthropic Claude | Alternative AI |
-| OpenAI | General tasks |
-| Perplexity | Market research |
+
+| Service          | Purpose           |
+| ---------------- | ----------------- |
+| Google Gemini    | Primary reasoning |
+| Anthropic Claude | Alternative AI    |
+| OpenAI           | General tasks     |
+| Perplexity       | Market research   |
 
 ## Architecture
 
@@ -117,15 +132,16 @@ The system orchestrates multiple AI services (Google Gemini, Anthropic Claude, O
 
 ```typescript
 // Key Tables
-projects        // Main entity: state, scenarios, outputs
-messages        // Chat history per project
-knowledgeEntries // RAG knowledge base
-apiHealthLogs   // Real-time API status tracking
+projects; // Main entity: state, scenarios, outputs
+messages; // Chat history per project
+knowledgeEntries; // RAG knowledge base
+apiHealthLogs; // Real-time API status tracking
 ```
 
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js 20+
 - PostgreSQL database
 - API keys for AI services
@@ -207,54 +223,62 @@ npm start
 ## API Endpoints
 
 ### Projects
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/projects` | List all projects |
-| GET | `/api/projects/:id` | Get project details |
-| POST | `/api/projects` | Create new project |
-| POST | `/api/projects/:id/chat` | Send message |
-| POST | `/api/projects/:id/approve-estimate` | Approve and generate PDF |
-| POST | `/api/projects/:id/send-email` | Send proposal email |
-| POST | `/api/projects/:id/reset` | Reset project to stage 1 |
+
+| Method | Endpoint                             | Description              |
+| ------ | ------------------------------------ | ------------------------ |
+| GET    | `/api/projects`                      | List all projects        |
+| GET    | `/api/projects/:id`                  | Get project details      |
+| POST   | `/api/projects`                      | Create new project       |
+| POST   | `/api/projects/:id/chat`             | Send message             |
+| POST   | `/api/projects/:id/approve-estimate` | Approve and generate PDF |
+| POST   | `/api/projects/:id/send-email`       | Send proposal email      |
+| POST   | `/api/projects/:id/reset`            | Reset project to stage 1 |
 
 ### Documents
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/projects/:id/proposal.pdf` | Download proposal PDF |
-| GET | `/api/projects/:id/report.pdf` | Download internal report |
-| GET | `/api/projects/:id/execution.pdf` | Download execution guide |
-| GET | `/api/projects/:id/consolidated.pdf` | Download main proposal |
+
+| Method | Endpoint                             | Description              |
+| ------ | ------------------------------------ | ------------------------ |
+| GET    | `/api/projects/:id/proposal.pdf`     | Download proposal PDF    |
+| GET    | `/api/projects/:id/report.pdf`       | Download internal report |
+| GET    | `/api/projects/:id/execution.pdf`    | Download execution guide |
+| GET    | `/api/projects/:id/consolidated.pdf` | Download main proposal   |
 
 ### System
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/health` | API health status |
-| GET | `/api/projects/:id/usage` | Project API usage stats |
+
+| Method | Endpoint                  | Description             |
+| ------ | ------------------------- | ----------------------- |
+| GET    | `/api/health`             | API health status       |
+| GET    | `/api/projects/:id/usage` | Project API usage stats |
 
 ## Development History
 
 ### Phase 1: Foundation
+
 - **Initial commit** - Base project structure with React + Express + TypeScript
 - **Stack extraction** - Set up Vite, Tailwind, shadcn/ui
 - **Database schema** - PostgreSQL with Drizzle ORM for projects and messages
 
 ### Phase 2: Core Features
+
 - **Project management** - CRUD operations, filtering, and display
 - **AI integration** - Multi-provider setup (Gemini, Claude, OpenAI)
 - **Chat interface** - Real-time messaging with AI responses
 - **Estimate generation** - Dual-scenario (High-Tech vs No-Code) pricing
 
 ### Phase 3: Document Generation
+
 - **PDF proposals** - Professional styling with pdfmake
 - **Export options** - JSON, Markdown, PDF downloads
 - **File uploads** - Support for PDF, Word, Excel documents
 
 ### Phase 4: Communication & Delivery
+
 - **Email service** - Resend integration with tracking
 - **Email preview** - Editable recipient, subject, and body
 - **PDF attachments** - Automatic attachment of proposal PDFs
 
 ### Phase 5: Advanced Features
+
 - **Market research** - Perplexity integration for competitive analysis
 - **API health monitoring** - Real-time status dashboard
 - **Usage tracking** - Per-project API cost monitoring
@@ -262,11 +286,13 @@ npm start
 - **Image generation** - Cover image creation (planned)
 
 ### Phase 6: Execution Planning
+
 - **Execution manuals** - 9-section comprehensive guides
 - **PM breakdown** - Task checklists with phases
 - **Internal reports** - Detailed stakeholder analysis
 
 ### Phase 7: Polish & UX
+
 - **Stage progress** - Visual workflow indicator with completion states
 - **Files tab** - Dual PDF/Markdown download buttons
 - **Consolidated exports** - Combined document packages
@@ -276,57 +302,60 @@ npm start
 
 ## Complete Commit History (Chronological)
 
-| # | Commit | Description |
-|---|--------|-------------|
-| 1 | `e212f9e` | Initial commit |
-| 2 | `bccef1d` | Extracted stack files |
-| 3 | `1134458` | Enhance project management with AI and improve user interface |
-| 4 | `d7f3b02` | Add export options and improve project filtering and display |
-| 5 | `b25ed5d` | Update project documentation and improve user interface features |
-| 6 | `a0d3688` | Add ability to upload files and improve button styling with glass effect |
-| 7 | `d985874` | Add support for uploading Microsoft Office documents |
-| 8 | `c3410b3` | Integrate market research and pricing details into project estimates |
-| 9 | `162f78a` | Add system to track API usage for each project |
-| 10 | `b9a5002` | Add usage tracking and API health checks for AI services |
-| 11 | `8c9e6d3` | Add project API usage statistics and cost display to sidebar |
-| 12 | `6fe9de4` | Add functionality to send and manage project documents and emails |
-| 13 | `d987a44` | Update email service to use verified sender and track email health |
-| 14 | `89ef0e0` | Improve market research by accurately tracking Perplexity API performance |
-| 15 | `83a4c6c` | Add type definitions for the PDF generation library |
-| 16 | `3bd4891` | Add image generation and approval workflow for project cover images |
-| 17 | `5eea7e7` | Add presentation generation using Gamma API |
-| 18 | `fe117ea` | Add features to generate execution manuals and convert HTML to PDF |
-| 19 | `257aa31` | Add a way to generate execution manuals using PDF.co service |
-| 20 | `aced49a` | Add detailed persona and mission for Replit project diagnostics |
-| 21 | `853abbf` | Add a new system for diagnosing and auditing code repositories |
-| 22 | `da782e6` | Add system diagnostics to analyze and report on GitHub repositories |
-| 23 | `4acdfb2` | Add a repository diagnostician tool to analyze GitHub repositories |
-| 24 | `aa75e22` | Update pricing logic to include detailed cost breakdowns and regional alternatives |
-| 25 | `a317d73` | Improve project estimate generation with detailed cost and regional options |
-| 26 | `c2060ad` | Add project reset functionality and improve file handling |
-| 27 | `952c154` | Add comprehensive test suite for backend, frontend, and workflow operations |
-| 28 | `be9f6b3` | Improve test setup and reliability across the project |
-| 29 | `c05fe2d` | Update project completion flow and enhance AI manual generation |
-| 30 | `c1d221f` | Published your App |
-| 31 | `b0fe4e6` | Add email preview and allow custom subjects for project proposals |
-| 32 | `d62dfa8` | Published your App |
+| #   | Commit    | Description                                                                        |
+| --- | --------- | ---------------------------------------------------------------------------------- |
+| 1   | `e212f9e` | Initial commit                                                                     |
+| 2   | `bccef1d` | Extracted stack files                                                              |
+| 3   | `1134458` | Enhance project management with AI and improve user interface                      |
+| 4   | `d7f3b02` | Add export options and improve project filtering and display                       |
+| 5   | `b25ed5d` | Update project documentation and improve user interface features                   |
+| 6   | `a0d3688` | Add ability to upload files and improve button styling with glass effect           |
+| 7   | `d985874` | Add support for uploading Microsoft Office documents                               |
+| 8   | `c3410b3` | Integrate market research and pricing details into project estimates               |
+| 9   | `162f78a` | Add system to track API usage for each project                                     |
+| 10  | `b9a5002` | Add usage tracking and API health checks for AI services                           |
+| 11  | `8c9e6d3` | Add project API usage statistics and cost display to sidebar                       |
+| 12  | `6fe9de4` | Add functionality to send and manage project documents and emails                  |
+| 13  | `d987a44` | Update email service to use verified sender and track email health                 |
+| 14  | `89ef0e0` | Improve market research by accurately tracking Perplexity API performance          |
+| 15  | `83a4c6c` | Add type definitions for the PDF generation library                                |
+| 16  | `3bd4891` | Add image generation and approval workflow for project cover images                |
+| 17  | `5eea7e7` | Add presentation generation using Gamma API                                        |
+| 18  | `fe117ea` | Add features to generate execution manuals and convert HTML to PDF                 |
+| 19  | `257aa31` | Add a way to generate execution manuals using PDF.co service                       |
+| 20  | `aced49a` | Add detailed persona and mission for Replit project diagnostics                    |
+| 21  | `853abbf` | Add a new system for diagnosing and auditing code repositories                     |
+| 22  | `da782e6` | Add system diagnostics to analyze and report on GitHub repositories                |
+| 23  | `4acdfb2` | Add a repository diagnostician tool to analyze GitHub repositories                 |
+| 24  | `aa75e22` | Update pricing logic to include detailed cost breakdowns and regional alternatives |
+| 25  | `a317d73` | Improve project estimate generation with detailed cost and regional options        |
+| 26  | `c2060ad` | Add project reset functionality and improve file handling                          |
+| 27  | `952c154` | Add comprehensive test suite for backend, frontend, and workflow operations        |
+| 28  | `be9f6b3` | Improve test setup and reliability across the project                              |
+| 29  | `c05fe2d` | Update project completion flow and enhance AI manual generation                    |
+| 30  | `c1d221f` | Published your App                                                                 |
+| 31  | `b0fe4e6` | Add email preview and allow custom subjects for project proposals                  |
+| 32  | `d62dfa8` | Published your App                                                                 |
 
-*Note: Automated commits (progress saves, mode transitions) omitted for clarity.*
+_Note: Automated commits (progress saves, mode transitions) omitted for clarity._
 
 ## Design System
 
 ### Colors
+
 - **Background**: `#0E0F11` (dark theme)
 - **Primary Accent**: `#1AD5E6` (cyan)
 - **PDF Header**: `#0A3A5A` (dark blue)
 - **PDF Accent**: `#00B8D4` (bright cyan)
 
 ### Typography
+
 - **Font Family**: Inter
 - **Headings**: Semi-bold to Bold
 - **Body**: Regular weight
 
 ### Components
+
 - Glass morphism effects with backdrop blur
 - Subtle borders and shadows
 - Consistent spacing (4px base unit)

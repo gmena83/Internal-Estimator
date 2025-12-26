@@ -38,7 +38,7 @@ export async function htmlToPdf(html: string, projectId?: string): Promise<Buffe
     if (!response.ok) {
       const errorText = await response.text();
       console.error("PDF.co API error:", errorText);
-      
+
       await storage.updateApiHealth({
         service: "pdf_co",
         status: "error",
@@ -78,7 +78,7 @@ export async function htmlToPdf(html: string, projectId?: string): Promise<Buffe
     return null;
   } catch (error) {
     console.error("Error converting HTML to PDF:", error);
-    
+
     await storage.updateApiHealth({
       service: "pdf_co",
       status: "error",
@@ -93,43 +93,70 @@ export function generateExecutionManualHtml(
   projectTitle: string,
   scenarioATitle: string,
   scenarioBTitle: string,
-  phasesA: { phaseTitle: string; steps: { title: string; description: string; prompt?: string; tip?: string }[] }[],
-  modulesB: { title: string; items: string[] }[]
+  phasesA: {
+    phaseTitle: string;
+    steps: { title: string; description: string; prompt?: string; tip?: string }[];
+  }[],
+  modulesB: { title: string; items: string[] }[],
 ): string {
   const renderPhasesA = () => {
-    return phasesA.map(phase => `
+    return phasesA
+      .map(
+        (phase) => `
       <div class="phase-block">
         <div class="phase-title">${phase.phaseTitle}</div>
-        ${phase.steps.map(step => `
+        ${phase.steps
+          .map(
+            (step) => `
           <div class="step-item">
             <div class="step-title">${step.title}</div>
             <p class="step-desc">${step.description}</p>
-            ${step.prompt ? `
+            ${
+              step.prompt
+                ? `
               <div class="prompt-container">
                 <div class="prompt-label">PROMPT</div>
                 <div class="prompt-box">${step.prompt}</div>
               </div>
-            ` : ''}
-            ${step.tip ? `
+            `
+                : ""
+            }
+            ${
+              step.tip
+                ? `
               <div class="tip-box">${step.tip}</div>
-            ` : ''}
+            `
+                : ""
+            }
           </div>
-        `).join('')}
+        `,
+          )
+          .join("")}
       </div>
-    `).join('');
+    `,
+      )
+      .join("");
   };
 
   const renderModulesB = () => {
-    return modulesB.map(module => `
+    return modulesB
+      .map(
+        (module) => `
       <div class="module-card">
         <div class="module-header">${module.title}</div>
         <ol class="module-list">
-          ${module.items.map(item => `
+          ${module.items
+            .map(
+              (item) => `
             <li class="nocode-step">${item}</li>
-          `).join('')}
+          `,
+            )
+            .join("")}
         </ol>
       </div>
-    `).join('');
+    `,
+      )
+      .join("");
   };
 
   return `<!DOCTYPE html>

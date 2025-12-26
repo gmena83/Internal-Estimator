@@ -1,52 +1,255 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>{{meta.projectTitle}}</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Inter', sans-serif; color: #334155; line-height: 1.6; margin: 0; padding: 40px; font-size: 13px; }
-    .no-break { page-break-inside: avoid; }
-    .page-break { page-break-before: always; }
-    h2, h3 { page-break-after: avoid; }
-    .header { border-bottom: 3px solid #0A3A5A; padding-bottom: 20px; margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; }
-    .title-box h1 { color: #0A3A5A; font-weight: 800; font-size: 24px; margin: 0; text-transform: uppercase; }
-    .subtitle { color: #00B8D4; font-size: 12px; font-weight: 700; margin-top: 5px; letter-spacing: 1px; }
-    .meta-box { text-align: right; font-size: 11px; color: #64748b; }
-    h2 { color: #0A3A5A; font-size: 16px; border-left: 5px solid #00B8D4; padding-left: 10px; margin-top: 30px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .highlight-box { background: #f0f9ff; border-left: 4px solid #00B8D4; padding: 15px; border-radius: 0 6px 6px 0; margin-bottom: 15px; color: #0c4a6e; font-weight: 500; }
-    .highlight-box .icon { margin-right: 5px; }
-    .roi-container { background: #fff1f2; border: 1px solid #fda4af; border-radius: 8px; padding: 20px; margin: 20px 0; display: flex; gap: 20px; align-items: center; }
-    .roi-number { font-size: 28px; font-weight: 800; color: #be123c; line-height: 1; }
-    .roi-math { font-family: 'Courier New', monospace; font-size: 11px; color: #9f1239; background: rgba(255,255,255,0.5); padding: 4px 8px; border-radius: 4px; margin-top: 8px; display: inline-block; border: 1px solid #fecdd3; }
-    .cards-grid { display: flex; gap: 15px; margin-top: 20px; align-items: stretch; }
-    .card { flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; background: #fff; display: flex; flex-direction: column; }
-    .card.primary { border: 2px solid #0A3A5A; box-shadow: 0 4px 12px rgba(10, 58, 90, 0.1); position: relative; }
-    .badge { position: absolute; top: -10px; right: 15px; background: #0A3A5A; color: white; padding: 2px 8px; font-size: 9px; border-radius: 4px; text-transform: uppercase; font-weight: 700; }
-    .card-title { font-weight: 700; color: #0f172a; font-size: 14px; margin-bottom: 5px; }
-    .card-price { font-size: 22px; font-weight: 800; color: #0A3A5A; }
-    .card-sub { font-size: 10px; color: #64748b; margin-bottom: 15px; }
-    .intro-text { font-size: 11px; color: #334155; margin-bottom: 12px; font-weight: 500; background: #f8fafc; padding: 8px; border-radius: 4px; }
-    .list-item { margin-bottom: 10px; }
-    .item-head { font-size: 11px; color: #334155; display: flex; align-items: center; }
-    .check-icon { color: #00B8D4; font-weight: bold; margin-right: 6px; font-size: 14px; }
-    .item-desc { font-size: 10px; color: #64748b; padding-left: 20px; margin-top: 2px; line-height: 1.4; font-style: italic; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
-    th { background: #f8fafc; text-align: left; padding: 8px; color: #475569; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; }
-    td { padding: 10px 8px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
-    .price-col { text-align: right; font-weight: 700; color: #0A3A5A; }
-    .steps-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 25px; margin-top: 30px; }
-    .step-row { display: flex; margin-bottom: 15px; }
-    .step-num { width: 24px; height: 24px; background: #0A3A5A; color: #fff; border-radius: 50%; text-align: center; line-height: 24px; font-weight: 700; font-size: 12px; margin-right: 15px; flex-shrink: 0; }
-    .step-content { font-size: 12px; color: #334155; padding-top: 3px; }
-    .step-content strong { color: #0f172a; }
-    .footer { margin-top: 50px; border-top: 1px solid #e2e8f0; padding-top: 15px; text-align: center; font-size: 9px; color: #94a3b8; }
-  </style>
-</head>
-<body>
-
-  <!--
+  <head>
+    <meta charset="UTF-8" />
+    <title>{{meta.projectTitle}}</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        color: #334155;
+        line-height: 1.6;
+        margin: 0;
+        padding: 40px;
+        font-size: 13px;
+      }
+      .no-break {
+        page-break-inside: avoid;
+      }
+      .page-break {
+        page-break-before: always;
+      }
+      h2,
+      h3 {
+        page-break-after: avoid;
+      }
+      .header {
+        border-bottom: 3px solid #0a3a5a;
+        padding-bottom: 20px;
+        margin-bottom: 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+      }
+      .title-box h1 {
+        color: #0a3a5a;
+        font-weight: 800;
+        font-size: 24px;
+        margin: 0;
+        text-transform: uppercase;
+      }
+      .subtitle {
+        color: #00b8d4;
+        font-size: 12px;
+        font-weight: 700;
+        margin-top: 5px;
+        letter-spacing: 1px;
+      }
+      .meta-box {
+        text-align: right;
+        font-size: 11px;
+        color: #64748b;
+      }
+      h2 {
+        color: #0a3a5a;
+        font-size: 16px;
+        border-left: 5px solid #00b8d4;
+        padding-left: 10px;
+        margin-top: 30px;
+        margin-bottom: 15px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .highlight-box {
+        background: #f0f9ff;
+        border-left: 4px solid #00b8d4;
+        padding: 15px;
+        border-radius: 0 6px 6px 0;
+        margin-bottom: 15px;
+        color: #0c4a6e;
+        font-weight: 500;
+      }
+      .highlight-box .icon {
+        margin-right: 5px;
+      }
+      .roi-container {
+        background: #fff1f2;
+        border: 1px solid #fda4af;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+        display: flex;
+        gap: 20px;
+        align-items: center;
+      }
+      .roi-number {
+        font-size: 28px;
+        font-weight: 800;
+        color: #be123c;
+        line-height: 1;
+      }
+      .roi-math {
+        font-family: "Courier New", monospace;
+        font-size: 11px;
+        color: #9f1239;
+        background: rgba(255, 255, 255, 0.5);
+        padding: 4px 8px;
+        border-radius: 4px;
+        margin-top: 8px;
+        display: inline-block;
+        border: 1px solid #fecdd3;
+      }
+      .cards-grid {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+        align-items: stretch;
+      }
+      .card {
+        flex: 1;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 20px;
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+      }
+      .card.primary {
+        border: 2px solid #0a3a5a;
+        box-shadow: 0 4px 12px rgba(10, 58, 90, 0.1);
+        position: relative;
+      }
+      .badge {
+        position: absolute;
+        top: -10px;
+        right: 15px;
+        background: #0a3a5a;
+        color: white;
+        padding: 2px 8px;
+        font-size: 9px;
+        border-radius: 4px;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+      .card-title {
+        font-weight: 700;
+        color: #0f172a;
+        font-size: 14px;
+        margin-bottom: 5px;
+      }
+      .card-price {
+        font-size: 22px;
+        font-weight: 800;
+        color: #0a3a5a;
+      }
+      .card-sub {
+        font-size: 10px;
+        color: #64748b;
+        margin-bottom: 15px;
+      }
+      .intro-text {
+        font-size: 11px;
+        color: #334155;
+        margin-bottom: 12px;
+        font-weight: 500;
+        background: #f8fafc;
+        padding: 8px;
+        border-radius: 4px;
+      }
+      .list-item {
+        margin-bottom: 10px;
+      }
+      .item-head {
+        font-size: 11px;
+        color: #334155;
+        display: flex;
+        align-items: center;
+      }
+      .check-icon {
+        color: #00b8d4;
+        font-weight: bold;
+        margin-right: 6px;
+        font-size: 14px;
+      }
+      .item-desc {
+        font-size: 10px;
+        color: #64748b;
+        padding-left: 20px;
+        margin-top: 2px;
+        line-height: 1.4;
+        font-style: italic;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        font-size: 11px;
+      }
+      th {
+        background: #f8fafc;
+        text-align: left;
+        padding: 8px;
+        color: #475569;
+        border-bottom: 2px solid #e2e8f0;
+        text-transform: uppercase;
+      }
+      td {
+        padding: 10px 8px;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: top;
+      }
+      .price-col {
+        text-align: right;
+        font-weight: 700;
+        color: #0a3a5a;
+      }
+      .steps-box {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 25px;
+        margin-top: 30px;
+      }
+      .step-row {
+        display: flex;
+        margin-bottom: 15px;
+      }
+      .step-num {
+        width: 24px;
+        height: 24px;
+        background: #0a3a5a;
+        color: #fff;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 24px;
+        font-weight: 700;
+        font-size: 12px;
+        margin-right: 15px;
+        flex-shrink: 0;
+      }
+      .step-content {
+        font-size: 12px;
+        color: #334155;
+        padding-top: 3px;
+      }
+      .step-content strong {
+        color: #0f172a;
+      }
+      .footer {
+        margin-top: 50px;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 15px;
+        text-align: center;
+        font-size: 9px;
+        color: #94a3b8;
+      }
+    </style>
+  </head>
+  <body>
+    <!--
   GUIDANCE FOR LLM-BASED TOOLS
 
   This is an HTML template for creating a proposal document. To use it, you need to replace the placeholders `{{placeholder_name}}` with the actual content.
@@ -106,146 +309,261 @@
   - `{{footer.text}}`: The text for the footer (e.g., "Generated by Menatech OS • Confidential Document • Validity: 30 days").
   -->
 
-  <div class="header">
-    <div class="title-box">
-      <h1>{{meta.projectTitle}}</h1>
-      <div class="subtitle">{{meta.subtitle}}</div>
-    </div>
-    <div class="meta-box">
-      <div>{{meta.date}}</div>
-      <div>{{meta.clientName}}</div>
-      <div><strong>{{meta.author}}</strong></div>
-    </div>
-  </div>
-
-  <div class="no-break">
-    <h2>Executive Summary</h2>
-    <p>{{content.execSummary}}</p>
-    
-    <div class="roi-container">
-      <div style="text-align: center; min-width: 120px;">
-        <div class="roi-number">{{roi.annual_loss_usd}}</div>
-        <div style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: #be123c;">Annual Loss</div>
+    <div class="header">
+      <div class="title-box">
+        <h1>{{meta.projectTitle}}</h1>
+        <div class="subtitle">{{meta.subtitle}}</div>
       </div>
-      <div style="border-left: 1px solid #fda4af; padding-left: 20px;">
-        <strong style="color: #9f1239; font-size: 12px;">The Cost of Inaction</strong><br>
-        <span style="font-size: 11px;">Current manual processes lead to critical operational inefficiency.</span><br>
-        <div class="roi-math">
-           Calculation: {{roi.math_explanation}}
+      <div class="meta-box">
+        <div>{{meta.date}}</div>
+        <div>{{meta.clientName}}</div>
+        <div><strong>{{meta.author}}</strong></div>
+      </div>
+    </div>
+
+    <div class="no-break">
+      <h2>Executive Summary</h2>
+      <p>{{content.execSummary}}</p>
+
+      <div class="roi-container">
+        <div style="text-align: center; min-width: 120px">
+          <div class="roi-number">{{roi.annual_loss_usd}}</div>
+          <div style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: #be123c">
+            Annual Loss
+          </div>
+        </div>
+        <div style="border-left: 1px solid #fda4af; padding-left: 20px">
+          <strong style="color: #9f1239; font-size: 12px">The Cost of Inaction</strong><br />
+          <span style="font-size: 11px"
+            >Current manual processes lead to critical operational inefficiency.</span
+          ><br />
+          <div class="roi-math">Calculation: {{roi.math_explanation}}</div>
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="no-break">
-    <h3>The Challenge</h3>
-    <p>{{content.challenge}}</p>
-  </div>
-
-  <div class="page-break"></div>
-
-  <h2>Implementation Strategy</h2>
-  <p>{{content.solution}}</p>
-
-  <div class="cards-grid no-break">
-    <div class="card primary">
-      <div class="badge">Recommended</div>
-      <div class="card-title">Option A: {{scA.title}}</div>
-      <div class="card-price">{{scA.grand_total_usd}}</div>
-      <div class="card-sub">One-time Payment (Infrastructure ~{{scA.infrastructure_cost_usd}}/month)</div>
-      <hr style="border:0; border-top:1px solid #f1f5f9; margin:5px 0 10px 0;">
-      <div class="intro-text"><strong>Why start here?</strong><br>{{scA.intro}}</div>
-      {{scA.pros}}
+    <div class="no-break">
+      <h3>The Challenge</h3>
+      <p>{{content.challenge}}</p>
     </div>
 
-    <div class="card">
-      <div class="card-title">Option B: {{scB.title}}</div>
-      <div class="card-price">{{scB.grand_total_usd}}</div>
-      <div class="card-sub">+ {{scB.subscription_cost_usd}}/month</div>
-      <hr style="border:0; border-top:1px solid #f1f5f9; margin:5px 0 10px 0;">
-      <div class="intro-text"><strong>Ideal for validation:</strong><br>{{scB.intro}}</div>
-      {{scB.pros}}
-      <div style="margin-top:15px; padding-top:10px; border-top:1px dashed #e2e8f0;">
-         <strong style="font-size:10px; color:#b45309; text-transform:uppercase;">Limitations:</strong>
-         <div style="margin-top:5px;">{{scB.cons}}</div>
+    <div class="page-break"></div>
+
+    <h2>Implementation Strategy</h2>
+    <p>{{content.solution}}</p>
+
+    <div class="cards-grid no-break">
+      <div class="card primary">
+        <div class="badge">Recommended</div>
+        <div class="card-title">Option A: {{scA.title}}</div>
+        <div class="card-price">{{scA.grand_total_usd}}</div>
+        <div class="card-sub">
+          One-time Payment (Infrastructure ~{{scA.infrastructure_cost_usd}}/month)
+        </div>
+        <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 5px 0 10px 0" />
+        <div class="intro-text"><strong>Why start here?</strong><br />{{scA.intro}}</div>
+        {{scA.pros}}
+      </div>
+
+      <div class="card">
+        <div class="card-title">Option B: {{scB.title}}</div>
+        <div class="card-price">{{scB.grand_total_usd}}</div>
+        <div class="card-sub">+ {{scB.subscription_cost_usd}}/month</div>
+        <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 5px 0 10px 0" />
+        <div class="intro-text"><strong>Ideal for validation:</strong><br />{{scB.intro}}</div>
+        {{scB.pros}}
+        <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #e2e8f0">
+          <strong style="font-size: 10px; color: #b45309; text-transform: uppercase"
+            >Limitations:</strong
+          >
+          <div style="margin-top: 5px">{{scB.cons}}</div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div style="margin-top: 20px; background: #f0fdf4; border-left: 4px solid #16a34a; padding: 15px; border-radius: 4px; color: #14532d;" class="no-break">
-    <strong>Strategic Recommendation:</strong> {{recommendation}}
-    <div style="margin-top:8px; font-size:12px; font-style:italic; border-top:1px solid rgba(22, 163, 74, 0.2); padding-top:8px;">
+    <div
+      style="
+        margin-top: 20px;
+        background: #f0fdf4;
+        border-left: 4px solid #16a34a;
+        padding: 15px;
+        border-radius: 4px;
+        color: #14532d;
+      "
+      class="no-break"
+    >
+      <strong>Strategic Recommendation:</strong> {{recommendation}}
+      <div
+        style="
+          margin-top: 8px;
+          font-size: 12px;
+          font-style: italic;
+          border-top: 1px solid rgba(22, 163, 74, 0.2);
+          padding-top: 8px;
+        "
+      >
         <strong>💡 Evolution Guarantee:</strong> {{evolution_guarantee}}
+      </div>
     </div>
-  </div>
 
-  <div class="page-break"></div>
+    <div class="page-break"></div>
 
-  <div class="no-break">
-    <h2>Work Plan (Option A: {{scA.title}})</h2>
-    <table><thead><tr><th>Phase</th><th>Duration</th><th>Deliverables</th></tr></thead><tbody>{{workplanA.body}}</tbody></table>
-  </div>
+    <div class="no-break">
+      <h2>Work Plan (Option A: {{scA.title}})</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Phase</th>
+            <th>Duration</th>
+            <th>Deliverables</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{workplanA.body}}
+        </tbody>
+      </table>
+    </div>
 
-  <div class="no-break" style="margin-top:30px;">
-    <h2>Work Plan (Option B: {{scB.title}})</h2>
-    <table><thead><tr><th>Phase</th><th>Est. Duration</th><th>Deliverables</th></tr></thead><tbody>
-      {{workplanB.body}}
-    </tbody></table>
-  </div>
+    <div class="no-break" style="margin-top: 30px">
+      <h2>Work Plan (Option B: {{scB.title}})</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Phase</th>
+            <th>Est. Duration</th>
+            <th>Deliverables</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{workplanB.body}}
+        </tbody>
+      </table>
+    </div>
 
-  <div class="page-break"></div>
+    <div class="page-break"></div>
 
-  <div class="no-break">
-    <h2>Investment Schedule</h2>
-    <p>Detailed commercial conditions for both alternatives.</p>
+    <div class="no-break">
+      <h2>Investment Schedule</h2>
+      <p>Detailed commercial conditions for both alternatives.</p>
 
-    <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; margin-bottom: 20px;">
-        <div style="background: #f8fafc; padding: 8px 12px; font-weight: 700; border-bottom: 1px solid #e2e8f0; color: #0A3A5A;">Option A: Custom Development ({{scA.title}})</div>
+      <div
+        style="
+          background: #fff;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          overflow: hidden;
+          margin-bottom: 20px;
+        "
+      >
+        <div
+          style="
+            background: #f8fafc;
+            padding: 8px 12px;
+            font-weight: 700;
+            border-bottom: 1px solid #e2e8f0;
+            color: #0a3a5a;
+          "
+        >
+          Option A: Custom Development ({{scA.title}})
+        </div>
         <table>
-            <thead><tr><th>Milestone</th><th style="text-align:center">%</th><th style="text-align:right">Amount</th></tr></thead>
-            <tbody>{{investmentA.body}}</tbody>
-            <tfoot><tr style="background:#fcfcfc"><td colspan="2" style="text-align:right"><strong>TOTAL</strong></td><td class="price-col">{{investmentA.total}}</td></tr></tfoot>
+          <thead>
+            <tr>
+              <th>Milestone</th>
+              <th style="text-align: center">%</th>
+              <th style="text-align: right">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{investmentA.body}}
+          </tbody>
+          <tfoot>
+            <tr style="background: #fcfcfc">
+              <td colspan="2" style="text-align: right"><strong>TOTAL</strong></td>
+              <td class="price-col">{{investmentA.total}}</td>
+            </tr>
+          </tfoot>
         </table>
-    </div>
+      </div>
 
-    <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden;">
-        <div style="background: #f8fafc; padding: 8px 12px; font-weight: 700; border-bottom: 1px solid #e2e8f0; color: #475569;">Option B: MVP No-Code ({{scB.title}})</div>
+      <div
+        style="background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden"
+      >
+        <div
+          style="
+            background: #f8fafc;
+            padding: 8px 12px;
+            font-weight: 700;
+            border-bottom: 1px solid #e2e8f0;
+            color: #475569;
+          "
+        >
+          Option B: MVP No-Code ({{scB.title}})
+        </div>
         <table>
-            <thead><tr><th>Concept</th><th>Detail</th><th style="text-align:right">Amount</th></tr></thead>
-            <tbody>
-                <tr><td><strong>Initial Implementation</strong></td><td>One-time setup and configuration payment.</td><td class="price-col">{{investmentB.implementation_cost}}</td></tr>
-                <tr><td><strong>Monthly Subscription</strong></td><td>Software Licenses (Airtable, Zapier, etc).</td><td class="price-col">{{investmentB.subscription_cost}} / month</td></tr>
-            </tbody>
+          <thead>
+            <tr>
+              <th>Concept</th>
+              <th>Detail</th>
+              <th style="text-align: right">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Initial Implementation</strong></td>
+              <td>One-time setup and configuration payment.</td>
+              <td class="price-col">{{investmentB.implementation_cost}}</td>
+            </tr>
+            <tr>
+              <td><strong>Monthly Subscription</strong></td>
+              <td>Software Licenses (Airtable, Zapier, etc).</td>
+              <td class="price-col">{{investmentB.subscription_cost}} / month</td>
+            </tr>
+          </tbody>
         </table>
+      </div>
     </div>
-  </div>
 
-  <div class="page-break"></div>
-  <div class="no-break">
-    <h2>Next Steps</h2>
-    <div class="steps-box">
+    <div class="page-break"></div>
+    <div class="no-break">
+      <h2>Next Steps</h2>
+      <div class="steps-box">
         <div class="step-row">
-            <div class="step-num">1</div>
-            <div class="step-content"><strong>Strategic Decision:</strong> Internally evaluate whether to prioritize speed (Option B) or scale (Option A).</div>
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <strong>Strategic Decision:</strong> Internally evaluate whether to prioritize speed
+            (Option B) or scale (Option A).
+          </div>
         </div>
         <div class="step-row">
-            <div class="step-num">2</div>
-            <div class="step-content"><strong>Consultations:</strong> Write to <a href="mailto:{{next_steps.contact_email}}" style="color:#00B8D4; text-decoration:none;">{{next_steps.contact_email}}</a> to resolve any technical or commercial questions.</div>
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <strong>Consultations:</strong> Write to
+            <a
+              href="mailto:{{next_steps.contact_email}}"
+              style="color: #00b8d4; text-decoration: none"
+              >{{next_steps.contact_email}}</a
+            >
+            to resolve any technical or commercial questions.
+          </div>
         </div>
         <div class="step-row">
-            <div class="step-num">3</div>
-            <div class="step-content"><strong>Formalization:</strong> Send the signed legal documents (attached in the email) indicating the chosen option and the proof of the initial payment.</div>
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <strong>Formalization:</strong> Send the signed legal documents (attached in the email)
+            indicating the chosen option and the proof of the initial payment.
+          </div>
         </div>
         <div class="step-row">
-            <div class="step-num">4</div>
-            <div class="step-content"><strong>Kick-off:</strong> You will receive a confirmation email and a link to schedule the first work meeting with the project team and the Project Manager.</div>
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <strong>Kick-off:</strong> You will receive a confirmation email and a link to schedule
+            the first work meeting with the project team and the Project Manager.
+          </div>
         </div>
+      </div>
     </div>
-  </div>
 
-  <div class="footer">
-    {{footer.text}}
-  </div>
-
-</body>
+    <div class="footer">{{footer.text}}</div>
+  </body>
 </html>

@@ -6,20 +6,20 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { 
-  Search, 
-  AlertTriangle, 
-  AlertCircle, 
-  Info, 
-  CheckCircle, 
-  Loader2, 
-  FileCode, 
-  Shield, 
-  Zap, 
+import {
+  Search,
+  AlertTriangle,
+  AlertCircle,
+  Info,
+  CheckCircle,
+  Loader2,
+  FileCode,
+  Shield,
+  Zap,
   Settings,
   ExternalLink,
   Clock,
-  FileText
+  FileText,
 } from "lucide-react";
 import { SiGithub } from "react-icons/si";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -40,7 +40,9 @@ function getSeverityIcon(severity: string) {
   }
 }
 
-function getSeverityBadgeVariant(severity: string): "destructive" | "secondary" | "outline" | "default" {
+function getSeverityBadgeVariant(
+  severity: string,
+): "destructive" | "secondary" | "outline" | "default" {
   switch (severity) {
     case "Critical":
       return "destructive";
@@ -130,8 +132,8 @@ export default function DiagnosticianPage() {
               className="flex-1"
               data-testid="input-repo-url"
             />
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               size="icon"
               disabled={runDiagnosticsMutation.isPending || !repoUrl.trim()}
               data-testid="button-run-diagnostics"
@@ -194,7 +196,9 @@ export default function DiagnosticianPage() {
                         )}
                       </>
                     ) : report.status === "failed" ? (
-                      <Badge variant="destructive" className="text-xs">Failed</Badge>
+                      <Badge variant="destructive" className="text-xs">
+                        Failed
+                      </Badge>
                     ) : null}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
@@ -217,9 +221,9 @@ export default function DiagnosticianPage() {
                   <SiGithub className="w-5 h-5" />
                   {selectedReport.repoOwner}/{selectedReport.repoName}
                 </h1>
-                <a 
-                  href={selectedReport.repoUrl} 
-                  target="_blank" 
+                <a
+                  href={selectedReport.repoUrl}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
                 >
@@ -235,7 +239,9 @@ export default function DiagnosticianPage() {
                 )}
                 {selectedReport.status === "completed" && (
                   <div className="flex items-center gap-2">
-                    <Badge variant="destructive">{selectedReport.criticalCount ?? 0} Critical</Badge>
+                    <Badge variant="destructive">
+                      {selectedReport.criticalCount ?? 0} Critical
+                    </Badge>
                     <Badge variant="secondary">{selectedReport.highCount ?? 0} High</Badge>
                     <Badge variant="outline">{selectedReport.mediumCount ?? 0} Medium</Badge>
                     <Badge variant="outline">{selectedReport.lowCount ?? 0} Low</Badge>
@@ -299,15 +305,13 @@ export default function DiagnosticianPage() {
                       <CardContent>
                         <div className="space-y-3">
                           {findings.map((finding, index) => (
-                            <div 
-                              key={index} 
+                            <div
+                              key={index}
                               className="p-3 rounded-md border bg-card"
                               data-testid={`finding-${index}`}
                             >
                               <div className="flex items-start gap-3">
-                                <div className="mt-0.5">
-                                  {getSeverityIcon(finding.severity)}
-                                </div>
+                                <div className="mt-0.5">{getSeverityIcon(finding.severity)}</div>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <Badge variant={getSeverityBadgeVariant(finding.severity)}>
@@ -318,12 +322,14 @@ export default function DiagnosticianPage() {
                                       {finding.category}
                                     </Badge>
                                     <span className="text-xs text-muted-foreground font-mono">
-                                      {finding.file}{finding.line ? `:${finding.line}` : ""}
+                                      {finding.file}
+                                      {finding.line ? `:${finding.line}` : ""}
                                     </span>
                                   </div>
                                   <p className="mt-2 text-sm">{finding.description}</p>
                                   <div className="mt-2 p-2 rounded bg-muted text-sm">
-                                    <span className="font-medium">Recommendation:</span> {finding.recommendation}
+                                    <span className="font-medium">Recommendation:</span>{" "}
+                                    {finding.recommendation}
                                   </div>
                                 </div>
                               </div>
@@ -341,9 +347,7 @@ export default function DiagnosticianPage() {
                           <FileCode className="w-5 h-5" />
                           Corrected Code Snippets
                         </CardTitle>
-                        <CardDescription>
-                          Ready-to-use fixes for identified issues
-                        </CardDescription>
+                        <CardDescription>Ready-to-use fixes for identified issues</CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-4">
@@ -351,11 +355,15 @@ export default function DiagnosticianPage() {
                             <div key={index} className="space-y-2" data-testid={`snippet-${index}`}>
                               <div className="flex items-center gap-2">
                                 <Badge variant="outline">{snippet.file}</Badge>
-                                <span className="text-sm text-muted-foreground">{snippet.description}</span>
+                                <span className="text-sm text-muted-foreground">
+                                  {snippet.description}
+                                </span>
                               </div>
                               {snippet.original && (
                                 <>
-                                  <p className="text-xs text-muted-foreground font-medium">Before:</p>
+                                  <p className="text-xs text-muted-foreground font-medium">
+                                    Before:
+                                  </p>
                                   <pre className="p-3 rounded-md bg-muted text-sm overflow-x-auto font-mono">
                                     {snippet.original}
                                   </pre>
@@ -375,25 +383,26 @@ export default function DiagnosticianPage() {
                     </Card>
                   )}
 
-                  {selectedReport.analyzedFiles && (selectedReport.analyzedFiles as string[]).length > 0 && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <FileCode className="w-5 h-5" />
-                          Analyzed Files ({(selectedReport.analyzedFiles as string[]).length})
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex flex-wrap gap-2">
-                          {(selectedReport.analyzedFiles as string[]).map((file, index) => (
-                            <Badge key={index} variant="outline" className="font-mono text-xs">
-                              {file}
-                            </Badge>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
+                  {selectedReport.analyzedFiles &&
+                    (selectedReport.analyzedFiles as string[]).length > 0 && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <FileCode className="w-5 h-5" />
+                            Analyzed Files ({(selectedReport.analyzedFiles as string[]).length})
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex flex-wrap gap-2">
+                            {(selectedReport.analyzedFiles as string[]).map((file, index) => (
+                              <Badge key={index} variant="outline" className="font-mono text-xs">
+                                {file}
+                              </Badge>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
                 </div>
               )}
             </ScrollArea>
@@ -404,7 +413,7 @@ export default function DiagnosticianPage() {
               <SiGithub className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
               <h2 className="text-xl font-semibold mb-2">Repository Diagnostician</h2>
               <p className="text-muted-foreground mb-4">
-                Enter a GitHub repository URL to run a comprehensive audit for Replit compatibility, 
+                Enter a GitHub repository URL to run a comprehensive audit for Replit compatibility,
                 security vulnerabilities, performance issues, and configuration problems.
               </p>
               <div className="text-sm text-muted-foreground space-y-1">

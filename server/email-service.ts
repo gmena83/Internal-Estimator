@@ -18,11 +18,11 @@ export async function sendProposalEmail(
   project: Project,
   emailContent: string,
   recipientEmail?: string,
-  emailSubject?: string
+  emailSubject?: string,
 ): Promise<EmailResult> {
   const resendApiKey = process.env.RESEND_API_KEY;
   const startTime = Date.now();
-  
+
   if (!resendApiKey) {
     console.log("Resend API key not configured - simulating email send");
     return {
@@ -32,9 +32,10 @@ export async function sendProposalEmail(
   }
 
   try {
-    const selectedScenario = project.selectedScenario === "A" 
-      ? project.scenarioA as Scenario
-      : project.scenarioB as Scenario;
+    const selectedScenario =
+      project.selectedScenario === "A"
+        ? (project.scenarioA as Scenario)
+        : (project.scenarioB as Scenario);
 
     const htmlContent = generateHtmlEmail(project, selectedScenario, emailContent);
     const subject = emailSubject || `Project Proposal: ${project.title}`;
@@ -42,7 +43,7 @@ export async function sendProposalEmail(
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${resendApiKey}`,
+        Authorization: `Bearer ${resendApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -74,13 +75,13 @@ export async function sendProposalEmail(
     }
 
     const data = await response.json();
-    
+
     await storage.updateApiHealth({
       service: "resend",
       status: "online",
       latencyMs,
     });
-    
+
     return {
       success: true,
       messageId: data.id,
@@ -99,7 +100,11 @@ export async function sendProposalEmail(
   }
 }
 
-function generateHtmlEmail(project: Project, scenario: Scenario | null, textContent: string): string {
+function generateHtmlEmail(
+  project: Project,
+  scenario: Scenario | null,
+  textContent: string,
+): string {
   return `
 <!DOCTYPE html>
 <html>
@@ -129,31 +134,42 @@ function generateHtmlEmail(project: Project, scenario: Scenario | null, textCont
   <div class="content">
     <p>Dear ${project.clientName || "Team"},</p>
     
-    ${textContent.split('\n').map(p => `<p>${p}</p>`).join('')}
+    ${textContent
+      .split("\n")
+      .map((p) => `<p>${p}</p>`)
+      .join("")}
     
-    ${scenario ? `
+    ${
+      scenario
+        ? `
     <div class="highlight-box">
       <h3 style="margin-top: 0;">Recommended Approach: ${scenario.name || "Selected Scenario"}</h3>
       <div style="margin-top: 15px;">
         <div class="metric">
           <div class="metric-label">Investment</div>
-          <div class="metric-value">${scenario.totalCost ? `$${scenario.totalCost.toLocaleString()}` : 'TBD'}</div>
+          <div class="metric-value">${scenario.totalCost ? `$${scenario.totalCost.toLocaleString()}` : "TBD"}</div>
         </div>
         <div class="metric">
           <div class="metric-label">Timeline</div>
-          <div class="metric-value">${scenario.timeline || 'TBD'}</div>
+          <div class="metric-value">${scenario.timeline || "TBD"}</div>
         </div>
       </div>
-      ${scenario.pros?.length ? `
+      ${
+        scenario.pros?.length
+          ? `
       <div style="margin-top: 15px;">
         <strong>Key Benefits:</strong>
         <ul style="margin: 5px 0;">
-          ${scenario.pros.map(p => `<li>${p}</li>`).join('')}
+          ${scenario.pros.map((p) => `<li>${p}</li>`).join("")}
         </ul>
       </div>
-      ` : ''}
+      `
+          : ""
+      }
     </div>
-    ` : ''}
+    `
+        : ""
+    }
     
     <p style="text-align: center;">
       <a href="#" class="cta-button">View Full Proposal</a>

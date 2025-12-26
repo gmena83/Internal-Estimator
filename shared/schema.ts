@@ -6,7 +6,9 @@ import { relations } from "drizzle-orm";
 
 // Projects table - main entity for ISI
 export const projects = pgTable("projects", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
   clientName: text("client_name"),
   status: text("status").notNull().default("draft"), // draft, estimate_generated, assets_ready, email_sent, accepted, in_progress, completed
@@ -38,8 +40,12 @@ export const projects = pgTable("projects", {
 
 // Messages table - chat history per project
 export const messages = pgTable("messages", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  projectId: varchar("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
   role: text("role").notNull(), // 'user' or 'assistant'
   content: text("content").notNull(),
   stage: integer("stage"), // Which stage this message relates to
@@ -59,7 +65,9 @@ export type Attachment = {
 
 // Knowledge base entries - for RAG system
 export const knowledgeEntries = pgTable("knowledge_entries", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   projectId: varchar("project_id").references(() => projects.id, { onDelete: "set null" }),
   category: text("category").notNull(), // 'estimate', 'tech_stack', 'hourly_rate', 'vibecode_prompt'
   content: text("content").notNull(),
@@ -70,7 +78,9 @@ export const knowledgeEntries = pgTable("knowledge_entries", {
 
 // API health tracking
 export const apiHealthLogs = pgTable("api_health_logs", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   service: text("service").notNull(), // 'gemini', 'claude', 'openai', 'perplexity', 'pdf_co', 'resend', 'gamma', 'nano_banana'
   status: text("status").notNull(), // 'online', 'degraded', 'offline'
   latencyMs: integer("latency_ms"),
@@ -81,7 +91,9 @@ export const apiHealthLogs = pgTable("api_health_logs", {
 
 // Diagnostic reports table for repository audits
 export const diagnosticReports = pgTable("diagnostic_reports", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   repoUrl: text("repo_url").notNull(),
   repoOwner: text("repo_owner").notNull(),
   repoName: text("repo_name").notNull(),
@@ -120,8 +132,12 @@ export type CorrectedSnippet = {
 
 // API usage tracking per project
 export const apiUsageLogs = pgTable("api_usage_logs", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  projectId: varchar("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
   provider: text("provider").notNull(), // 'gemini', 'claude', 'openai', 'perplexity'
   model: text("model").notNull(), // e.g., 'gemini-2.0-flash-exp', 'claude-3-opus', 'gpt-4o'
   inputTokens: integer("input_tokens").notNull().default(0),
@@ -284,7 +300,7 @@ export type PMTask = {
   description: string;
   estimatedHours: number;
   assignee?: string;
-  status: 'pending' | 'in_progress' | 'completed';
+  status: "pending" | "in_progress" | "completed";
   subtasks: PMSubtask[];
   checklist: PMTaskChecklistItem[];
 };
@@ -299,7 +315,7 @@ export type PMSubtask = {
 export type ServiceStatus = {
   service: string;
   displayName: string;
-  status: 'online' | 'degraded' | 'offline' | 'unknown';
+  status: "online" | "degraded" | "offline" | "unknown";
   latencyMs?: number;
   requestCount?: number;
   lastChecked?: Date;
@@ -319,9 +335,13 @@ export type ProjectApiUsageStats = {
 
 // Stage definitions
 export const STAGES = [
-  { number: 1, name: 'Dual Scenario Estimate', description: 'Analyze input and generate financial scenarios' },
-  { number: 2, name: 'Production Assets', description: 'Generate PDFs and presentations' },
-  { number: 3, name: 'Client Communication', description: 'Send proposal and track engagement' },
-  { number: 4, name: 'Vibecoding Guide', description: 'Generate developer execution guides' },
-  { number: 5, name: 'PM Breakdown', description: 'Create detailed project management plan' },
+  {
+    number: 1,
+    name: "Dual Scenario Estimate",
+    description: "Analyze input and generate financial scenarios",
+  },
+  { number: 2, name: "Production Assets", description: "Generate PDFs and presentations" },
+  { number: 3, name: "Client Communication", description: "Send proposal and track engagement" },
+  { number: 4, name: "Vibecoding Guide", description: "Generate developer execution guides" },
+  { number: 5, name: "PM Breakdown", description: "Create detailed project management plan" },
 ] as const;
