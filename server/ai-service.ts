@@ -679,7 +679,7 @@ IMPORTANT: Each task must include a "checklist" array with specific action items
   },
 };
 
-function createDefaultScenarios(project: Project): {
+function createDefaultScenarios(_project: Project): {
   scenarioA: Scenario;
   scenarioB: Scenario;
   roiAnalysis: ROIAnalysis;
@@ -1099,7 +1099,7 @@ function extractBasicInfo(rawInput: string): any {
 }
 
 // Fallback chat response
-function getStageAwareResponse(project: Project, userMessage: string): string {
+function getStageAwareResponse(project: Project, _userMessage: string): string {
   const stage = project.currentStage;
   const projectTitle = project.title || "your project";
 
@@ -1337,7 +1337,7 @@ ${scenarioB?.techStack?.map((t) => `- ${t}`).join("\n") || "- Airtable\n- Zapier
 }
 
 // Fallback PM breakdown with task checklists
-function generateDefaultPMBreakdown(project: Project): any {
+function generateDefaultPMBreakdown(_project: Project): any {
   return {
     phases: [
       {

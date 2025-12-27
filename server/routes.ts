@@ -19,7 +19,7 @@ import {
   generateInternalReportPdf,
   generateExecutionManualPdf,
 } from "./pdf-service";
-import { htmlToPdf, generateExecutionManualHtml } from "./pdfco-service";
+
 import { sendProposalEmail } from "./email-service";
 import { generateCoverImageWithApproval } from "./image-service";
 import { generatePresentation } from "./gamma-service";
@@ -49,7 +49,7 @@ const upload = multer({
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB
   },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (_req, file, cb) => {
     const allowedTypes = [
       "image/png",
       "image/jpeg",
@@ -78,7 +78,7 @@ const upload = multer({
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
   // QA Instrumentation
   if (process.env.QA_MODE === "true") {
-    app.use((req, res, next) => {
+    app.use((req, _res, next) => {
 
       const paramRegex = /\/[0-9a-fA-F-]+/g; // crude UUID matcher
       const cleanPath = req.path.replace(paramRegex, '/:id');
@@ -101,7 +101,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   }
 
   // Projects - Get all
-  app.get("/api/projects", async (req, res) => {
+  app.get("/api/projects", async (_req, res) => {
     try {
       const projects = await storage.getProjects();
       res.json(projects);
@@ -112,7 +112,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // Projects - Get recent (last 5)
-  app.get("/api/projects/recent", async (req, res) => {
+  app.get("/api/projects/recent", async (_req, res) => {
     try {
       const projects = await storage.getRecentProjects(5);
       res.json(projects);
@@ -295,7 +295,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // Serve uploaded files
-  app.use("/uploads", (req, res, next) => {
+  app.use("/uploads", (req, res, _next) => {
     const filePath = path.join(uploadsDir, req.path);
     if (fs.existsSync(filePath)) {
       res.sendFile(filePath);
@@ -770,83 +770,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(404).json({ error: "Project not found" });
       }
 
-      const scenarioA = project.scenarioA as { name?: string; title?: string } | null;
-      const scenarioB = project.scenarioB as { name?: string; title?: string } | null;
-      const vibeGuideA = project.vibecodeGuideA as string | null;
-      const vibeGuideB = project.vibecodeGuideB as string | null;
 
-      const phasesA: {
-        phaseTitle: string;
-        steps: { title: string; description: string; prompt?: string; tip?: string }[];
-      }[] = [];
-      const modulesB: { title: string; items: string[] }[] = [];
 
-      if (vibeGuideA) {
-        let currentPhase = "";
-        let currentSteps: { title: string; description: string; prompt?: string; tip?: string }[] =
-          [];
-
-        vibeGuideA.split("\n").forEach((line) => {
-          if (line.startsWith("## ")) {
-            if (currentPhase && currentSteps.length > 0) {
-              phasesA.push({ phaseTitle: currentPhase, steps: currentSteps });
-              currentSteps = [];
-            }
-            currentPhase = line.replace("## ", "");
-          } else if (line.startsWith("### ")) {
-            currentSteps.push({ title: line.replace("### ", ""), description: "" });
-          } else if (line.startsWith("$ ") && currentSteps.length > 0) {
-            currentSteps[currentSteps.length - 1].prompt = line.replace("$ ", "");
-          } else if (line.startsWith("> ") && currentSteps.length > 0) {
-            currentSteps[currentSteps.length - 1].tip = line.replace("> ", "");
-          } else if (line.trim() && currentSteps.length > 0) {
-            currentSteps[currentSteps.length - 1].description +=
-              (currentSteps[currentSteps.length - 1].description ? " " : "") + line.trim();
-          }
-        });
-
-        if (currentPhase && currentSteps.length > 0) {
-          phasesA.push({ phaseTitle: currentPhase, steps: currentSteps });
-        }
-      }
-
-      if (vibeGuideB) {
-        let currentModule = "";
-        let currentItems: string[] = [];
-
-        vibeGuideB.split("\n").forEach((line) => {
-          if (line.startsWith("## ")) {
-            if (currentModule && currentItems.length > 0) {
-              modulesB.push({ title: currentModule, items: currentItems });
-              currentItems = [];
-            }
-            currentModule = line.replace("## ", "");
-          } else if (line.startsWith("- ") || line.startsWith("* ")) {
-            currentItems.push(line.replace(/^[-*]\s*/, ""));
-          }
-        });
-
-        if (currentModule && currentItems.length > 0) {
-          modulesB.push({ title: currentModule, items: currentItems });
-        }
-      }
-
-      let pdfBuffer: Buffer | null = null;
-
-      if (process.env.PDF_CO_API_KEY) {
-        const html = generateExecutionManualHtml(
-          project.title,
-          scenarioA?.title || scenarioA?.name || "Manual A: High-Code Approach",
-          scenarioB?.title || scenarioB?.name || "Manual B: No-Code Approach",
-          phasesA,
-          modulesB,
-        );
-        pdfBuffer = await htmlToPdf(html, project.id);
-      }
-
-      if (!pdfBuffer) {
-        pdfBuffer = await generateExecutionManualPdf(project);
-      }
+      const pdfBuffer = await generateExecutionManualPdf(project);
 
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader(
@@ -861,7 +787,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // API Health
-  app.get("/api/health", async (req, res) => {
+  app.get("/api/health", async (_req, res) => {
     try {
       const healthLogs = await storage.getApiHealth();
       const statuses: ServiceStatus[] = healthLogs.map((log) => ({
@@ -1171,7 +1097,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // Diagnostics - List all reports
-  app.get("/api/diagnostics", async (req, res) => {
+  app.get("/api/diagnostics", async (_req, res) => {
     try {
       const reports = await storage.getDiagnosticReports();
       res.json(reports);

@@ -53,16 +53,6 @@ interface ROIAnalysis {
   paybackPeriodMonths?: number;
   threeYearROI?: number;
 }
-
-interface PMPhase {
-  phaseNumber: number;
-  phaseName: string;
-  objectives?: string[];
-  durationDays?: number;
-  tasks?: { id: string; name: string; estimatedHours?: number }[];
-  deliverables?: string[];
-}
-
 function createTerminalBox(command: string, label?: string): Content[] {
   const content: Content[] = [];
 
@@ -855,7 +845,7 @@ export async function generateExecutionManualPdf(project: Project): Promise<Buff
   const scenarioB = project.scenarioB as Scenario | null;
   const vibeGuideA = project.vibecodeGuideA as string | null;
   const vibeGuideB = project.vibecodeGuideB as string | null;
-  const pmBreakdown = project.pmBreakdown as { phases?: PMPhase[] } | null;
+
 
   const content: Content[] = [
     {

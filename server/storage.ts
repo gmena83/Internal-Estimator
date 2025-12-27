@@ -24,7 +24,7 @@ import { eq, desc, sql } from "drizzle-orm";
 
 export type ProjectSummary = Pick<
   Project,
-  "id" | "title" | "status" | "updatedAt" | "clientName" | "currentStage"
+  "id" | "title" | "status" | "updatedAt" | "clientName" | "currentStage" | "rawInput"
 >;
 
 export interface IStorage {
@@ -80,6 +80,7 @@ export class DatabaseStorage implements IStorage {
         updatedAt: projects.updatedAt,
         clientName: projects.clientName,
         currentStage: projects.currentStage,
+        rawInput: projects.rawInput,
       })
       .from(projects)
       .orderBy(desc(projects.updatedAt));
@@ -95,6 +96,7 @@ export class DatabaseStorage implements IStorage {
         updatedAt: projects.updatedAt,
         clientName: projects.clientName,
         currentStage: projects.currentStage,
+        rawInput: projects.rawInput,
       })
       .from(projects)
       .orderBy(desc(projects.updatedAt))

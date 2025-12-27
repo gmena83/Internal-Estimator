@@ -185,15 +185,7 @@ export async function findMatchingProjectType(description: string): Promise<Proj
   const matrix = await loadPricingMatrix();
   const lowerDesc = description.toLowerCase();
 
-  // Keyword matching for project type
-  const keywords: Record<string, string[]> = {
-    website: ["landing page", "web development", "website", "web app", "wordpress", "ecommerce"],
-    chatbot: ["chatbot", "bot", "conversational", "assistant", "chat"],
-    "ai agent": ["ai agent", "agent", "automation", "workflow"],
-    analytics: ["analytics", "dashboard", "reporting", "data visualization"],
-    mobile: ["mobile app", "ios", "android", "react native"],
-    enterprise: ["enterprise", "large scale", "complex system"],
-  };
+
 
   // Find complexity based on keywords
   let matchedComplexity = "Simple";
@@ -220,7 +212,7 @@ export async function findMatchingProjectType(description: string): Promise<Proj
 }
 
 export async function estimateCostFromMatrix(
-  projectDescription: string,
+  _projectDescription: string,
   complexity: "simple" | "medium" | "high" = "medium",
 ): Promise<{ low: number; high: number; timeline: string; reference: ProjectCost | null }> {
   const matrix = await loadPricingMatrix();
