@@ -98,7 +98,10 @@ export function RightSidebar({ projectId }: RightSidebarProps) {
   };
 
   const lastUpdated = healthStatus?.[0]?.lastChecked
-    ? format(new Date(healthStatus[0].lastChecked), "h:mm:ss a")
+    ? (() => {
+      const date = new Date(healthStatus[0].lastChecked);
+      return isNaN(date.getTime()) ? null : format(date, "h:mm:ss a");
+    })()
     : null;
 
   const totalCost = usageStats?.reduce((sum, stat) => sum + stat.totalCostUsd, 0) || 0;
