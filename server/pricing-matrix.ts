@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import * as path from "path";
 import * as fs from "fs";
 
@@ -29,7 +29,7 @@ export interface PricingMatrix {
 
 let cachedMatrix: PricingMatrix | null = null;
 
-export function loadPricingMatrix(): PricingMatrix {
+export async function loadPricingMatrix(): Promise<PricingMatrix> {
   if (cachedMatrix) return cachedMatrix;
 
   const filePath = path.join(
@@ -44,11 +44,38 @@ export function loadPricingMatrix(): PricingMatrix {
   }
 
   try {
-    const workbook = XLSX.readFile(filePath);
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(filePath);
+
+    // Helper to get raw JSON from worksheet
+    const sheetToJson = (sheetName: string): any[] => {
+      const sheet = workbook.getWorksheet(sheetName);
+      if (!sheet) return [];
+
+      const rows: any[] = [];
+      const headers: string[] = [];
+
+      sheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) {
+          row.eachCell((cell, colNumber) => {
+            headers[colNumber] = cell.text?.trim() || "";
+          });
+        } else {
+          const rowData: any = {};
+          row.eachCell((cell, colNumber) => {
+            if (headers[colNumber]) {
+              // Handle rich text or simple values
+              rowData[headers[colNumber]] = cell.value;
+            }
+          });
+          rows.push(rowData);
+        }
+      });
+      return rows;
+    };
 
     // Parse Project Costs
-    const projectCostsSheet = workbook.Sheets["Project Costs by Complexity"];
-    const projectCostsRaw = XLSX.utils.sheet_to_json<any>(projectCostsSheet);
+    const projectCostsRaw = sheetToJson("Project Costs by Complexity");
     const projectCosts: ProjectCost[] = projectCostsRaw.map((row: any) => ({
       projectType: row["Project Type"] || "",
       complexityLevel: row["Complexity Level"] || "",
@@ -60,8 +87,7 @@ export function loadPricingMatrix(): PricingMatrix {
     }));
 
     // Parse Regional Multipliers
-    const regionalSheet = workbook.Sheets["Regional Multipliers"];
-    const regionalRaw = XLSX.utils.sheet_to_json<any>(regionalSheet);
+    const regionalRaw = sheetToJson("Regional Multipliers");
     const regionalMultipliers: Record<string, number> = {};
     regionalRaw.forEach((row: any) => {
       const region = row["Region"] || row["Country"];
@@ -70,8 +96,7 @@ export function loadPricingMatrix(): PricingMatrix {
     });
 
     // Parse Hourly Rates
-    const ratesSheet = workbook.Sheets["Hourly Rates by Role-Region"];
-    const ratesRaw = XLSX.utils.sheet_to_json<any>(ratesSheet);
+    const ratesRaw = sheetToJson("Hourly Rates by Role-Region");
     const hourlyRates: HourlyRate[] = ratesRaw.map((row: any) => ({
       role: row["Role"] || "",
       region: row["Region"] || "",
@@ -80,12 +105,10 @@ export function loadPricingMatrix(): PricingMatrix {
     }));
 
     // Parse AI API Pricing
-    const aiApiSheet = workbook.Sheets["AI API Model Pricing"];
-    const aiApiPricing = aiApiSheet ? XLSX.utils.sheet_to_json(aiApiSheet) : [];
+    const aiApiPricing = sheetToJson("AI API Model Pricing");
 
     // Parse Cost Drivers
-    const costDriversSheet = workbook.Sheets["Cost Drivers Key Insights"];
-    const costDriversRaw = costDriversSheet ? XLSX.utils.sheet_to_json<any>(costDriversSheet) : [];
+    const costDriversRaw = sheetToJson("Cost Drivers Key Insights");
     const costDrivers = costDriversRaw
       .map(
         (row: any) =>
@@ -158,8 +181,8 @@ function getDefaultPricingMatrix(): PricingMatrix {
   };
 }
 
-export function findMatchingProjectType(description: string): ProjectCost | null {
-  const matrix = loadPricingMatrix();
+export async function findMatchingProjectType(description: string): Promise<ProjectCost | null> {
+  const matrix = await loadPricingMatrix();
   const lowerDesc = description.toLowerCase();
 
   // Keyword matching for project type
@@ -196,11 +219,11 @@ export function findMatchingProjectType(description: string): ProjectCost | null
   );
 }
 
-export function estimateCostFromMatrix(
+export async function estimateCostFromMatrix(
   projectDescription: string,
   complexity: "simple" | "medium" | "high" = "medium",
-): { low: number; high: number; timeline: string; reference: ProjectCost | null } {
-  const matrix = loadPricingMatrix();
+): Promise<{ low: number; high: number; timeline: string; reference: ProjectCost | null }> {
+  const matrix = await loadPricingMatrix();
 
   const complexityMap: Record<string, string[]> = {
     simple: ["simple", "basic"],
@@ -228,8 +251,8 @@ export function estimateCostFromMatrix(
   return { low: avgLow, high: avgHigh, timeline, reference: matchingTypes[0] };
 }
 
-export function getPricingContext(): string {
-  const matrix = loadPricingMatrix();
+export async function getPricingContext(): Promise<string> {
+  const matrix = await loadPricingMatrix();
 
   const projectTypeSummary = matrix.projectCosts
     .slice(0, 8)
@@ -247,9 +270,9 @@ ${projectTypeSummary}
 
 ### Key Cost Drivers:
 ${matrix.costDrivers
-  .slice(0, 5)
-  .map((d) => `- ${d}`)
-  .join("\n")}
+      .slice(0, 5)
+      .map((d) => `- ${d}`)
+      .join("\n")}
 
 Use these references to calibrate your estimates. Always justify costs based on complexity and features.
 `;

@@ -22,11 +22,16 @@ import {
 import { db } from "./db";
 import { eq, desc, sql } from "drizzle-orm";
 
+export type ProjectSummary = Pick<
+  Project,
+  "id" | "title" | "status" | "updatedAt" | "clientName" | "currentStage"
+>;
+
 export interface IStorage {
   // Projects
   getProject(id: string): Promise<Project | undefined>;
-  getProjects(): Promise<Project[]>;
-  getRecentProjects(limit?: number): Promise<Project[]>;
+  getProjects(): Promise<ProjectSummary[]>;
+  getRecentProjects(limit?: number): Promise<ProjectSummary[]>;
   createProject(project: InsertProject): Promise<Project>;
   updateProject(id: string, updates: Partial<InsertProject>): Promise<Project | undefined>;
   deleteProject(id: string): Promise<void>;
@@ -66,12 +71,35 @@ export class DatabaseStorage implements IStorage {
     return project || undefined;
   }
 
-  async getProjects(): Promise<Project[]> {
-    return await db.select().from(projects).orderBy(desc(projects.updatedAt));
+  async getProjects(): Promise<ProjectSummary[]> {
+    const result = await db
+      .select({
+        id: projects.id,
+        title: projects.title,
+        status: projects.status,
+        updatedAt: projects.updatedAt,
+        clientName: projects.clientName,
+        currentStage: projects.currentStage,
+      })
+      .from(projects)
+      .orderBy(desc(projects.updatedAt));
+    return result;
   }
 
-  async getRecentProjects(limit: number = 5): Promise<Project[]> {
-    return await db.select().from(projects).orderBy(desc(projects.updatedAt)).limit(limit);
+  async getRecentProjects(limit: number = 5): Promise<ProjectSummary[]> {
+    const result = await db
+      .select({
+        id: projects.id,
+        title: projects.title,
+        status: projects.status,
+        updatedAt: projects.updatedAt,
+        clientName: projects.clientName,
+        currentStage: projects.currentStage,
+      })
+      .from(projects)
+      .orderBy(desc(projects.updatedAt))
+      .limit(limit);
+    return result;
   }
 
   async createProject(project: InsertProject): Promise<Project> {

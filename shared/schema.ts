@@ -198,8 +198,24 @@ export const insertApiUsageLogSchema = createInsertSchema(apiUsageLogs).omit({
 export const insertDiagnosticReportSchema = createInsertSchema(diagnosticReports).omit({
   id: true,
   createdAt: true,
-  completedAt: true,
 });
+
+// RPC Schemas
+export const emailUpdateSchema = z.object({
+  email: z.string().email(),
+});
+
+export const scenarioSelectionSchema = z.object({
+  scenario: z.enum(["A", "B"]),
+});
+
+export const imageApprovalSchema = z.object({
+  imageId: z.string().optional(),
+  imageUrl: z.string().optional(),
+}).refine(data => data.imageId || data.imageUrl, {
+  message: "Either imageId or imageUrl must be provided",
+});
+
 
 // Types
 export type Project = typeof projects.$inferSelect;

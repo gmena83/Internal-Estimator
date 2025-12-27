@@ -50,9 +50,8 @@ The system orchestrates multiple AI services (Google Gemini, Anthropic Claude, O
 
 ## Security & Vulnerabilities
 
-- **Known Issue**: `npm audit` reports high-severity vulnerabilities in `xlsx` (imported as `xlsx`). This is currently used in `server/pricing-matrix.ts` to read legacy pricing data.
-  - **Mitigation**: Access is limited to internal server-side reading of local files.
-  - **Recommendation**: Refactor to use `.json` or `exceljs`.
+- **Audit Status**: Critical dependencies have been patched. `xlsx` has been replaced with `exceljs` to mitigate CVE vulnerabilities.
+- **Auth**: API keys are handled via environment variables and never exposed to client.
 
 ## Technology Stack
 
@@ -282,8 +281,8 @@ npm start
 - **Market research** - Perplexity integration for competitive analysis
 - **API health monitoring** - Real-time status dashboard
 - **Usage tracking** - Per-project API cost monitoring
-- **Presentation generation** - Gamma API integration (planned)
-- **Image generation** - Cover image creation (planned)
+- **Presentation generation** - Gamma API integration (Completed)
+- **Image generation** - Cover image creation (Completed)
 
 ### Phase 6: Execution Planning
 

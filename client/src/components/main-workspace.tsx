@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   MessageSquare,
@@ -12,7 +12,6 @@ import {
   Image,
   FolderOpen,
   CheckCircle2,
-  Circle,
   CheckSquare,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -459,7 +458,7 @@ function ProjectFilesView({ project }: { project?: Project }) {
     URL.revokeObjectURL(url);
   };
 
-  const generateConsolidatedMarkdown = () => {
+  const generateConsolidatedMarkdown = React.useCallback(() => {
     let consolidated = `# ${project.title} - Complete Project Documentation\n\n`;
     consolidated += `**Client:** ${project.clientName || "N/A"}\n`;
     consolidated += `**Generated:** ${new Date().toLocaleDateString()}\n\n`;
@@ -479,9 +478,9 @@ function ProjectFilesView({ project }: { project?: Project }) {
     }
 
     return consolidated;
-  };
+  }, [project.title, project.clientName, project.estimateMarkdown, project.vibecodeGuideA, project.vibecodeGuideB, project.pmBreakdown]);
 
-  const files = [
+  const files = React.useMemo(() => [
     {
       name: "Proposal",
       icon: FileText,
@@ -522,7 +521,7 @@ function ProjectFilesView({ project }: { project?: Project }) {
       description: "Project management breakdown with phases, tasks, and checklists",
       pdfUrl: null,
     },
-  ];
+  ], [project.estimateMarkdown, project.proposalPdfUrl, project.internalReportPdfUrl, project.vibecodeGuideA, project.id, project.vibecodeGuideB, project.pmBreakdown]);
 
   return (
     <div className="space-y-6">

@@ -1,5 +1,5 @@
 import type { Express } from "express";
-import { createServer, type Server } from "http";
+import { type Server } from "http";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -7,6 +7,9 @@ import { storage } from "./storage";
 import {
   insertProjectSchema,
   insertMessageSchema,
+  emailUpdateSchema,
+  scenarioSelectionSchema,
+  imageApprovalSchema,
   type ServiceStatus,
   type Attachment,
 } from "@shared/schema";
@@ -30,14 +33,14 @@ if (!fs.existsSync(uploadsDir)) {
 
 const upload = multer({
   storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      const projectDir = path.join(uploadsDir, req.params.id);
+    destination: (_req, _file, cb) => {
+      const projectDir = path.join(uploadsDir, _req.params.id);
       if (!fs.existsSync(projectDir)) {
         fs.mkdirSync(projectDir, { recursive: true });
       }
       cb(null, projectDir);
     },
-    filename: (req, file, cb) => {
+    filename: (_req, file, cb) => {
       const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
       const ext = path.extname(file.originalname);
       cb(null, `${uniqueSuffix}${ext}`);
@@ -73,6 +76,24 @@ const upload = multer({
 });
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
+  // QA Instrumentation
+  if (process.env.QA_MODE === "true") {
+    app.use((req, res, next) => {
+
+      const paramRegex = /\/[0-9a-fA-F-]+/g; // crude UUID matcher
+      const cleanPath = req.path.replace(paramRegex, '/:id');
+      const logLine = `${req.method} ${cleanPath}\n`;
+
+      const qaDir = path.join(process.cwd(), "qa_results");
+      if (!fs.existsSync(qaDir)) fs.mkdirSync(qaDir, { recursive: true });
+
+      fs.appendFile(path.join(qaDir, "route_logs.txt"), logLine, (err: any) => {
+        if (err) console.error("Failed to log route usage:", err);
+      });
+      next();
+    });
+  }
+
   // Projects - Get all
   app.get("/api/projects", async (req, res) => {
     try {
@@ -391,13 +412,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // Update client email
   app.post("/api/projects/:id/update-client-email", async (req, res) => {
     try {
-      const { email } = req.body;
-      if (!email || typeof email !== "string" || !email.includes("@")) {
-        return res.status(400).json({ error: "Valid email address is required" });
+      const parsed = emailUpdateSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.issues[0].message });
       }
 
       const updated = await storage.updateProject(req.params.id, {
-        clientEmail: email,
+        clientEmail: parsed.data.email,
       });
 
       if (!updated) {
@@ -414,13 +435,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // Stage Actions - Select Scenario
   app.post("/api/projects/:id/select-scenario", async (req, res) => {
     try {
-      const { scenario } = req.body;
-      if (!scenario || !["A", "B"].includes(scenario)) {
-        return res.status(400).json({ error: "Invalid scenario selection" });
+      const parsed = scenarioSelectionSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.issues[0].message });
       }
 
       const updated = await storage.updateProject(req.params.id, {
-        selectedScenario: scenario,
+        selectedScenario: parsed.data.scenario,
       });
 
       res.json(updated);
@@ -463,7 +484,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // Stage Actions - Approve Image and Generate Assets
   app.post("/api/projects/:id/approve-image", async (req, res) => {
     try {
-      const { imageId, imageUrl } = req.body;
+      const parsed = imageApprovalSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.issues[0].message });
+      }
+
       const project = await storage.getProject(req.params.id);
       if (!project) {
         return res.status(404).json({ error: "Project not found" });
@@ -471,7 +496,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       // Update project with approved cover image
       const updated = await storage.updateProject(req.params.id, {
-        coverImageUrl: imageUrl || `/api/projects/${req.params.id}/cover-${imageId}.png`,
+        coverImageUrl: parsed.data.imageUrl || `/api/projects/${req.params.id}/cover-${parsed.data.imageId}.png`,
       });
 
       res.json({

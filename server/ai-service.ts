@@ -1,18 +1,12 @@
 import { GoogleGenAI } from "@google/genai";
-import Anthropic from "@anthropic-ai/sdk";
-// import Anthropic from "@anthropic-ai/sdk"; // Removed
 import OpenAI from "openai";
 import { storage } from "./storage";
 import type {
   Project,
   Scenario,
   ROIAnalysis,
-  OngoingCosts,
-  RegionalAlternative,
-  FeatureBreakdown,
-  PricingMultipliers,
 } from "@shared/schema";
-import { loadPricingMatrix, getPricingContext, estimateCostFromMatrix } from "./pricing-matrix";
+import { getPricingContext } from "./pricing-matrix";
 import {
   conductMarketResearch,
   formatMarketResearchMarkdown,
@@ -35,28 +29,20 @@ const hasOpenAIIntegration = !!(
 // Initialize AI clients using Replit AI Integrations (no API keys required, billed to credits)
 const gemini = hasGeminiIntegration
   ? new GoogleGenAI({
-      apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
-      httpOptions: {
-        apiVersion: "",
-        baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
-      },
-    })
+    apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+    httpOptions: {
+      apiVersion: "",
+      baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
+    },
+  })
   : null;
-
-// const anthropic = hasAnthropicIntegration
-//   ? new Anthropic({
-//       apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
-//       baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
-//     })
-//   : null;
-const anthropic = null;
 
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
 const openai = hasOpenAIIntegration
   ? new OpenAI({
-      baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-      apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-    })
+    baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+    apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  })
   : null;
 
 console.log(
@@ -254,7 +240,7 @@ Be helpful, professional, and concise. Guide users through the estimate and prop
       if (gemini) {
         try {
           // Get pricing context from matrix
-          const pricingContext = getPricingContext();
+          const pricingContext = await getPricingContext();
 
           const context = `
 Project Title: ${project.title}
@@ -1067,11 +1053,10 @@ ${generateRegionalAlternatives(scenarioB, "Scenario B")}
 
 ## Recommendation
 
-${
-  scenarioB?.recommended
-    ? `Based on the analysis, we recommend **Scenario B: ${scenarioB.name}** for faster time-to-market and lower initial investment. This approach allows you to validate your concept quickly before committing to a larger custom development effort.`
-    : `Based on the analysis, we recommend **Scenario A: ${scenarioA?.name}** for full control and long-term scalability. This approach provides complete ownership of your solution with maximum flexibility for future enhancements.`
-}
+${scenarioB?.recommended
+      ? `Based on the analysis, we recommend **Scenario B: ${scenarioB.name}** for faster time-to-market and lower initial investment. This approach allows you to validate your concept quickly before committing to a larger custom development effort.`
+      : `Based on the analysis, we recommend **Scenario A: ${scenarioA?.name}** for full control and long-term scalability. This approach provides complete ownership of your solution with maximum flexibility for future enhancements.`
+    }
 
     ---
 
