@@ -225,219 +225,157 @@ Be helpful, professional, and concise. Guide users through the estimate and prop
   },
 
   // Generate dual-scenario estimate
+  // Generate dual-scenario estimate
   async generateEstimate(project: Project): Promise<{
     markdown: string;
     scenarioA: Scenario;
     scenarioB: Scenario;
     roiAnalysis: ROIAnalysis;
     parsedData: any;
+    researchMarkdown?: string;
   }> {
     const startTime = Date.now();
     const parsedData = (project.parsedData as any) || {};
-    let scenarios;
+    let data: { scenarios: any; researchAnalysis: string } | null = null;
+    let scenarios: any = null;
+    let researchAnalysis: string = "";
 
     try {
-      if (gemini) {
-        try {
-          // Get pricing context from matrix
-          const pricingContext = await getPricingContext();
+      // Conduct market research using Perplexity FIRST (if available) to feed into OpenAI
+      let marketResearch: MarketResearchResult | null = null;
+      try {
+        const projectType = parsedData?.mission || project.title || "software development";
+        const projectDesc = project.rawInput || project.title || "";
+        marketResearch = await conductMarketResearch(projectType, projectDesc, project.id);
+      } catch (researchError) {
+        console.error("Market research failed:", researchError);
+      }
 
-          const context = `
+      const pricingContext = await getPricingContext();
+      const marketResearchContext = formatMarketResearchMarkdown(marketResearch);
+
+      const context = `
 Project Title: ${project.title}
 Mission: ${parsedData?.mission || "Software development project"}
 Objectives: ${JSON.stringify(parsedData?.objectives || [])}
 Constraints: ${JSON.stringify(parsedData?.constraints || [])}
 Raw Input: ${project.rawInput || "No additional context provided"}
 
+PRICING MATRIX CONTEXT:
 ${pricingContext}
-          `;
 
-          // Use Gemini for complex reasoning on scenarios
-          const response = await gemini.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: `You are a Lead AI Solutions Architect creating a comprehensive "Dual Scenario" project estimate.
+MARKET RESEARCH CONTEXT:
+${marketResearchContext}
+      `;
 
-${context}
+      // Use OpenAI (Model 5) as primary
+      if (openai) {
+        try {
+          const response = await openai.chat.completions.create({
+            model: "gpt-5", // User requested Model 5
+            messages: [
+              {
+                role: "system",
+                content: `You are a Lead AI Solutions Architect.
+Generate a response with TWO parts:
+1. A detailed JSON object for the project estimate (Scenario A vs B).
+2. A detailed MARKDOWN "Research & Analysis" document.
 
-Generate a detailed project estimate with TWO scenarios following 2026 pricing standards:
+SCENARIO A (High-Tech/Custom): US-based senior rates ($150/hr), full ownership, scalable.
+SCENARIO B (No-Code/MVP): Low-code/No-code, faster ($75/hr), limits.
 
-SCENARIO A (High-Tech/Custom):
-- Full custom code development with complete ownership
-- US-based senior developer rates: $150/hr (mid-level to senior range $120-$250/hr)
-- Higher initial cost but maximum flexibility and scalability
-
-SCENARIO B (No-Code/MVP):
-- No-code/low-code platforms for rapid deployment
-- Lower hourly rate: $75/hr (nearshore/specialized no-code rate)
-- Faster time to market, lower initial investment
-
-For EACH scenario, provide:
-1. Feature list with individual hour estimates
-2. Feature breakdown table (feature name, hours, cost at hourly rate)
-3. Tech stack recommendation
-4. Timeline (realistic for complexity - AI agents typically need 3-6 months)
-5. Total cost calculation with hours x rate
-6. Ongoing costs estimates (25-40% of development annually for maintenance)
-7. Regional alternatives with cost multipliers (LATAM 0.45x, Eastern Europe 0.40x, India 0.30x)
-8. Pricing multipliers applied (complexity, data, integration, customization)
-9. Rate justification based on team location and experience level
-10. Pros and cons
-
-ROI Analysis requirements:
-- Cost of Doing Nothing: Estimate annual cost of manual operations, lost opportunities, inefficiencies
-- Methodology: Explain the basis for each ROI figure
-- Projected savings with realistic assumptions
-- Payback period calculated as: totalCost / (annualSavings / 12)
-- 3-year ROI: ((3 * annualSavings - totalCost) / totalCost) * 100
-
-Return a JSON object with this structure:
+Return a JSON object with this EXACT structure:
 {
-  "scenarioA": {
-    "name": "High-Tech Custom",
-    "description": "Full custom development with complete code ownership",
-    "features": ["Feature 1", "Feature 2"],
-    "featureBreakdown": [
-      {"feature": "Project Discovery & Architecture", "hours": 60, "cost": 9000, "expectedRangeLow": 5000, "expectedRangeHigh": 15000},
-      {"feature": "Custom Data Ingestion & ETL", "hours": 180, "cost": 27000, "expectedRangeLow": 15000, "expectedRangeHigh": 50000}
-    ],
-    "techStack": ["React", "Node.js", "PostgreSQL"],
-    "timeline": "10-14 weeks",
-    "totalCost": 130500,
-    "hourlyRate": 150,
-    "totalHours": 870,
-    "rateJustification": "US-based mid-level to senior development team ($120-$250/hr range)",
-    "ongoingCosts": {
-      "annualMaintenanceLow": 32625,
-      "annualMaintenanceHigh": 52200,
-      "monthlyCloudInfraLow": 500,
-      "monthlyCloudInfraHigh": 2000,
-      "monthlyAiApiLow": 200,
-      "monthlyAiApiHigh": 1000,
-      "monthlyMonitoringLow": 200,
-      "monthlyMonitoringHigh": 500
-    },
-    "regionalAlternatives": [
-      {"region": "Latin America (Nearshore)", "multiplier": 0.45, "adjustedCost": 58725, "notes": "Quality nearshore development"},
-      {"region": "Eastern Europe", "multiplier": 0.40, "adjustedCost": 52200, "notes": "Strong technical talent pool"},
-      {"region": "India/Asia", "multiplier": 0.30, "adjustedCost": 39150, "notes": "Cost-optimized offshore"}
-    ],
-    "multipliers": {
-      "complexity": {"factor": "5-10x", "description": "High - RAG/LLM integration"},
-      "data": {"factor": "2-3x", "description": "Medium - Custom data pipelines"},
-      "integration": {"factor": "1.2-1.5x", "description": "Simple - 1-3 system integrations"},
-      "customization": {"factor": "3-10x", "description": "Custom development"},
-      "timeline": {"factor": "1.0x", "description": "Standard timeline"}
-    },
-    "pros": ["Full code ownership", "Complete customization", "Scalable architecture"],
-    "cons": ["Higher upfront cost", "Longer development time"],
-    "recommended": false
+  "scenarios": {
+    "scenarioA": { ... (standard scenario structure with features, breakdown, costs, logic) ... },
+    "scenarioB": { ... (standard scenario structure) ... },
+    "roiAnalysis": { ... }
   },
-  "scenarioB": {
-    "name": "No-Code MVP",
-    "description": "Rapid development using no-code/low-code platforms",
-    "features": ["Feature 1", "Feature 2"],
-    "featureBreakdown": [
-      {"feature": "Project Scoping", "hours": 50, "cost": 3750, "expectedRangeLow": 2000, "expectedRangeHigh": 8000}
-    ],
-    "techStack": ["Airtable", "Zapier", "Webflow", "Make"],
-    "timeline": "8-10 weeks",
-    "totalCost": 45000,
-    "hourlyRate": 75,
-    "totalHours": 600,
-    "rateJustification": "Nearshore no-code specialists or US junior developers",
-    "ongoingCosts": {
-      "annualMaintenanceLow": 11250,
-      "annualMaintenanceHigh": 18000,
-      "monthlyCloudInfraLow": 100,
-      "monthlyCloudInfraHigh": 500,
-      "monthlyAiApiLow": 50,
-      "monthlyAiApiHigh": 300,
-      "monthlyMonitoringLow": 50,
-      "monthlyMonitoringHigh": 200
-    },
-    "regionalAlternatives": [
-      {"region": "Latin America", "multiplier": 0.60, "adjustedCost": 27000, "notes": "No-code specialists"},
-      {"region": "Eastern Europe", "multiplier": 0.55, "adjustedCost": 24750, "notes": "Technical automation experts"}
-    ],
-    "multipliers": {
-      "complexity": {"factor": "1-2x", "description": "Simple-Medium - No-code configuration"},
-      "data": {"factor": "1x", "description": "Low - Standard data handling"},
-      "integration": {"factor": "1.2x", "description": "Simple - Platform integrations"},
-      "customization": {"factor": "1x", "description": "Platform-based"},
-      "timeline": {"factor": "1.0x", "description": "Standard timeline"}
-    },
-    "pros": ["Fast time to market", "Lower initial cost", "Easy to iterate"],
-    "cons": ["Platform limitations", "Recurring platform costs", "Less customization"],
-    "recommended": true
-  },
-  "roiAnalysis": {
-    "costOfDoingNothing": 75000,
-    "manualOperationalCost": 40000,
-    "projectedSavings": 80000,
-    "paybackPeriodMonths": 12,
-    "threeYearROI": 284,
-    "methodology": "Cost of Doing Nothing based on: 1) Manual operational labor ($40K/yr), 2) Lost efficiency opportunities ($20K/yr), 3) Competitive disadvantage risk ($15K/yr). Savings assume 80% automation of manual tasks and new revenue opportunities."
-  }
+  "researchAnalysis": "# comprehensive markdown string..."
 }
 
-Ensure all numbers are realistic based on the project scope. Return ONLY the JSON object.`,
+For "researchAnalysis", create a detailed markdown document that includes:
+- Executive Summary of the analysis.
+- Synthesis of the Market Research data provided.
+- Detailed reasoning for the pricing and architecture choices in Scenario A vs B.
+- Use cases analysis.
+- Sources cited (from market research).
+`
+              },
+              {
+                role: "user",
+                content: context
+              }
+            ],
+            response_format: { type: "json_object" }
           });
 
-          await trackHealth("gemini", startTime);
-
-          const text = response.text || "";
+          await trackHealth("openai", startTime);
+          const text = response.choices[0].message.content || "{}";
 
           await logApiUsage({
             projectId: project.id,
-            provider: "gemini",
-            model: "gemini-2.5-flash",
-            inputText: project.rawInput || "",
+            provider: "openai",
+            model: "gpt-5",
+            inputText: context,
             outputText: text,
             operation: "estimate",
           });
 
           try {
-            const jsonMatch = text.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-              scenarios = JSON.parse(jsonMatch[0]);
+            data = JSON.parse(text);
+            if (data) {
+              scenarios = data.scenarios;
+              researchAnalysis = data.researchAnalysis;
             }
-          } catch (parseError) {
-            console.error("Failed to parse scenarios:", parseError);
-            scenarios = createDefaultScenarios(project);
+          } catch (e) {
+            console.error("Failed to parse OpenAI JSON", e);
           }
+
         } catch (aiError) {
-          await trackHealth("gemini", startTime, aiError as Error);
-          console.error("Gemini error, using fallback scenarios:", aiError);
-          scenarios = createDefaultScenarios(project);
+          await trackHealth("openai", startTime, aiError as Error);
+          console.error("OpenAI error", aiError);
         }
-      } else {
-        // No AI available, use defaults
-        scenarios = createDefaultScenarios(project);
+      }
+
+      // Fallback to Gemini if OpenAI failed or not present
+      if (!scenarios && gemini) {
+        try {
+          const response = await gemini.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: `You are a Lead AI Solutions Architect.
+${context}
+
+Generate a detailed project estimate with TWO scenarios (High-Tech vs No-Code).
+Return ONLY the JSON object for the scenarios (same structure as standard).
+`
+          });
+
+          await trackHealth("gemini", startTime);
+          const text = response.text || "";
+          const jsonMatch = text.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            scenarios = JSON.parse(jsonMatch[0]);
+            // Create basic research analysis if missing
+            researchAnalysis = marketResearchContext;
+          }
+        } catch (geminiError) {
+          console.error("Gemini fallback failed", geminiError);
+        }
       }
 
       if (!scenarios) {
         scenarios = createDefaultScenarios(project);
+        researchAnalysis = marketResearchContext + "\n\n*Generated using default fallback scenarios.*";
       }
 
-      // Conduct market research using Perplexity (if available)
-      let marketResearch: MarketResearchResult | null = null;
-      try {
-        const projectType = parsedData?.mission || project.title || "software development";
-        const projectDesc = project.rawInput || project.title || "";
-        marketResearch = await conductMarketResearch(projectType, projectDesc, project.id);
-        if (marketResearch) {
-          console.log("Market research completed successfully");
-        }
-      } catch (researchError) {
-        console.error("Market research failed:", researchError);
-      }
+      // Generate the Proposal Markdown (HTML template style content)
+      const proposalMarkdown = generateEstimateMarkdown(project, scenarios, marketResearch);
 
-      // Generate markdown summary with market research
-      const markdown = generateEstimateMarkdown(project, scenarios, marketResearch);
-
-      // Update project - always persist the result
+      // Update project
       await storage.updateProject(project.id, {
-        estimateMarkdown: markdown,
+        estimateMarkdown: proposalMarkdown,
+        researchMarkdown: researchAnalysis,
         scenarioA: scenarios.scenarioA,
         scenarioB: scenarios.scenarioB,
         roiAnalysis: scenarios.roiAnalysis,
@@ -446,15 +384,16 @@ Ensure all numbers are realistic based on the project scope. Return ONLY the JSO
       });
 
       return {
-        markdown,
+        markdown: proposalMarkdown,
         scenarioA: scenarios.scenarioA,
         scenarioB: scenarios.scenarioB,
         roiAnalysis: scenarios.roiAnalysis,
         parsedData,
+        researchMarkdown: researchAnalysis
       };
+
     } catch (error) {
       console.error("Error generating estimate:", error);
-      // Still generate with defaults
       scenarios = createDefaultScenarios(project);
       const markdown = generateEstimateMarkdown(project, scenarios, null);
 
@@ -472,7 +411,7 @@ Ensure all numbers are realistic based on the project scope. Return ONLY the JSO
         scenarioA: scenarios.scenarioA,
         scenarioB: scenarios.scenarioB,
         roiAnalysis: scenarios.roiAnalysis,
-        parsedData,
+        parsedData
       };
     }
   },

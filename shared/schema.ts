@@ -34,6 +34,7 @@ export const projects = pgTable("projects", {
   attachments: jsonb("attachments").$type<Attachment[]>(), // Uploaded meeting notes, documents
   clientEmail: text("client_email"), // Client email for communication
   marketResearch: jsonb("market_research"), // Perplexity deep research results
+  researchMarkdown: text("research_markdown"), // Consolidated breakdown of research for download
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -199,6 +200,32 @@ export const insertDiagnosticReportSchema = createInsertSchema(diagnosticReports
   id: true,
   createdAt: true,
 });
+
+// Users table
+export const users = pgTable("users", {
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  role: text("role").notNull().default("admin"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Session table (managed by connect-pg-simple, defined here to prevent migration drop)
+export const session = pgTable("session", {
+  sid: varchar("sid").primaryKey(),
+  sess: jsonb("sess").notNull(),
+  expire: timestamp("expire").notNull(),
+});
+
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
 
 // RPC Schemas
 export const emailUpdateSchema = z.object({

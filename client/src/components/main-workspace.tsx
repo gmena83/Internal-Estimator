@@ -464,21 +464,29 @@ function ProjectFilesView({ project }: { project?: Project }) {
     consolidated += `**Generated:** ${new Date().toLocaleDateString()}\n\n`;
     consolidated += `---\n\n`;
 
+    if (project.proposalPdfUrl) {
+      consolidated += `* [Download Proposal PDF](${project.proposalPdfUrl})\n`;
+    }
+    consolidated += `\n---\n\n`;
+
     if (project.estimateMarkdown) {
       consolidated += `# Part 1: Project Proposal\n\n${project.estimateMarkdown}\n\n---\n\n`;
     }
+    if (project.researchMarkdown) {
+      consolidated += `# Part 2: Research & Analysis\n\n${project.researchMarkdown}\n\n---\n\n`;
+    }
     if (project.vibecodeGuideA) {
-      consolidated += `# Part 2: High-Code Execution Guide\n\n${project.vibecodeGuideA}\n\n---\n\n`;
+      consolidated += `# Part 3: High-Code Execution Guide\n\n${project.vibecodeGuideA}\n\n---\n\n`;
     }
     if (project.vibecodeGuideB) {
-      consolidated += `# Part 3: No-Code Execution Guide\n\n${project.vibecodeGuideB}\n\n---\n\n`;
+      consolidated += `# Part 4: No-Code Execution Guide\n\n${project.vibecodeGuideB}\n\n---\n\n`;
     }
     if (project.pmBreakdown) {
-      consolidated += `# Part 4: Project Management Breakdown\n\n${generatePMMarkdown(project.pmBreakdown as any)}\n`;
+      consolidated += `# Part 5: Project Management Breakdown\n\n${generatePMMarkdown(project.pmBreakdown as any)}\n`;
     }
 
     return consolidated;
-  }, [project.title, project.clientName, project.estimateMarkdown, project.vibecodeGuideA, project.vibecodeGuideB, project.pmBreakdown]);
+  }, [project.title, project.clientName, project.estimateMarkdown, project.researchMarkdown, project.proposalPdfUrl, project.vibecodeGuideA, project.vibecodeGuideB, project.pmBreakdown]);
 
   const files = React.useMemo(() => [
     {
@@ -488,6 +496,14 @@ function ProjectFilesView({ project }: { project?: Project }) {
       content: project.estimateMarkdown || "",
       description: "Complete project proposal with estimates and ROI analysis",
       pdfUrl: project.proposalPdfUrl,
+    },
+    {
+      name: "Research_Analysis",
+      icon: FileText,
+      available: !!project.researchMarkdown,
+      content: project.researchMarkdown || "",
+      description: "Deep dive market research and technical feasibility analysis",
+      pdfUrl: null,
     },
     {
       name: "Internal_Report",
@@ -521,7 +537,7 @@ function ProjectFilesView({ project }: { project?: Project }) {
       description: "Project management breakdown with phases, tasks, and checklists",
       pdfUrl: null,
     },
-  ], [project.estimateMarkdown, project.proposalPdfUrl, project.internalReportPdfUrl, project.vibecodeGuideA, project.id, project.vibecodeGuideB, project.pmBreakdown]);
+  ], [project.estimateMarkdown, project.researchMarkdown, project.proposalPdfUrl, project.internalReportPdfUrl, project.vibecodeGuideA, project.id, project.vibecodeGuideB, project.pmBreakdown]);
 
   return (
     <div className="space-y-6">

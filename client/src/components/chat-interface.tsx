@@ -276,13 +276,16 @@ export function ChatInterface({ projectId, onMessageSent }: ChatInterfaceProps) 
                       {message.role === "user" ? "You" : "ISI"}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {message.createdAt ? format(new Date(message.createdAt), "h:mm a") : ""}
+                      {(() => {
+                        if (!message.createdAt) return "";
+                        const date = new Date(message.createdAt);
+                        return !isNaN(date.getTime()) ? format(date, "h:mm a") : "";
+                      })()}
                     </span>
                   </div>
                   <div
-                    className={`rounded-lg p-3 ${
-                      message.role === "user" ? "bg-muted" : "bg-card border border-card-border"
-                    }`}
+                    className={`rounded-lg p-3 ${message.role === "user" ? "bg-muted" : "bg-card border border-card-border"
+                      }`}
                   >
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
 

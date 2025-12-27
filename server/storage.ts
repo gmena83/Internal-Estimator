@@ -18,9 +18,16 @@ import {
   type ProjectApiUsageStats,
   type DiagnosticReport,
   type InsertDiagnosticReport,
+  users,
+  type User,
+  type InsertUser,
 } from "@shared/schema";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { eq, desc, sql } from "drizzle-orm";
+import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+
+const PostgresSessionStore = connectPgSimple(session);
 
 export type ProjectSummary = Pick<
   Project,
@@ -62,6 +69,12 @@ export interface IStorage {
     id: string,
     updates: Partial<InsertDiagnosticReport>,
   ): Promise<DiagnosticReport | undefined>;
+
+  // Users
+  getUser(id: string): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  sessionStore: session.Store;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -334,6 +347,31 @@ export class DatabaseStorage implements IStorage {
       .where(eq(diagnosticReports.id, id))
       .returning();
     return updated || undefined;
+  }
+
+  // Users
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const [created] = await db.insert(users).values(user).returning();
+    return created;
+  }
+
+  sessionStore: session.Store;
+
+  constructor() {
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      createTableIfMissing: true,
+    });
   }
 }
 
