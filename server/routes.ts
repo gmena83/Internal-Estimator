@@ -94,6 +94,12 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     });
   }
 
+  // Response validation middleware (normalize URLs)
+  if (process.env.NODE_ENV !== 'test') {
+    const { responseValidator } = await import('./middleware/response-validator');
+    app.use(responseValidator);
+  }
+
   // Projects - Get all
   app.get("/api/projects", async (req, res) => {
     try {

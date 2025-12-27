@@ -8,6 +8,8 @@
     "build": "tsx script/build.ts",
     "start": "node dist/index.cjs",
     "check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write .",
     "db:push": "drizzle-kit push",
