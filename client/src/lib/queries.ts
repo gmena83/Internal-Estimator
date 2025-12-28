@@ -69,3 +69,14 @@ export const useProjectDocuments = (projectId?: string) => {
         enabled: !!projectId,
     });
 };
+
+export const useStartStage = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ projectId, stageId }: { projectId: string, stageId: string }) =>
+            api.startStage(projectId, stageId),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['stages', variables.projectId] });
+        },
+    });
+};

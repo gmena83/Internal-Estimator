@@ -16,12 +16,17 @@ interface LeftSidebarProps {
 export const LeftSidebar: React.FC<LeftSidebarProps> = ({ projects, activeProjectId, onCreateProject, isDark, onToggleTheme }) => {
     const [search, setSearch] = useState('');
     const [lang, setLang] = useState<'en' | 'es'>('en');
+    const [showAllProjects, setShowAllProjects] = useState(false);
 
     // Handle undefined projects gracefully
     const filteredProjects = (projects || []).filter(p =>
         p.name.toLowerCase().includes(search.toLowerCase()) ||
         p.client.toLowerCase().includes(search.toLowerCase())
     );
+
+    // Limit to 5 projects unless "Show All" is clicked
+    const displayedProjects = showAllProjects ? filteredProjects : filteredProjects.slice(0, 5);
+    const hasMoreProjects = filteredProjects.length > 5;
 
     return (
         <div className="w-64 h-full border-r border-border bg-background flex flex-col transition-colors duration-300">
@@ -63,7 +68,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({ projects, activeProjec
             <div className="flex-1 overflow-y-auto px-2">
                 <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-2 mt-2">Projects</div>
                 <div className="space-y-0.5">
-                    {filteredProjects.map(project => (
+                    {displayedProjects.map(project => (
                         <Link key={project.id} href={`/project/${project.id}`}>
                             <a className={cn(
                                 "flex flex-col gap-1 p-2 rounded-md transition-all duration-200 group border border-transparent cursor-pointer no-underline",
@@ -86,63 +91,80 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({ projects, activeProjec
                     ))}
                 </div>
 
-                {/* Response Time Chart */}
-                <div className="mt-6 px-2 mb-4">
-                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> Response Trend (1h)
-                    </div>
-                    <Card className="p-3 bg-muted/50 border-border">
-                        <div className="flex items-end justify-between mb-2">
-                            <div className="flex flex-col">
-                                <span className="text-xl font-bold text-foreground leading-none">145<span className="text-sm font-normal text-muted-foreground ml-0.5">ms</span></span>
-                            </div>
-                            <Badge variant="success" className="mb-0.5 text-[10px] px-1.5 py-0">
-                                <TrendingUp className="w-3 h-3 mr-1" />
-                                -12%
-                            </Badge>
-                        </div>
-                        <Sparkline seed="response-time-sidebar" className="w-full h-8 text-primary" />
-                    </Card>
+                {/* Show All / Show Less toggle */}
+                {hasMoreProjects && (
+                    <Button
+                        variant="ghost"
+                        className="w-full mt-2 text-xs h-7 text-muted-foreground hover:text-primary"
+                        onClick={() => setShowAllProjects(!showAllProjects)}
+                    >
+                        {showAllProjects ? `Show Less` : `Show All (${filteredProjects.length})`}
+                    </Button>
+                )}
+            </div>
+
+            {/* Response Time Chart */}
+            <div className="mt-6 px-2 mb-4">
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> Response Trend (1h)
                 </div>
-
-                {/* Knowledge Base Widget */}
-                <div className="px-2 mb-4">
-                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1">
-                        <Database className="w-3 h-3" /> Knowledge Base
+                <Card className="p-3 bg-muted/50 border-border">
+                    <div className="flex items-end justify-between mb-2">
+                        <div className="flex flex-col">
+                            <span className="text-xl font-bold text-foreground leading-none">145<span className="text-sm font-normal text-muted-foreground ml-0.5">ms</span></span>
+                        </div>
+                        <Badge variant="success" className="mb-0.5 text-[10px] px-1.5 py-0">
+                            <TrendingUp className="w-3 h-3 mr-1" />
+                            -12%
+                        </Badge>
                     </div>
-                    <Card className="p-3 bg-muted/50 border-border relative overflow-hidden group cursor-pointer hover:bg-muted/80 transition-all border-dashed">
-                        <div className="flex items-center justify-between mb-3">
-                            <div className="flex flex-col">
-                                <span className="text-xs font-semibold">Corporate Context</span>
-                                <span className="text-[10px] text-muted-foreground">1,240 documents indexed</span>
-                            </div>
-                            <div className="w-6 h-6 rounded bg-background border border-border flex items-center justify-center group-hover:border-primary/50 transition-colors">
-                                <Settings className="w-3 h-3 text-muted-foreground group-hover:text-primary" />
-                            </div>
-                        </div>
+                    <Sparkline seed="response-time-sidebar" className="w-full h-8 text-primary" />
+                </Card>
+            </div>
 
-                        {/* Visual Storage Breakdown */}
-                        <div className="space-y-2">
-                            <div className="flex justify-between text-[10px]">
-                                <span className="text-muted-foreground">Index Usage</span>
-                                <span className="font-mono font-medium">82%</span>
-                            </div>
-                            <div className="flex h-1.5 w-full rounded-full overflow-hidden bg-background ring-1 ring-border/50">
-                                <div className="w-[35%] bg-blue-500 hover:opacity-80 transition-opacity" title="PDFs" />
-                                <div className="w-[25%] bg-purple-500 hover:opacity-80 transition-opacity" title="Docs" />
-                                <div className="w-[22%] bg-emerald-500 hover:opacity-80 transition-opacity" title="Spreadsheets" />
-                            </div>
-                            <div className="flex justify-between items-center text-[9px] text-muted-foreground pt-1">
-                                <div className="flex gap-2">
-                                    <span className="flex items-center gap-1"><div className="w-1 h-1 rounded-full bg-blue-500" /> PDF</span>
-                                    <span className="flex items-center gap-1"><div className="w-1 h-1 rounded-full bg-purple-500" /> DOC</span>
-                                </div>
-                                <span className="text-primary hover:underline">Manage Files</span>
-                            </div>
-                        </div>
-                    </Card>
+            {/* Knowledge Base */}
+            <div className="mt-4 px-2">
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-2 flex items-center justify-between">
+                    <span>Knowledge Base</span>
+                    <Badge variant="outline" className="text-[9px] h-4 px-1 opacity-60">v2.1</Badge>
                 </div>
+                <Card
+                    className="p-3 bg-card border-border hover:bg-muted/80 transition-all duration-200 cursor-pointer group"
+                    onClick={() => console.log("Open Knowledge Base")}
+                >
+                    <div className="flex items-start gap-2 mb-3">
+                        <div className="p-1.5 rounded-md bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                            <Database className="w-4 h-4" />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-xs font-semibold group-hover:text-primary transition-colors">Corporate Context</span>
+                            <span className="text-[10px] text-muted-foreground">1,240 documents indexed</span>
+                        </div>
+                        <div className="w-6 h-6 rounded bg-background border border-border flex items-center justify-center group-hover:border-primary/50 transition-colors">
+                            <Settings className="w-3 h-3 text-muted-foreground group-hover:text-primary" />
+                        </div>
+                    </div>
 
+                    {/* Visual Storage Breakdown */}
+                    <div className="space-y-2">
+                        <div className="flex justify-between text-[10px]">
+                            <span className="text-muted-foreground">Index Usage</span>
+                            <span className="font-mono font-medium">82%</span>
+                        </div>
+                        <div className="flex h-1.5 w-full rounded-full overflow-hidden bg-background ring-1 ring-border/50">
+                            <div className="w-[35%] bg-blue-500 hover:opacity-80 transition-opacity" title="PDFs" />
+                            <div className="w-[25%] bg-purple-500 hover:opacity-80 transition-opacity" title="Docs" />
+                            <div className="w-[22%] bg-emerald-500 hover:opacity-80 transition-opacity" title="Spreadsheets" />
+                        </div>
+                        <div className="flex justify-between items-center text-[9px] text-muted-foreground pt-1">
+                            <div className="flex gap-2">
+                                <span className="flex items-center gap-1"><div className="w-1 h-1 rounded-full bg-blue-500" /> PDF</span>
+                                <span className="flex items-center gap-1"><div className="w-1 h-1 rounded-full bg-purple-500" /> DOC</span>
+                            </div>
+                            <span className="text-primary hover:underline cursor-pointer">Manage Files</span>
+                        </div>
+                    </div>
+                </Card>
             </div>
 
             {/* Footer / User Profile & Settings */}

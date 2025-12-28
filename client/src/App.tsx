@@ -15,7 +15,7 @@ import { Button, Skeleton } from './components/ui/UIComponents';
 import { Message } from './types';
 import { LayoutDashboard, MessageSquare, FileText, RefreshCw, Wand2, AlertTriangle } from 'lucide-react';
 import { cn } from './lib/utils';
-import { useProjects, useProject, useSystemHealth, useProjectUsage, useProjectStages, useProjectDocuments } from './lib/queries';
+import { useProjects, useProject, useSystemHealth, useProjectUsage, useProjectStages, useProjectDocuments, useStartStage } from './lib/queries';
 import { api } from './lib/api';
 
 // --- Dashboard Component ---
@@ -39,6 +39,7 @@ const ProjectView = ({ params }: { params: { id: string } }) => {
   const { data: project, isLoading: isProjectLoading, isError: isProjectError } = useProject(id);
   const { data: stages, isLoading: isStagesLoading } = useProjectStages(id);
   const { data: docs } = useProjectDocuments(id);
+  const startStageMutation = useStartStage();
 
   // Chat State
   const [messages, setMessages] = useState<Message[]>([
@@ -60,48 +61,52 @@ const ProjectView = ({ params }: { params: { id: string } }) => {
     setIsStreaming(true);
 
     try {
-      const response = await fetch(api.chatEndpoint(id), {
+      // Use existing /messages endpoint that works
+      const response = await fetch(`/api/projects/${id}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: content }), // We only need 'message' for backend
+        body: JSON.stringify({
+          content,
+          role: 'user',
+          stage: project?.currentStage || 0
+        }),
       });
 
-      if (!response.body) throw new Error("No response body");
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let botMsgId = (Date.now() + 1).toString();
+      const data = await response.json();
 
-      setMessages(prev => [...prev, {
-        id: botMsgId,
-        role: 'assistant',
-        content: '',
-        timestamp: new Date().toISOString()
-      }]);
-
-      let fullContent = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        fullContent += chunk;
-
-        setMessages(prev => prev.map(msg =>
-          msg.id === botMsgId ? { ...msg, content: fullContent } : msg
-        ));
+      // Add assistant message from response
+      if (data.assistantMessage) {
+        setMessages(prev => [...prev, {
+          id: data.assistantMessage.id || (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: data.assistantMessage.content,
+          timestamp: data.assistantMessage.createdAt || new Date().toISOString()
+        }]);
       }
     } catch (error) {
       console.error("Chat error:", error);
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         role: 'system',
-        content: 'Error: Could not connect to AI service.',
+        content: 'Error: Could not connect to AI service. Please try again.',
         timestamp: new Date().toISOString()
       }]);
     } finally {
       setIsStreaming(false);
+    }
+  };
+
+  const handleAutoRun = async () => {
+    if (!stages || stages.length === 0) return;
+
+    // Find first stage that is not completed
+    const nextStage = stages.find(s => s.status === 'todo');
+    if (nextStage) {
+      await startStageMutation.mutateAsync({ projectId: id, stageId: nextStage.id });
     }
   };
 
@@ -136,7 +141,7 @@ const ProjectView = ({ params }: { params: { id: string } }) => {
             <Button variant="outline" size="sm">
               <RefreshCw className="w-3.5 h-3.5 mr-2" /> Reset
             </Button>
-            <Button variant="primary" size="sm">
+            <Button variant="primary" size="sm" onClick={handleAutoRun} isLoading={startStageMutation.isPending}>
               <Wand2 className="w-3.5 h-3.5 mr-2" /> Auto-Run
             </Button>
           </div>
