@@ -7,6 +7,7 @@ The project has undergone a "Strategic Hard Fork" into a monorepo. We've moved a
 ## 🛠 Active Workstreams
 
 - [x] **Monorepo Migration** (100%): All files moved, Turborepo configured.
+- [x] **Git Hooks & Commits** (100%): Restored `lint-staged` config and successfully committed 185 files.
 - [x] **Bun Transition** (100%): API running on `Bun.serve`.
 - [x] **Frontend Modernization** (100%): Vite 6 and Tailwind 4 integrated.
 - [/] **Refactoring & Cleanup** (80%): Many relative paths updated, but smaller, less-used files might still have legacy imports.
