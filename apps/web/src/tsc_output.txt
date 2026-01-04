@@ -1,0 +1,4 @@
+src/components/features/project/project-files-view.tsx(5,24): error TS6196: 'Attachment' is declared but never used.
+src/components/layouts/project-view.tsx(5,31): error TS2307: Cannot find module '../stage-progress' or its corresponding type declarations.
+src/components/layouts/project-view.tsx(6,27): error TS2307: Cannot find module '../chat-panel' or its corresponding type declarations.
+src/components/layouts/project-view.tsx(7,25): error TS2307: Cannot find module '../doc-tabs' or its corresponding type declarations.

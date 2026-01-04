@@ -61,8 +61,8 @@ The system orchestrates multiple AI services (Google Gemini, Anthropic Claude, O
 | -------------- | ----------------------- |
 | React 18       | UI framework            |
 | TypeScript     | Type safety             |
-| Vite           | Build tool & dev server |
-| Tailwind CSS   | Styling                 |
+| Vite 6         | Build tool & dev server |
+| Tailwind CSS 4 | Styling (Native CSS)    |
 | shadcn/ui      | Component library       |
 | Radix UI       | Accessible primitives   |
 | TanStack Query | Server state management |
@@ -73,7 +73,7 @@ The system orchestrates multiple AI services (Google Gemini, Anthropic Claude, O
 
 | Technology  | Purpose         |
 | ----------- | --------------- |
-| Node.js     | Runtime         |
+| Bun 1.3+    | Runtime         |
 | Express     | HTTP server     |
 | TypeScript  | Type safety     |
 | Drizzle ORM | Database access |
@@ -98,50 +98,33 @@ The system orchestrates multiple AI services (Google Gemini, Anthropic Claude, O
 | OpenAI           | General tasks     |
 | Perplexity       | Market research   |
 
-## Architecture
+## Architecture (Monorepo)
+
+The project uses **Turborepo** to manage a multi-workspace structure:
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                      ISI Command Center                          │
-├─────────────────┬───────────────────────────┬───────────────────┤
-│   Left Sidebar  │      Main Workspace       │   Right Sidebar   │
-│   (w-64)        │      (flex-1)             │   (w-72)          │
-│                 │                           │                   │
-│ - Recent        │ - Chat Interface          │ - API Health      │
-│   Projects      │ - Markdown Viewer         │ - Project Stats   │
-│ - Project       │ - Stage Progress          │ - Usage Metrics   │
-│   History       │ - Action Buttons          │ - System Status   │
-│ - Quick         │ - Document Tabs           │                   │
-│   Actions       │ - File Management         │                   │
-└─────────────────┴───────────────────────────┴───────────────────┘
-
-┌─────────────────────────────────────────────────────────────────┐
-│                        Backend Services                          │
-├──────────────┬──────────────┬──────────────┬────────────────────┤
-│   Express    │   AI Layer   │  PDF/Email   │     Database       │
-│   Routes     │              │              │                    │
-│              │ - Gemini     │ - pdfmake    │ - PostgreSQL       │
-│ /api/*       │ - Claude     │ - Resend     │ - Drizzle ORM      │
-│              │ - OpenAI     │              │                    │
-│              │ - Perplexity │              │                    │
-└──────────────┴──────────────┴──────────────┴────────────────────┘
+├── apps/
+│   ├── web/                # Frontend (Vite 6 + Tailwind 4)
+│   └── api/                # Backend (Bun + Express)
+├── packages/
+│   └── shared/             # Shared Types & Schema (@internal/shared)
+├── turbo.json              # Monorepo orchestration
+└── package.json            # Workspace definitions
 ```
 
-### Database Schema
+### 5-Stage Autonomous Workflow
 
-```typescript
-// Key Tables
-projects; // Main entity: state, scenarios, outputs
-messages; // Chat history per project
-knowledgeEntries; // RAG knowledge base
-apiHealthLogs; // Real-time API status tracking
-```
+1. **Mission Extraction** - AI parses client input to identify project scope, requirements, and deliverables
+2. **Dual-Scenario Estimates** - Generates High-Tech (custom development) vs No-Code solutions with detailed breakdowns
+3. **Production Assets** - Creates professional PDF proposals, internal reports, and presentations
+4. **Client Communication** - Email preview and delivery with PDF attachments
+5. **Execution Planning** - Comprehensive guides with collapsible task checklists
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 20+
+- **Bun** (Required) - [Install Bun](https://bun.sh)
 - PostgreSQL database
 - API keys for AI services
 
@@ -151,34 +134,51 @@ apiHealthLogs; // Real-time API status tracking
 # Database
 DATABASE_URL=postgresql://...
 
-# AI Services (via Replit AI Integrations)
+# AI Services
 AI_INTEGRATIONS_GEMINI_API_KEY=...
-AI_INTEGRATIONS_GEMINI_BASE_URL=...
-AI_INTEGRATIONS_ANTHROPIC_API_KEY=...
-AI_INTEGRATIONS_ANTHROPIC_BASE_URL=...
-AI_INTEGRATIONS_OPENAI_API_KEY=...
-AI_INTEGRATIONS_OPENAI_BASE_URL=...
-
-# External Services
 PERPLEXITY_API_KEY=...
 RESEND_API_KEY=...
-
-# Security
-SESSION_SECRET=...
 ```
 
-### Installation
+### Installation & Development
 
 ```bash
-# Install dependencies
-npm install
+# Install dependencies across all workspaces
+bun install
 
 # Push database schema
-npm run db:push
+bun x drizzle-kit push
 
-# Start development server
-npm run dev
+# Start all development servers (turborepo)
+bun dev
 ```
+
+### Local Testing & Access
+
+Once the server is running, you can access the ISI Command Center at:
+
+- **URL**: `http://localhost:5000`
+- **Default Port**: 5000 (unless changed via `PORT` environment variable)
+
+#### Running Tests
+
+To run the automated test battery:
+
+```bash
+# Run all tests
+npm test
+
+# Run the specific API Agent Battery
+npx vitest run tests/api/agent-battery.test.ts
+```
+
+#### Manual Testing Workflow
+
+1. **Launch**: Open `http://localhost:5000` in your browser.
+2. **Setup**: Ensure your `.env` file has valid API keys for the services you want to test.
+3. **Create**: Click "New Project" and input a scenario (you can use examples from `qa_scenarios.json`).
+4. **Interact**: Use the chat interface to refine requirements.
+5. **Execute**: Advance through the stages to generate estimates, PDFs, and PM breakdowns.
 
 ### Production Build
 
