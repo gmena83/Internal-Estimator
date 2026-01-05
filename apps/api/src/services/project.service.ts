@@ -128,7 +128,7 @@ TOTAL HOURS: ${totalHours}
             approvedAt: new Date().toISOString(),
           },
         });
-        console.log(`[Learning] Captured knowledge from project ${projectId}`);
+        // console.log(`[Learning] Captured knowledge from project ${projectId}`);
       }
     } catch (error) {
       // Non-blocking error for learning
