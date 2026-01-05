@@ -20,6 +20,7 @@ const FilesTab = () => <div>File Management (Pending)</div>;
 const PricingTab = () => <div>Pricing Matrix (Pending)</div>;
 
 export const AdminDashboard = () => {
+  const [activeTab, setActiveTab] = useState("projects");
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   // Simple check on mount (ideally use a real auth hook)
@@ -81,7 +82,11 @@ export const AdminDashboard = () => {
       </div>
 
       <div className="flex-1 p-6 overflow-y-auto">
-        <Tabs defaultValue="projects" className="space-y-4">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="space-y-4"
+        >
           <TabsList>
             <TabsTrigger value="projects" className="items-center gap-2">
               <LayoutDashboard className="w-4 h-4" /> Projects
@@ -104,7 +109,7 @@ export const AdminDashboard = () => {
           </TabsList>
 
           <TabsContent value="projects" className="space-y-4">
-            <ProjectsTab />
+            {activeTab === "projects" && <ProjectsTab />}
           </TabsContent>
 
           <TabsContent value="files" className="space-y-4">
@@ -112,7 +117,7 @@ export const AdminDashboard = () => {
           </TabsContent>
 
           <TabsContent value="learnings" className="space-y-4">
-            <LearningsTab />
+            {activeTab === "learnings" && <LearningsTab />}
           </TabsContent>
 
           <TabsContent value="pricing" className="space-y-4">
@@ -120,11 +125,11 @@ export const AdminDashboard = () => {
           </TabsContent>
 
           <TabsContent value="system" className="space-y-4">
-            <SystemTab />
+            {activeTab === "system" && <SystemTab />}
           </TabsContent>
 
           <TabsContent value="users" className="space-y-4">
-            <UsersTab />
+            {activeTab === "users" && <UsersTab />}
           </TabsContent>
         </Tabs>
       </div>
