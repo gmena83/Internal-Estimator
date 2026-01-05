@@ -1,6 +1,6 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { Express } from "express";
+import { Express, Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
@@ -16,6 +16,13 @@ declare global {
 }
 
 export function setupAuth(app: Express) {
+  if (
+    app.get("env") === "production" &&
+    (!process.env.SESSION_SECRET || process.env.SESSION_SECRET === "default_session_secret")
+  ) {
+    throw new Error("CRITICAL SECURITY ERROR: SESSION_SECRET must be set correctly in production.");
+  }
+
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "default_session_secret",
     resave: false,
@@ -104,6 +111,14 @@ export function setupAuth(app: Express) {
     }
     res.status(401).send("Not authenticated");
   });
+}
+
+export function requireAuth(req: Request, res: Response, next: NextFunction) {
+  console.log(`[AUTH CHECK] Path: ${req.path}, Authenticated: ${req.isAuthenticated()}`);
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).json({ error: "Authentication required" });
 }
 
 export async function hashPassword(password: string) {

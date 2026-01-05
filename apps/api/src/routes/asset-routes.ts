@@ -15,7 +15,7 @@ const router = Router();
 // Proposal PDF
 router.get("/:projectId/proposal.pdf", async (req, res) => {
   try {
-    const project = await storage.getProject(req.params.projectId);
+    const project = await storage.getProject(req.params.projectId, req.user?.id);
     if (!project) return res.status(404).json({ error: "Project not found" });
 
     const startTime = Date.now();
@@ -38,7 +38,7 @@ router.get("/:projectId/proposal.pdf", async (req, res) => {
 // Internal Report PDF
 router.get("/:projectId/internal-report.pdf", async (req, res) => {
   try {
-    const project = await storage.getProject(req.params.projectId);
+    const project = await storage.getProject(req.params.projectId, req.user?.id);
     if (!project) return res.status(404).json({ error: "Project not found" });
 
     const pdfBuffer = await generateInternalReportPdf(project);
@@ -57,7 +57,7 @@ router.get("/:projectId/internal-report.pdf", async (req, res) => {
 // Execution Manual PDF
 router.get("/:projectId/execution-manual.pdf", async (req, res) => {
   try {
-    const project = await storage.getProject(req.params.projectId);
+    const project = await storage.getProject(req.params.projectId, req.user?.id);
     if (!project) return res.status(404).json({ error: "Project not found" });
 
     const pdfBuffer = await generateExecutionManualPdf(project);
@@ -75,7 +75,7 @@ router.get("/:projectId/execution-manual.pdf", async (req, res) => {
 // Export JSON
 router.get("/:projectId/export/json", async (req, res) => {
   try {
-    const project = await storage.getProject(req.params.projectId);
+    const project = await storage.getProject(req.params.projectId, req.user?.id);
     if (!project) return res.status(404).json({ error: "Project not found" });
 
     const messages = await storage.getMessages(project.id);
@@ -95,7 +95,7 @@ router.get("/:projectId/export/json", async (req, res) => {
 // Export CSV
 router.get("/:projectId/export/csv", async (req, res) => {
   try {
-    const project = await storage.getProject(req.params.projectId);
+    const project = await storage.getProject(req.params.projectId, req.user?.id);
     if (!project) return res.status(404).json({ error: "Project not found" });
 
     const csvContent = exportService.mapToCsv(project);
@@ -114,7 +114,7 @@ router.get("/:projectId/export/csv", async (req, res) => {
 // Image Generation
 router.post("/:projectId/generate-images", async (req, res) => {
   try {
-    const project = await storage.getProject(req.params.projectId);
+    const project = await storage.getProject(req.params.projectId, req.user?.id);
     if (!project) return res.status(404).json({ error: "Project not found" });
 
     const images = await assetService.generateCoverImages(project);
@@ -131,7 +131,7 @@ router.post("/:projectId/approve-image", async (req, res) => {
     const parsed = imageApprovalSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
 
-    const project = await storage.getProject(req.params.projectId);
+    const project = await storage.getProject(req.params.projectId, req.user?.id);
     if (!project) return res.status(404).json({ error: "Project not found" });
 
     const imageUrl =
@@ -148,10 +148,15 @@ router.post("/:projectId/approve-image", async (req, res) => {
 // Generate Stage 3/4 Assets
 router.post("/:projectId/generate-assets", async (req, res) => {
   try {
-    await storage.updateProject(req.params.projectId, {
-      currentStage: 3,
-      status: "assets_ready",
-    });
+    const updated = await storage.updateProject(
+      req.params.projectId,
+      {
+        currentStage: 3,
+        status: "assets_ready",
+      },
+      req.user?.id,
+    );
+    if (!updated) return res.status(404).json({ error: "Project not found" });
     res.json({ success: true });
   } catch (_error) {
     res.status(500).json({ error: "Failed to generate assets" });
@@ -161,14 +166,18 @@ router.post("/:projectId/generate-assets", async (req, res) => {
 // Vibecode Guide
 router.post("/:projectId/vibecode-guide", async (req, res) => {
   try {
-    const project = await storage.getProject(req.params.projectId);
+    const project = await storage.getProject(req.params.projectId, req.user?.id);
     if (!project) return res.status(404).json({ error: "Project not found" });
 
     const result = await aiService.generateVibeGuides(project);
-    const updated = await storage.updateProject(req.params.projectId, {
-      vibecodeGuideA: result.guideA,
-      vibecodeGuideB: result.guideB,
-    });
+    const updated = await storage.updateProject(
+      req.params.projectId,
+      {
+        vibecodeGuideA: result.guideA,
+        vibecodeGuideB: result.guideB,
+      },
+      req.user?.id,
+    );
     res.json(updated);
   } catch (error) {
     console.error("Asset route error:", error);
@@ -179,13 +188,17 @@ router.post("/:projectId/vibecode-guide", async (req, res) => {
 // PM Breakdown
 router.post("/:projectId/pm-breakdown", async (req, res) => {
   try {
-    const project = await storage.getProject(req.params.projectId);
+    const project = await storage.getProject(req.params.projectId, req.user?.id);
     if (!project) return res.status(404).json({ error: "Project not found" });
 
     const result = await aiService.generatePMBreakdown(project);
-    const updated = await storage.updateProject(req.params.projectId, {
-      pmBreakdown: result,
-    });
+    const updated = await storage.updateProject(
+      req.params.projectId,
+      {
+        pmBreakdown: result,
+      },
+      req.user?.id,
+    );
     res.json(updated);
   } catch (_error) {
     res.status(500).json({ error: "Failed to generate PM breakdown" });
@@ -200,10 +213,14 @@ router.post("/:projectId/select-scenario", async (req, res) => {
       return res.status(400).json({ message: "scenario is required" });
     }
 
-    const updated = await storage.updateProject(req.params.projectId, {
-      selectedScenario: scenario as "A" | "B",
-      currentStage: 3,
-    });
+    const updated = await storage.updateProject(
+      req.params.projectId,
+      {
+        selectedScenario: scenario as "A" | "B",
+        currentStage: 3,
+      },
+      req.user?.id,
+    );
     res.json(updated);
   } catch (_error) {
     res.status(500).json({ error: "Failed to select scenario" });

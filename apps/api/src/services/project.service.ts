@@ -21,8 +21,9 @@ export class ProjectService {
     projectId: string,
     targetStage: number,
     targetStatus: ProjectStatus,
+    userId?: string,
   ): Promise<Project> {
-    const project = await storage.getProject(projectId);
+    const project = await storage.getProject(projectId, userId);
     if (!project) {
       throw new Error("Project not found");
     }
@@ -36,10 +37,14 @@ export class ProjectService {
     }
 
     try {
-      const updated = await storage.updateProject(projectId, {
-        currentStage: targetStage,
-        status: targetStatus,
-      });
+      const updated = await storage.updateProject(
+        projectId,
+        {
+          currentStage: targetStage,
+          status: targetStatus,
+        },
+        userId,
+      );
 
       if (!updated) throw new Error("Update failed");
       return updated;
@@ -52,42 +57,46 @@ export class ProjectService {
     }
   }
 
-  async resetProject(projectId: string): Promise<Project> {
-    const updated = await storage.updateProject(projectId, {
-      currentStage: 1,
-      status: PROJECT_STATUS.DRAFT,
-      estimateMarkdown: null,
-      scenarioA: null,
-      scenarioB: null,
-      roiAnalysis: null,
-      selectedScenario: null,
-      proposalPdfUrl: null,
-      internalReportPdfUrl: null,
-      presentationUrl: null,
-      coverImageUrl: null,
-      emailContent: null,
-      emailSentAt: null,
-      emailOpened: false,
-      emailClicked: false,
-      vibecodeGuideA: null,
-      vibecodeGuideB: null,
-      pmBreakdown: null,
-      rawInput: null,
-      parsedData: null,
-    });
+  async resetProject(projectId: string, userId?: string): Promise<Project> {
+    const updated = await storage.updateProject(
+      projectId,
+      {
+        currentStage: 1,
+        status: PROJECT_STATUS.DRAFT,
+        estimateMarkdown: null,
+        scenarioA: null,
+        scenarioB: null,
+        roiAnalysis: null,
+        selectedScenario: null,
+        proposalPdfUrl: null,
+        internalReportPdfUrl: null,
+        presentationUrl: null,
+        coverImageUrl: null,
+        emailContent: null,
+        emailSentAt: null,
+        emailOpened: false,
+        emailClicked: false,
+        vibecodeGuideA: null,
+        vibecodeGuideB: null,
+        pmBreakdown: null,
+        rawInput: null,
+        parsedData: null,
+      },
+      userId,
+    );
 
     if (!updated) throw new Error("Project not found or reset failed");
     return updated;
   }
 
-  async deleteProject(projectId: string): Promise<void> {
-    await storage.deleteProject(projectId);
+  async deleteProject(projectId: string, userId?: string): Promise<void> {
+    await storage.deleteProject(projectId, userId);
     // Asynchronous, non-blocking directory deletion
     await this.provider.deleteDirectory(projectId);
   }
 
-  async approveDraft(projectId: string): Promise<Project> {
-    const project = await storage.getProject(projectId);
+  async approveDraft(projectId: string, userId?: string): Promise<Project> {
+    const project = await storage.getProject(projectId, userId);
     if (!project) throw new Error("Project not found");
 
     // 1. Validation: Ensure a scenario is selected
@@ -147,7 +156,7 @@ TOTAL HOURS: ${totalHours}
       }
     }
 
-    return await this.advanceStage(projectId, 2, PROJECT_STATUS.ASSETS_READY);
+    return await this.advanceStage(projectId, 2, PROJECT_STATUS.ASSETS_READY, userId);
   }
 }
 

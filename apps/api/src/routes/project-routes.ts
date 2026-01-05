@@ -12,9 +12,9 @@ import path from "path";
 const router = Router();
 
 // Get all projects
-router.get("/", async (_req, res) => {
+router.get("/", async (req, res) => {
   try {
-    const projects = await storage.getProjects();
+    const projects = await storage.getProjects(req.user?.id);
     res.json(projects);
   } catch {
     res.status(500).json({ error: "Failed to fetch projects" });
@@ -22,9 +22,9 @@ router.get("/", async (_req, res) => {
 });
 
 // Get recent projects
-router.get("/recent", async (_req, res) => {
+router.get("/recent", async (req, res) => {
   try {
-    const projects = await storage.getRecentProjects(5);
+    const projects = await storage.getRecentProjects(req.user?.id, 5);
     res.json(projects);
   } catch {
     res.status(500).json({ error: "Failed to fetch recent projects" });
@@ -34,7 +34,7 @@ router.get("/recent", async (_req, res) => {
 // Get single project dashboard (consolidated data)
 router.get("/:id/dashboard", async (req, res) => {
   try {
-    const dashboard = await storage.getProjectDashboard(req.params.id);
+    const dashboard = await storage.getProjectDashboard(req.params.id, req.user?.id);
     if (!dashboard) return res.status(404).json({ error: "Project not found" });
     res.json(dashboard);
   } catch {
@@ -45,7 +45,7 @@ router.get("/:id/dashboard", async (req, res) => {
 // Get single project
 router.get("/:id", async (req, res) => {
   try {
-    const project = await storage.getProject(req.params.id);
+    const project = await storage.getProject(req.params.id, req.user?.id);
     if (!project) return res.status(404).json({ error: "Project not found" });
     res.json(project);
   } catch {
@@ -59,7 +59,10 @@ router.post("/", async (req, res) => {
     const parsed = insertProjectSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
 
-    const project = await storage.createProject(parsed.data);
+    const project = await storage.createProject({
+      ...parsed.data,
+      createdById: req.user?.id,
+    });
     if (parsed.data.rawInput) {
       aiService.processRawInput(project.id, parsed.data.rawInput).catch(console.error);
     }
@@ -73,7 +76,7 @@ router.post("/", async (req, res) => {
 // Update project
 router.patch("/:id", async (req, res) => {
   try {
-    const project = await storage.updateProject(req.params.id, req.body);
+    const project = await storage.updateProject(req.params.id, req.body, req.user?.id);
     if (!project) return res.status(404).json({ error: "Project not found" });
     res.json(project);
   } catch {
@@ -84,7 +87,7 @@ router.patch("/:id", async (req, res) => {
 // Delete project
 router.delete("/:id", async (req, res) => {
   try {
-    await projectService.deleteProject(req.params.id);
+    await projectService.deleteProject(req.params.id, req.user?.id);
     res.json({ success: true });
   } catch {
     res.status(500).json({ error: "Failed to delete project" });
@@ -94,10 +97,10 @@ router.delete("/:id", async (req, res) => {
 // Approve Stage 1 Draft
 router.post("/:id/approve-draft", async (req, res) => {
   try {
-    const updated = await projectService.approveDraft(req.params.id);
+    const updated = await projectService.approveDraft(req.params.id, req.user?.id);
     const assetUrls = await assetService.generateStage2Assets(updated);
 
-    const finalUpdate = await storage.updateProject(req.params.id, assetUrls);
+    const finalUpdate = await storage.updateProject(req.params.id, assetUrls, req.user?.id);
     res.json(finalUpdate);
   } catch (error: any) {
     if (error.recommendation) {
@@ -113,7 +116,7 @@ router.post("/:id/approve-draft", async (req, res) => {
 // Reset project
 router.post("/:id/reset", async (req, res) => {
   try {
-    const updated = await projectService.resetProject(req.params.id);
+    const updated = await projectService.resetProject(req.params.id, req.user?.id);
     res.json(updated);
   } catch (_error) {
     res.status(500).json({ error: "Failed to reset project" });
@@ -161,7 +164,7 @@ router.post("/:id/upload", upload.array("files", 10), async (req, res) => {
 // Get attachments
 router.get("/:id/attachments", async (req, res) => {
   try {
-    const project = await storage.getProject(req.params.id);
+    const project = await storage.getProject(req.params.id, req.user?.id);
     if (!project) return res.status(404).json({ error: "Project not found" });
     res.json({ attachments: project.attachments || [] });
   } catch {

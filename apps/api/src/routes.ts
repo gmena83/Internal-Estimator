@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { type Server } from "http";
 import path from "path";
 import express from "express";
-import { setupAuth } from "./auth";
+import { setupAuth, requireAuth } from "./auth";
 import { qaLogger, responseNormalizer } from "./middleware/common";
 
 // Domain Routers
@@ -25,15 +25,15 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   // 3. Domain API Mounting
   // Maintaining '/api/projects' base for compatibility
-  app.use("/api/projects", projectRouter);
-  app.use("/api/projects", messageRouter); // Mounts :projectId/messages, :projectId/chat
-  app.use("/api/projects", assetRouter); // Mounts :projectId/proposal.pdf, etc.
-  app.use("/api/projects", emailRouter); // Mounts :projectId/send-email, etc.
+  app.use("/api/projects", requireAuth, projectRouter);
+  app.use("/api/projects", requireAuth, messageRouter); // Mounts :projectId/messages, :projectId/chat
+  app.use("/api/projects", requireAuth, assetRouter); // Mounts :projectId/proposal.pdf, etc.
+  app.use("/api/projects", requireAuth, emailRouter); // Mounts :projectId/send-email, etc.
 
-  app.use("/api/knowledge-base", knowledgeRouter);
-  app.use("/api/diagnostics", diagnosticRouter);
-  app.use("/api/admin", adminRouter);
-  app.use("/api/learn", learningRouter);
+  app.use("/api/knowledge-base", requireAuth, knowledgeRouter);
+  app.use("/api/diagnostics", requireAuth, diagnosticRouter);
+  app.use("/api/admin", requireAuth, adminRouter);
+  app.use("/api/learn", requireAuth, learningRouter);
 
   // 4. Static Asset Serving
   const uploadsDir = path.join(process.cwd(), "uploads");

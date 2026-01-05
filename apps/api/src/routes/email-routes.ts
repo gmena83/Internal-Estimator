@@ -12,9 +12,14 @@ router.post("/:id/update-email", async (req, res) => {
     const parsed = emailUpdateSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
 
-    const updated = await storage.updateProject(req.params.id, {
-      emailContent: parsed.data.emailContent,
-    } as any);
+    const updated = await storage.updateProject(
+      req.params.id,
+      {
+        emailContent: parsed.data.emailContent,
+      } as any,
+      req.user?.id,
+    );
+    if (!updated) return res.status(404).json({ error: "Project not found" });
     res.json(updated);
   } catch (_error) {
     res.status(500).json({ error: "Failed to update email content" });
@@ -34,10 +39,14 @@ router.post("/:id/send-email", async (req, res) => {
 
     const result = await sendProposalEmail(recipientEmail, emailSubject, emailBody, project as any);
     if (result.success) {
-      const updated = await storage.updateProject(req.params.id, {
-        status: "email_sent",
-        emailSentAt: new Date(),
-      } as any);
+      const updated = await storage.updateProject(
+        req.params.id,
+        {
+          status: "email_sent",
+          emailSentAt: new Date(),
+        } as any,
+        req.user?.id,
+      );
       res.json({ success: true, project: updated });
     } else {
       res.status(500).json({ error: "Failed to send email" });
@@ -54,7 +63,11 @@ router.post("/:id/regenerate-email", async (req, res) => {
     if (!project) return res.status(404).json({ error: "Project not found" });
 
     const emailContent = await aiService.generateEmailContent(project as any);
-    const updated = await storage.updateProject(req.params.id, { emailContent } as any);
+    const updated = await storage.updateProject(
+      req.params.id,
+      { emailContent } as any,
+      req.user?.id,
+    );
     res.json(updated);
   } catch (_error) {
     res.status(500).json({ error: "Failed to regenerate email content" });

@@ -36,14 +36,18 @@ export type ProjectSummary = Pick<
 
 export interface IStorage {
   // Projects
-  getProject(id: string): Promise<Project | undefined>;
-  getProjects(includeDeleted?: boolean): Promise<ProjectSummary[]>;
-  getRecentProjects(limit?: number): Promise<ProjectSummary[]>;
+  getProject(id: string, userId?: string): Promise<Project | undefined>;
+  getProjects(userId?: string, includeDeleted?: boolean): Promise<ProjectSummary[]>;
+  getRecentProjects(userId?: string, limit?: number): Promise<ProjectSummary[]>;
   createProject(project: InsertProject): Promise<Project>;
-  updateProject(id: string, updates: Partial<InsertProject>): Promise<Project | undefined>;
-  deleteProject(id: string, permanent?: boolean): Promise<void>;
-  restoreProject(id: string): Promise<Project | undefined>;
-  getProjectDashboard(id: string): Promise<any>;
+  updateProject(
+    id: string,
+    updates: Partial<InsertProject>,
+    userId?: string,
+  ): Promise<Project | undefined>;
+  deleteProject(id: string, userId?: string, permanent?: boolean): Promise<void>;
+  restoreProject(id: string, userId?: string): Promise<Project | undefined>;
+  getProjectDashboard(id: string, userId?: string): Promise<any>;
 
   // Messages
   getMessages(projectId: string): Promise<Message[]>;
@@ -84,12 +88,24 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   // Projects
-  async getProject(id: string): Promise<Project | undefined> {
-    const [project] = await db.select().from(projects).where(eq(projects.id, id));
+  async getProject(id: string, userId?: string): Promise<Project | undefined> {
+    const filters = [eq(projects.id, id)];
+    if (userId) filters.push(eq(projects.createdById, userId));
+
+    const [project] = await db
+      .select()
+      .from(projects)
+      .where(sql.join(filters, sql` AND `));
     return project || undefined;
   }
 
-  async getProjects(includeDeleted: boolean = false): Promise<ProjectSummary[]> {
+  async getProjects(userId?: string, includeDeleted: boolean = false): Promise<ProjectSummary[]> {
+    const filters = [];
+    if (userId) filters.push(eq(projects.createdById, userId));
+    if (!includeDeleted) {
+      filters.push(sql`${projects.deletedAt} IS NULL`);
+    }
+
     let query = db
       .select({
         id: projects.id,
@@ -102,14 +118,17 @@ export class DatabaseStorage implements IStorage {
       })
       .from(projects);
 
-    if (!includeDeleted) {
-      query = query.where(sql`${projects.deletedAt} IS NULL`) as any;
+    if (filters.length > 0) {
+      query = query.where(sql.join(filters, sql` AND `)) as any;
     }
 
     return await query.orderBy(desc(projects.updatedAt));
   }
 
-  async getRecentProjects(limit: number = 5): Promise<ProjectSummary[]> {
+  async getRecentProjects(userId?: string, limit: number = 5): Promise<ProjectSummary[]> {
+    const filters = [sql`${projects.deletedAt} IS NULL`];
+    if (userId) filters.push(eq(projects.createdById, userId));
+
     const result = await db
       .select({
         id: projects.id,
@@ -121,7 +140,7 @@ export class DatabaseStorage implements IStorage {
         rawInput: projects.rawInput,
       })
       .from(projects)
-      .where(sql`${projects.deletedAt} IS NULL`)
+      .where(sql.join(filters, sql` AND `))
       .orderBy(desc(projects.updatedAt))
       .limit(limit);
     return result;
@@ -135,35 +154,51 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async updateProject(id: string, updates: Partial<InsertProject>): Promise<Project | undefined> {
+  async updateProject(
+    id: string,
+    updates: Partial<InsertProject>,
+    userId?: string,
+  ): Promise<Project | undefined> {
+    const filters = [eq(projects.id, id)];
+    if (userId) filters.push(eq(projects.createdById, userId));
+
     const [updated] = await db
       .update(projects)
       .set({ ...updates, updatedAt: new Date() } as any)
-      .where(eq(projects.id, id))
+      .where(sql.join(filters, sql` AND `))
       .returning();
     return updated || undefined;
   }
 
-  async deleteProject(id: string, permanent: boolean = false): Promise<void> {
+  async deleteProject(id: string, userId?: string, permanent: boolean = false): Promise<void> {
+    const filters = [eq(projects.id, id)];
+    if (userId) filters.push(eq(projects.createdById, userId));
+
     if (permanent) {
-      await db.delete(projects).where(eq(projects.id, id));
+      await db.delete(projects).where(sql.join(filters, sql` AND `));
     } else {
-      await db.update(projects).set({ deletedAt: new Date() }).where(eq(projects.id, id));
+      await db
+        .update(projects)
+        .set({ deletedAt: new Date() })
+        .where(sql.join(filters, sql` AND `));
     }
   }
 
-  async restoreProject(id: string): Promise<Project | undefined> {
+  async restoreProject(id: string, userId?: string): Promise<Project | undefined> {
+    const filters = [eq(projects.id, id)];
+    if (userId) filters.push(eq(projects.createdById, userId));
+
     const [updated] = await db
       .update(projects)
       .set({ deletedAt: null } as any)
-      .where(eq(projects.id, id))
+      .where(sql.join(filters, sql` AND `))
       .returning();
     return updated || undefined;
   }
 
-  async getProjectDashboard(id: string): Promise<any> {
+  async getProjectDashboard(id: string, userId?: string): Promise<any> {
     const [project, messagesData, stats] = await Promise.all([
-      this.getProject(id),
+      this.getProject(id, userId),
       this.getMessages(id),
       this.getProjectApiUsageStats(id),
     ]);

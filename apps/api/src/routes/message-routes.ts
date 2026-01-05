@@ -8,6 +8,8 @@ const router = Router();
 // Get messages for project
 router.get("/:projectId/messages", async (req, res) => {
   try {
+    const project = await storage.getProject(req.params.projectId, req.user?.id);
+    if (!project) return res.status(404).json({ error: "Project not found" });
     const messages = await storage.getMessages(req.params.projectId);
     res.json(messages);
   } catch (_error) {
@@ -23,7 +25,7 @@ router.get("/:projectId/messages", async (req, res) => {
 router.post("/:projectId/messages", async (req, res) => {
   try {
     const { projectId } = req.params;
-    const project = await storage.getProject(projectId);
+    const project = await storage.getProject(projectId, req.user?.id);
     if (!project) return res.status(404).json({ error: "Project not found" });
 
     const isStreaming = req.headers.accept === "text/event-stream" || req.query.stream === "true";

@@ -52,6 +52,7 @@ export const projects = pgTable("projects", {
   deletedAt: timestamp("deleted_at"), // Soft delete support
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  createdById: varchar("created_by_id").references(() => users.id, { onDelete: "set null" }),
 });
 
 // Messages table - chat history per project
@@ -165,9 +166,13 @@ export const apiUsageLogs = pgTable("api_usage_logs", {
 });
 
 // Relations
-export const projectsRelations = relations(projects, ({ many }) => ({
+export const projectsRelations = relations(projects, ({ many, one }) => ({
   messages: many(messages),
   knowledgeEntries: many(knowledgeEntries),
+  creator: one(users, {
+    fields: [projects.createdById],
+    references: [users.id],
+  }),
 }));
 
 export const messagesRelations = relations(messages, ({ one }) => ({
