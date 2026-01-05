@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { storage } from "../storage";
-import { runDiagnostics } from "../diagnostics-service";
+import { Worker } from "node:worker_threads";
 
 const router = Router();
 
@@ -24,9 +24,14 @@ router.post("/", async (req, res) => {
     });
 
     // Run diagnostics asynchronously
-    (async () => {
-      try {
-        const results = await runDiagnostics(repoUrl);
+    // Run diagnostics in a worker thread (non-blocking)
+    const worker = new Worker(new URL("../workers/diagnostic.worker.ts", import.meta.url));
+
+    worker.postMessage({ type: "START_DIAGNOSTICS", repoUrl });
+
+    worker.on("message", async (msg) => {
+      if (msg.type === "SUCCESS") {
+        const results = msg.results;
         await storage.updateDiagnosticReport(report.id, {
           status: "completed",
           healthAssessment: results.healthAssessment,
@@ -39,13 +44,31 @@ router.post("/", async (req, res) => {
           fullReportMarkdown: results.fullReport,
           analyzedFiles: results.analyzedFiles,
         });
-      } catch (err) {
+        worker.terminate();
+      } else if (msg.type === "ERROR") {
+        console.error("Diagnostic worker error:", msg.error);
         await storage.updateDiagnosticReport(report.id, {
           status: "failed",
-          healthAssessment: "Analysis failed",
+          healthAssessment: `Analysis failed: ${msg.error}`,
         });
+        worker.terminate();
       }
-    })();
+    });
+
+    worker.on("error", async (err) => {
+      console.error("Diagnostic worker system error:", err);
+      await storage.updateDiagnosticReport(report.id, {
+        status: "failed",
+        healthAssessment: "System error during analysis",
+      });
+      worker.terminate();
+    });
+
+    worker.on("exit", (code) => {
+      if (code !== 0) {
+        console.error(`Diagnostic worker stopped with exit code ${code}`);
+      }
+    });
 
     res.json(report);
   } catch (error) {

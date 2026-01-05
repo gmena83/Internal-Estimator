@@ -37,11 +37,12 @@ export type ProjectSummary = Pick<
 export interface IStorage {
   // Projects
   getProject(id: string): Promise<Project | undefined>;
-  getProjects(): Promise<ProjectSummary[]>;
+  getProjects(includeDeleted?: boolean): Promise<ProjectSummary[]>;
   getRecentProjects(limit?: number): Promise<ProjectSummary[]>;
   createProject(project: InsertProject): Promise<Project>;
   updateProject(id: string, updates: Partial<InsertProject>): Promise<Project | undefined>;
-  deleteProject(id: string): Promise<void>;
+  deleteProject(id: string, permanent?: boolean): Promise<void>;
+  restoreProject(id: string): Promise<Project | undefined>;
   getProjectDashboard(id: string): Promise<any>;
 
   // Messages
@@ -56,6 +57,7 @@ export interface IStorage {
   // API Health
   getApiHealth(): Promise<ApiHealthLog[]>;
   updateApiHealth(log: InsertApiHealthLog): Promise<ApiHealthLog>;
+  resetApiHealth(): Promise<void>;
 
   // API Usage
   logApiUsage(usage: InsertApiUsageLog): Promise<ApiUsageLog>;
@@ -74,7 +76,9 @@ export interface IStorage {
   // Users
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined>;
   sessionStore: session.Store;
 }
 
@@ -85,8 +89,8 @@ export class DatabaseStorage implements IStorage {
     return project || undefined;
   }
 
-  async getProjects(): Promise<ProjectSummary[]> {
-    const result = await db
+  async getProjects(includeDeleted: boolean = false): Promise<ProjectSummary[]> {
+    let query = db
       .select({
         id: projects.id,
         title: projects.title,
@@ -96,9 +100,13 @@ export class DatabaseStorage implements IStorage {
         currentStage: projects.currentStage,
         rawInput: projects.rawInput,
       })
-      .from(projects)
-      .orderBy(desc(projects.updatedAt));
-    return result;
+      .from(projects);
+
+    if (!includeDeleted) {
+      query = query.where(sql`${projects.deletedAt} IS NULL`) as any;
+    }
+
+    return await query.orderBy(desc(projects.updatedAt));
   }
 
   async getRecentProjects(limit: number = 5): Promise<ProjectSummary[]> {
@@ -113,6 +121,7 @@ export class DatabaseStorage implements IStorage {
         rawInput: projects.rawInput,
       })
       .from(projects)
+      .where(sql`${projects.deletedAt} IS NULL`)
       .orderBy(desc(projects.updatedAt))
       .limit(limit);
     return result;
@@ -135,8 +144,21 @@ export class DatabaseStorage implements IStorage {
     return updated || undefined;
   }
 
-  async deleteProject(id: string): Promise<void> {
-    await db.delete(projects).where(eq(projects.id, id));
+  async deleteProject(id: string, permanent: boolean = false): Promise<void> {
+    if (permanent) {
+      await db.delete(projects).where(eq(projects.id, id));
+    } else {
+      await db.update(projects).set({ deletedAt: new Date() }).where(eq(projects.id, id));
+    }
+  }
+
+  async restoreProject(id: string): Promise<Project | undefined> {
+    const [updated] = await db
+      .update(projects)
+      .set({ deletedAt: null } as any)
+      .where(eq(projects.id, id))
+      .returning();
+    return updated || undefined;
   }
 
   async getProjectDashboard(id: string): Promise<any> {
@@ -288,6 +310,12 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
+  async resetApiHealth(): Promise<void> {
+    await db.delete(apiHealthLogs);
+    // Optionally re-initialize?
+    await this.getApiHealth(); // This re-populates with unknown status due to the logic in getApiHealth
+  }
+
   // API Usage
   async logApiUsage(usage: InsertApiUsageLog): Promise<ApiUsageLog> {
     const [created] = await db.insert(apiUsageLogs).values(usage).returning();
@@ -381,6 +409,15 @@ export class DatabaseStorage implements IStorage {
   async createUser(user: InsertUser): Promise<User> {
     const [created] = await db.insert(users).values(user).returning();
     return created;
+  }
+
+  async getUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined> {
+    const [updated] = await db.update(users).set(updates).where(eq(users.id, id)).returning();
+    return updated || undefined;
   }
 
   sessionStore: session.Store;

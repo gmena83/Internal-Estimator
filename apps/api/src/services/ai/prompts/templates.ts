@@ -29,17 +29,66 @@ Generate a response with TWO parts:
 1. A detailed JSON object for the project estimate (Scenario A vs B).
 2. A detailed MARKDOWN "Research & Analysis" document.
 
+### CRITICAL INSTRUCTIONS:
+- **Never Lie**: Do not invent data or hallucinate details.
+- **Dynamic Estimates**: Provide specific, realistic estimates for ongoing costs (Maintenance, Cloud, AI APIs).
+- **Budget Adaptation (CRITICAL)**: If a "Target Budget" is provided:
+    1. You MUST fit the proposal strictly within that budget.
+    2. If the budget is insufficient for a full-featured solution, propose a **drastically reduced MVP scope**.
+    3. Clearly disclaim any compromises in scope, timeline, or technology.
+    4. Add a field "budgetConstrained": true to the JSON response.
+    5. Add a field "budgetDisclaimer": "string explaining what was reduced to fit the budget".
+- **Regional Logic**: Identify the client's country of operations. Use the provided Pricing Matrix to select the correct regional multiplier. If the country/region is unknown, the JSON response should include a "missingData": true field and a "requestField": "clientRegion" note.
+- **Multiplier Transparency**: Explicitly calculate and justify multipliers for:
+    - Complexity (Logic/RAG)
+    - Data Handling (Open vs Private data, specific compliance needs)
+    - Integration Complexity (APIs, third-party systems)
+- **ROI Methodology**: Include a "methodology" section in the roiAnalysis object justifying your calculations for "Cost of Doing Nothing" and "Projected Savings".
+- **Learning Loop**: Note that this estimate will be used in a constant learning and standardizing loop to refine future pricing accuracy.
+
 SCENARIO A (High-Tech/Custom): US-based senior rates ($150/hr), full ownership, scalable.
 SCENARIO B (No-Code/MVP): Low-code/No-code, faster ($75/hr), limits.
 
 Return a JSON object with this EXACT structure:
 {
   "scenarios": {
-    "scenarioA": { ... },
-    "scenarioB": { ... },
-    "roiAnalysis": { ... }
+    "scenarioA": {
+      "name": "string",
+      "description": "string",
+      "features": ["string"],
+      "techStack": ["string"],
+      "timeline": "string",
+      "totalCost": number,
+      "hourlyRate": number,
+      "totalHours": number,
+      "ongoingCosts": {
+        "annualMaintenanceLow": number,
+        "annualMaintenanceHigh": number,
+        "monthlyCloudInfraLow": number,
+        "monthlyCloudInfraHigh": number,
+        "monthlyAiApiLow": number,
+        "monthlyAiApiHigh": number
+      },
+      "pricingMultipliers": {
+        "complexity": { "factor": "string", "description": "string" },
+        "dataHandling": { "factor": "string", "description": "string" },
+        "integrations": { "factor": "string", "description": "string" }
+      },
+      "regionalMultiplier": { "reasoning": "string", "value": number }
+    },
+    "scenarioB": { ... same structure as scenarioA ... },
+    "roiAnalysis": {
+      "costOfDoingNothing": number,
+      "manualOperationalCost": number,
+      "projectedSavings": number,
+      "paybackPeriodMonths": number,
+      "threeYearROI": number,
+      "methodology": "Detailed markdown string justifying the numbers"
+    }
   },
-  "researchAnalysis": "# comprehensive markdown string..."
+  "researchAnalysis": "# comprehensive markdown string...",
+  "missingData": boolean,
+  "requestField": "string (set to 'clientRegion' if location unknown)"
 }
 
 CONTEXT:
@@ -47,13 +96,17 @@ Project Title: {{title}}
 Mission: {{mission}}
 Objectives: {{objectives}}
 Constraints: {{constraints}}
+Target Budget: {{targetBudget}}
 Raw Input: {{rawInput}}
 
 PRICING MATRIX CONTEXT:
 {{pricingContext}}
 
 MARKET RESEARCH CONTEXT:
-{{marketResearchContext}}`,
+{{marketResearchContext}}
+
+LEARNING FROM PAST PROJECTS:
+{{learningContext}}`,
 
   CHAT_SYSTEM: `You are ISI, an autonomous Business Development & Project Architecture Agent. 
 PERSONALITY & BEHAVIOR:

@@ -90,6 +90,51 @@ export class ProjectService {
     const project = await storage.getProject(projectId);
     if (!project) throw new Error("Project not found");
 
+    // 1. Validation: Ensure a scenario is selected
+    if (!project.selectedScenario) {
+      throw new ProjectServiceError(
+        "No scenario selected for approval.",
+        "Please select either Scenario A or Scenario B before approving.",
+        project.currentStage,
+      );
+    }
+
+    // 2. Learning: Extract and save knowledge
+    try {
+      const selectedData = project.selectedScenario === "A" ? project.scenarioA : project.scenarioB;
+      if (selectedData) {
+        const { totalCost, totalHours, techStack, features, timeline, hourlyRate } =
+          selectedData as any;
+
+        const learningContent = `
+APPROVED PROJECT: ${project.title}
+MISSION: ${(project.parsedData as any)?.mission || "N/A"}
+TECH STACK: ${Array.isArray(techStack) ? techStack.join(", ") : techStack}
+FEATURES: ${Array.isArray(features) ? features.join(", ") : features}
+TIMELINE: ${timeline}
+APPROVED COST: $${totalCost}
+HOURLY RATE: $${hourlyRate}/hr
+TOTAL HOURS: ${totalHours}
+`;
+
+        await storage.createKnowledgeEntry({
+          projectId: project.id,
+          category: "approved_estimate",
+          content: learningContent.trim(),
+          metadata: {
+            sourceProjectId: project.id,
+            totalCost,
+            techStack,
+            approvedAt: new Date().toISOString(),
+          },
+        });
+        console.log(`[Learning] Captured knowledge from project ${projectId}`);
+      }
+    } catch (error) {
+      // Non-blocking error for learning
+      console.warn(`[Learning] Failed to capture knowledge for project ${projectId}`, error);
+    }
+
     if (!project.estimateMarkdown) {
       try {
         await aiService.generateEstimate(project);

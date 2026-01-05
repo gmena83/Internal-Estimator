@@ -40,7 +40,7 @@ export class OpenAIProvider extends BaseAIProvider {
 
       const content = response.choices[0]?.message?.content || "";
       await this.trackHealth(startTime);
-      await this.logUsage(projectId, prompt, content, operation);
+      this.logUsage(projectId, prompt, content, operation);
       return content;
     } catch (error) {
       await this.trackHealth(startTime, error as Error);
@@ -75,7 +75,7 @@ export class OpenAIProvider extends BaseAIProvider {
       }
 
       await this.trackHealth(startTime);
-      await this.logUsage(projectId, prompt, fullContent, operation);
+      this.logUsage(projectId, prompt, fullContent, operation);
       yield { content: "", stage: _stage, isFinal: true };
     } catch (error) {
       await this.trackHealth(startTime, error as Error);

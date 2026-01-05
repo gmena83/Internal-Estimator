@@ -10,9 +10,11 @@ import {
   TrendingUp,
   Database,
   Settings,
+  Shield,
 } from "lucide-react";
 import { Input, Button, Badge, Card, Sparkline } from "@/components/ui/UIComponents";
 import { Link } from "wouter";
+import { useUser } from "@/lib/queries";
 import type { Project } from "@/types";
 
 interface LeftSidebarProps {
@@ -33,6 +35,8 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
   const [search, setSearch] = useState("");
   const [lang, setLang] = useState<"en" | "es">("en");
   const [showAllProjects, setShowAllProjects] = useState(false);
+
+  const { data: user } = useUser();
 
   // Handle undefined projects gracefully
   const filteredProjects = (projects || []).filter(
@@ -87,6 +91,18 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
         <Button variant="ghost" className="w-full justify-start text-xs h-8 text-muted-foreground">
           <Upload className="w-3 h-3 mr-2" /> Upload Context
         </Button>
+
+        {/* Admin Link */}
+        {user?.role === "admin" && (
+          <Link href="/admin">
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-xs h-8 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 mt-1"
+            >
+              <Shield className="w-3 h-3 mr-2" /> Admin Dashboard
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Project List */}

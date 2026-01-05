@@ -115,7 +115,7 @@ export async function generateProjectImages(
     });
 
     if (projectId) {
-      await logApiUsage({
+      logApiUsage({
         projectId,
         provider: "gemini",
         model: "gemini-2.0-flash-exp",

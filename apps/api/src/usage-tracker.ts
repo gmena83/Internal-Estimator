@@ -66,27 +66,30 @@ export interface UsageData {
   operation?: OperationType;
 }
 
-export async function logApiUsage(data: UsageData): Promise<void> {
-  try {
-    const inputTokens = data.inputTokens ?? (data.inputText ? estimateTokens(data.inputText) : 0);
-    const outputTokens =
-      data.outputTokens ?? (data.outputText ? estimateTokens(data.outputText) : 0);
-    const totalTokens = inputTokens + outputTokens;
-    const costUsd = calculateCost(data.provider, data.model, inputTokens, outputTokens);
+export function logApiUsage(data: UsageData): void {
+  // Fire and forget - do not await
+  (async () => {
+    try {
+      const inputTokens = data.inputTokens ?? (data.inputText ? estimateTokens(data.inputText) : 0);
+      const outputTokens =
+        data.outputTokens ?? (data.outputText ? estimateTokens(data.outputText) : 0);
+      const totalTokens = inputTokens + outputTokens;
+      const costUsd = calculateCost(data.provider, data.model, inputTokens, outputTokens);
 
-    await storage.logApiUsage({
-      projectId: data.projectId,
-      provider: data.provider,
-      model: data.model,
-      inputTokens,
-      outputTokens,
-      totalTokens,
-      costUsd: costUsd.toFixed(6),
-      operation: data.operation,
-    });
-  } catch (error) {
-    console.error("Failed to log API usage:", error);
-  }
+      await storage.logApiUsage({
+        projectId: data.projectId,
+        provider: data.provider,
+        model: data.model,
+        inputTokens,
+        outputTokens,
+        totalTokens,
+        costUsd: costUsd.toFixed(6),
+        operation: data.operation,
+      });
+    } catch (error) {
+      console.error("Failed to log API usage:", error);
+    }
+  })();
 }
 
 export function getModelForProvider(provider: AIProvider): string {

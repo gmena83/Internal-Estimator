@@ -38,13 +38,8 @@ export abstract class BaseAIProvider implements IAIProvider {
     });
   }
 
-  protected async logUsage(
-    projectId: string,
-    input: string,
-    output: string,
-    operation: string,
-  ): Promise<void> {
-    await logApiUsage({
+  protected logUsage(projectId: string, input: string, output: string, operation: string): void {
+    logApiUsage({
       projectId,
       provider: this.name as any,
       model: this.model,

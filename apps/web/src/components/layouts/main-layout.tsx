@@ -3,6 +3,7 @@ import { Switch, Route, useRoute } from "wouter";
 import { LeftSidebar } from "./left-sidebar";
 import { RightSidebar } from "./right-sidebar";
 import { Dashboard } from "./dashboard";
+import { AdminDashboard } from "../../pages/admin-dashboard";
 import { ProjectView } from "./project-view";
 import { useProjects, useSystemHealth, useProjectUsage } from "../../lib/queries";
 
@@ -41,6 +42,7 @@ export function MainLayout() {
 
       <main className="flex-1 flex flex-col min-w-0 border-r border-border">
         <Switch>
+          <Route path="/admin" component={AdminDashboard} />
           <Route path="/project/:id" component={ProjectView} />
           <Route path="/" component={Dashboard} />
           <Route component={Dashboard} />

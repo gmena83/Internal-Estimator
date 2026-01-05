@@ -21,6 +21,8 @@ import { PMBreakdownView } from "../features/project/pm-breakdown-view";
 import { ProjectFilesView } from "../features/project/project-files-view";
 import { DocumentsView } from "../features/project/documents-view";
 import { apiRequest, queryClient } from "../../lib/queryClient";
+import { api } from "../../lib/api";
+import { useToast } from "../../hooks/use-toast";
 import type { Project, Scenario, ROIAnalysis, Attachment } from "@shared/schema";
 
 interface MainWorkspaceProps {
@@ -29,6 +31,7 @@ interface MainWorkspaceProps {
 
 export function MainWorkspace({ projectId }: MainWorkspaceProps) {
   const [activeTab, setActiveTab] = useState("chat");
+  const { toast } = useToast();
 
   const { data: project, isLoading } = useQuery<Project>({
     queryKey: ["/api/projects", projectId],
@@ -160,6 +163,23 @@ export function MainWorkspace({ projectId }: MainWorkspaceProps) {
                 roiAnalysis={roiAnalysis}
                 selectedScenario={project?.selectedScenario || null}
                 onSelectScenario={(scenario) => selectScenario.mutate(scenario)}
+                onApprove={async () => {
+                  if (projectId) {
+                    try {
+                      await api.learnFromProject(projectId);
+                      toast({
+                        title: "Learning",
+                        description: "Estimate approved and learned for future projects.",
+                      });
+                    } catch {
+                      toast({
+                        title: "Error",
+                        description: "Failed to learn from project.",
+                        variant: "destructive",
+                      });
+                    }
+                  }
+                }}
               />
             </div>
           </TabsContent>

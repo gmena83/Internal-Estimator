@@ -46,7 +46,7 @@ export class GeminiProvider extends BaseAIProvider {
 
       const content = response.text || "";
       await this.trackHealth(startTime);
-      await this.logUsage(projectId, prompt, content, operation);
+      this.logUsage(projectId, prompt, content, operation);
       return content;
     } catch (error) {
       await this.trackHealth(startTime, error as Error);

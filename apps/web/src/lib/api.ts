@@ -100,6 +100,33 @@ export const api = {
   getUsage: () => fetchJson<ProjectUsage>("/usage"),
 
   // Docs
+  // Docs
   getDocuments: (id: string) =>
     fetchJson<{ proposal: string; report: string; guide: string }>(`/projects/${id}/documents`),
+
+  // User
+  getUser: () => fetchJson<{ id: string; username: string; role: string }>("/user"),
+
+  // Admin
+  getAdminProjects: async () => {
+    const projects = await fetchJson<any[]>("/admin/projects");
+    return projects.map((p) => ({
+      id: p.id,
+      name: p.title,
+      client: p.clientName || "Unknown",
+      updatedAt: p.createdAt || new Date().toISOString(),
+      status: p.status === "complete" ? "completed" : "active",
+      currentStage: p.currentStage,
+      deletedAt: p.deletedAt,
+    })) as (Project & { deletedAt?: string })[];
+  },
+  restoreProject: (id: string) => fetchJson(`/admin/projects/${id}/restore`, { method: "POST" }),
+  wipeProject: (id: string) => fetchJson(`/admin/projects/${id}/wipe`, { method: "DELETE" }),
+  softDeleteProject: (id: string) => fetchJson(`/admin/projects/${id}`, { method: "DELETE" }),
+  resetSystemHealth: () => fetchJson("/admin/system/reset-health", { method: "POST" }),
+  getUsers: () => fetchJson<{ id: string; username: string; role: string }[]>("/admin/users"),
+  updateUserRole: (id: string, role: string) =>
+    fetchJson(`/admin/users/${id}`, { method: "PATCH", body: JSON.stringify({ role }) }),
+  learnFromProject: (id: string) =>
+    fetchJson<{ success: boolean; message: string }>(`/learn/projects/${id}`, { method: "POST" }),
 };

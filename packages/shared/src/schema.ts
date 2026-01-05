@@ -48,6 +48,8 @@ export const projects = pgTable("projects", {
   clientEmail: text("client_email"), // Client email for communication
   marketResearch: jsonb("market_research"), // Perplexity deep research results
   researchMarkdown: text("research_markdown"), // Consolidated breakdown of research for download
+  targetBudget: text("target_budget"), // Specific client budget override
+  deletedAt: timestamp("deleted_at"), // Soft delete support
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -288,6 +290,7 @@ export type Scenario = {
   recommended: boolean;
   ongoingCosts?: OngoingCosts;
   regionalAlternatives?: RegionalAlternative[];
+  regionalMultiplier?: { reasoning: string; value: number };
   multipliers?: PricingMultipliers;
   rateJustification?: string;
 };

@@ -44,6 +44,20 @@ interface Scenario {
   pros?: string[];
   cons?: string[];
   recommended?: boolean;
+  ongoingCosts?: {
+    annualMaintenanceLow?: number;
+    annualMaintenanceHigh?: number;
+    monthlyCloudInfraLow?: number;
+    monthlyCloudInfraHigh?: number;
+    monthlyAiApiLow?: number;
+    monthlyAiApiHigh?: number;
+  };
+  pricingMultipliers?: {
+    complexity?: { factor: string; description: string };
+    dataHandling?: { factor: string; description: string };
+    integrations?: { factor: string; description: string };
+  };
+  regionalMultiplier?: { reasoning: string; value: number };
 }
 
 interface ROIAnalysis {
@@ -52,6 +66,17 @@ interface ROIAnalysis {
   projectedSavings?: number;
   paybackPeriodMonths?: number;
   threeYearROI?: number;
+  methodology?: string;
+}
+
+function formatNumericValue(val: any, suffix: string = ""): string {
+  if (val === null || val === undefined) return "N/A";
+  if (typeof val === "object") {
+    // Attempt to extract numeric value if it's accidentally nested (common AI hallucination)
+    const firstNum = Object.values(val).find((v) => typeof v === "number") as number;
+    return firstNum ? `${firstNum.toLocaleString()}${suffix}` : "N/A";
+  }
+  return `${val.toLocaleString()}${suffix}`;
 }
 function createTerminalBox(command: string, label?: string): Content[] {
   const content: Content[] = [];
@@ -413,9 +438,7 @@ export async function generateProposalPdf(project: Project): Promise<Buffer> {
                 margin: [8, 6, 8, 6] as [number, number, number, number],
               },
               {
-                text: roiAnalysis?.costOfDoingNothing
-                  ? `$${roiAnalysis.costOfDoingNothing.toLocaleString()}/year`
-                  : "N/A",
+                text: formatNumericValue(roiAnalysis?.costOfDoingNothing, "/year"),
                 margin: [8, 6, 8, 6] as [number, number, number, number],
               },
             ],
@@ -426,9 +449,7 @@ export async function generateProposalPdf(project: Project): Promise<Buffer> {
                 margin: [8, 6, 8, 6] as [number, number, number, number],
               },
               {
-                text: roiAnalysis?.projectedSavings
-                  ? `$${roiAnalysis.projectedSavings.toLocaleString()}/year`
-                  : "N/A",
+                text: formatNumericValue(roiAnalysis?.projectedSavings, "/year"),
                 fillColor: COLORS.background,
                 margin: [8, 6, 8, 6] as [number, number, number, number],
               },
@@ -436,9 +457,7 @@ export async function generateProposalPdf(project: Project): Promise<Buffer> {
             [
               { text: "Payback Period", margin: [8, 6, 8, 6] as [number, number, number, number] },
               {
-                text: roiAnalysis?.paybackPeriodMonths
-                  ? `${roiAnalysis.paybackPeriodMonths} months`
-                  : "N/A",
+                text: formatNumericValue(roiAnalysis?.paybackPeriodMonths, " months"),
                 margin: [8, 6, 8, 6] as [number, number, number, number],
               },
             ],
@@ -449,7 +468,7 @@ export async function generateProposalPdf(project: Project): Promise<Buffer> {
                 margin: [8, 6, 8, 6] as [number, number, number, number],
               },
               {
-                text: roiAnalysis?.threeYearROI ? `${roiAnalysis.threeYearROI}%` : "N/A",
+                text: formatNumericValue(roiAnalysis?.threeYearROI, "%"),
                 fillColor: COLORS.background,
                 margin: [8, 6, 8, 6] as [number, number, number, number],
               },
@@ -462,7 +481,99 @@ export async function generateProposalPdf(project: Project): Promise<Buffer> {
           hLineColor: () => COLORS.border,
           vLineColor: () => COLORS.border,
         },
-        margin: [0, 0, 0, 25] as [number, number, number, number],
+        margin: [0, 0, 0, 10] as [number, number, number, number],
+      },
+      roiAnalysis?.methodology
+        ? {
+            text: `Methodology: ${roiAnalysis.methodology}`,
+            fontSize: 9,
+            italics: true,
+            color: COLORS.textSecondary,
+            margin: [0, 0, 0, 20] as [number, number, number, number],
+          }
+        : { text: "", margin: [0, 0, 0, 10] },
+      createSectionHeader("Ongoing Operational Costs"),
+      {
+        table: {
+          widths: ["*", "*"],
+          body: [
+            [
+              { text: "Operational Item", bold: true, fillColor: COLORS.background },
+              { text: "Estimated Monthly Cost", bold: true, fillColor: COLORS.background },
+            ],
+            [
+              { text: "Standard Maintenance & Support" },
+              {
+                text: `${formatNumericValue(selectedScenario?.ongoingCosts?.monthlyCloudInfraLow || 0, " - ")}${formatNumericValue(selectedScenario?.ongoingCosts?.monthlyCloudInfraHigh || 0, "")}`,
+              },
+            ],
+            [
+              { text: "Cloud Infrastructure (Hosting, DB)", fillColor: COLORS.background },
+              {
+                text: `${formatNumericValue(selectedScenario?.ongoingCosts?.monthlyCloudInfraLow || 0, " - ")}${formatNumericValue(selectedScenario?.ongoingCosts?.monthlyCloudInfraHigh || 0, "")}`,
+                fillColor: COLORS.background,
+              },
+            ],
+            [
+              { text: "AI API Consumption (LLM usage)" },
+              {
+                text: `${formatNumericValue(selectedScenario?.ongoingCosts?.monthlyAiApiLow || 0, " - ")}${formatNumericValue(selectedScenario?.ongoingCosts?.monthlyAiApiHigh || 0, "")}`,
+              },
+            ],
+          ],
+        },
+        layout: {
+          hLineWidth: () => 1,
+          vLineWidth: () => 1,
+          hLineColor: () => COLORS.border,
+          vLineColor: () => COLORS.border,
+        },
+        margin: [0, 0, 0, 20] as [number, number, number, number],
+      },
+      createSectionHeader("Pricing Transparency & Multipliers"),
+      {
+        table: {
+          widths: ["30%", "*"],
+          body: [
+            [
+              { text: "Factor", bold: true, fillColor: COLORS.background },
+              { text: "Reasoning & Impact", bold: true, fillColor: COLORS.background },
+            ],
+            [
+              { text: "Complexity (RAG/Logic)" },
+              {
+                text: `${selectedScenario?.pricingMultipliers?.complexity?.factor || "1.0x"}: ${selectedScenario?.pricingMultipliers?.complexity?.description || "Baseline complexity"}`,
+              },
+            ],
+            [
+              { text: "Data & Compliance", fillColor: COLORS.background },
+              {
+                text: `${selectedScenario?.pricingMultipliers?.dataHandling?.factor || "1.0x"}: ${selectedScenario?.pricingMultipliers?.dataHandling?.description || "Standard data handling"}`,
+                fillColor: COLORS.background,
+              },
+            ],
+            [
+              { text: "Integrations" },
+              {
+                text: `${selectedScenario?.pricingMultipliers?.integrations?.factor || "1.0x"}: ${selectedScenario?.pricingMultipliers?.integrations?.description || "Single system integration"}`,
+              },
+            ],
+            [
+              { text: "Regional Multiplier", fillColor: COLORS.background },
+              {
+                text: `${selectedScenario?.regionalMultiplier?.value || "1.0"}x: ${selectedScenario?.regionalMultiplier?.reasoning || "Standard US-based rates applied"}`,
+                fillColor: COLORS.background,
+              },
+            ],
+          ],
+        },
+        layout: {
+          hLineWidth: () => 1,
+          vLineWidth: () => 1,
+          hLineColor: () => COLORS.border,
+          vLineColor: () => COLORS.border,
+        },
+        margin: [0, 0, 0, 20] as [number, number, number, number],
       },
       createSectionHeader("Next Steps"),
       {
@@ -713,9 +824,7 @@ export async function generateInternalReportPdf(project: Project): Promise<Buffe
                 margin: [6, 5, 6, 5] as [number, number, number, number],
               },
               {
-                text: roiAnalysis?.costOfDoingNothing
-                  ? `$${roiAnalysis.costOfDoingNothing.toLocaleString()}/year`
-                  : "N/A",
+                text: formatNumericValue(roiAnalysis?.costOfDoingNothing, "/year"),
                 margin: [6, 5, 6, 5] as [number, number, number, number],
               },
             ],
@@ -726,9 +835,7 @@ export async function generateInternalReportPdf(project: Project): Promise<Buffe
                 margin: [6, 5, 6, 5] as [number, number, number, number],
               },
               {
-                text: roiAnalysis?.manualOperationalCost
-                  ? `$${roiAnalysis.manualOperationalCost.toLocaleString()}/year`
-                  : "N/A",
+                text: formatNumericValue(roiAnalysis?.manualOperationalCost, "/year"),
                 fillColor: COLORS.background,
                 margin: [6, 5, 6, 5] as [number, number, number, number],
               },
@@ -739,9 +846,7 @@ export async function generateInternalReportPdf(project: Project): Promise<Buffe
                 margin: [6, 5, 6, 5] as [number, number, number, number],
               },
               {
-                text: roiAnalysis?.projectedSavings
-                  ? `$${roiAnalysis.projectedSavings.toLocaleString()}/year`
-                  : "N/A",
+                text: formatNumericValue(roiAnalysis?.projectedSavings, "/year"),
                 margin: [6, 5, 6, 5] as [number, number, number, number],
               },
             ],
@@ -752,9 +857,7 @@ export async function generateInternalReportPdf(project: Project): Promise<Buffe
                 margin: [6, 5, 6, 5] as [number, number, number, number],
               },
               {
-                text: roiAnalysis?.paybackPeriodMonths
-                  ? `${roiAnalysis.paybackPeriodMonths} months`
-                  : "N/A",
+                text: formatNumericValue(roiAnalysis?.paybackPeriodMonths, " months"),
                 fillColor: COLORS.background,
                 margin: [6, 5, 6, 5] as [number, number, number, number],
               },
@@ -762,7 +865,7 @@ export async function generateInternalReportPdf(project: Project): Promise<Buffe
             [
               { text: "3-Year ROI", margin: [6, 5, 6, 5] as [number, number, number, number] },
               {
-                text: roiAnalysis?.threeYearROI ? `${roiAnalysis.threeYearROI}%` : "N/A",
+                text: formatNumericValue(roiAnalysis?.threeYearROI, "%"),
                 margin: [6, 5, 6, 5] as [number, number, number, number],
               },
             ],

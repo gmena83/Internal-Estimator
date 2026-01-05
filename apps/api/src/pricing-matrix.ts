@@ -124,13 +124,50 @@ export async function loadPricingMatrix(): Promise<PricingMatrix> {
       costDrivers,
     };
 
+    // Apply Overrides if they exist
+    const overridesPath = path.join(process.cwd(), "attached_assets", "pricing-overrides.json");
+    if (fs.existsSync(overridesPath)) {
+      try {
+        const overrides = JSON.parse(fs.readFileSync(overridesPath, "utf-8"));
+        cachedMatrix = { ...cachedMatrix, ...overrides };
+        console.log("Applied pricing overrides from JSON");
+      } catch (e) {
+        console.error("Failed to load pricing overrides:", e);
+      }
+    }
+
     console.log(
       `Loaded pricing matrix: ${projectCosts.length} project types, ${hourlyRates.length} rates`,
     );
+    if (!cachedMatrix) return getDefaultPricingMatrix();
     return cachedMatrix;
   } catch (error) {
     console.error("Error loading pricing matrix:", error);
     return getDefaultPricingMatrix();
+  }
+}
+
+export async function updatePricingMatrix(updates: Partial<PricingMatrix>): Promise<PricingMatrix> {
+  const current = await loadPricingMatrix();
+  const updated = { ...current, ...updates };
+
+  const overridesPath = path.join(process.cwd(), "attached_assets", "pricing-overrides.json");
+
+  // We only save the differences or the whole thing as an override?
+  // For simplicity, let's save the whole "updated" structure as the override,
+  // effectively implementing a "copy on write" strategy where the JSON becomes the source of truth if valid.
+
+  try {
+    // Ensure directory exists
+    const dir = path.dirname(overridesPath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+    fs.writeFileSync(overridesPath, JSON.stringify(updated, null, 2));
+    cachedMatrix = updated;
+    return updated;
+  } catch (error) {
+    console.error("Failed to save pricing overrides:", error);
+    throw new Error("Failed to save pricing matrix updates");
   }
 }
 

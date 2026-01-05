@@ -10,6 +10,7 @@ interface ScenarioComparisonProps {
   roiAnalysis: ROIAnalysis | null;
   selectedScenario: string | null;
   onSelectScenario?: (scenario: "A" | "B") => void;
+  onApprove?: (scenario: "A" | "B") => void;
 }
 
 export function ScenarioComparison({
@@ -18,6 +19,7 @@ export function ScenarioComparison({
   roiAnalysis,
   selectedScenario,
   onSelectScenario,
+  onApprove,
 }: ScenarioComparisonProps) {
   if (!scenarioA && !scenarioB) {
     return null;
@@ -46,6 +48,7 @@ export function ScenarioComparison({
             icon={Code2}
             selected={selectedScenario === "A"}
             onSelect={() => onSelectScenario?.("A")}
+            onApprove={() => onApprove?.("A")}
             formatCurrency={formatCurrency}
             formatNumber={formatNumber}
           />
@@ -57,6 +60,7 @@ export function ScenarioComparison({
             icon={Blocks}
             selected={selectedScenario === "B"}
             onSelect={() => onSelectScenario?.("B")}
+            onApprove={() => onApprove?.("B")}
             formatCurrency={formatCurrency}
             formatNumber={formatNumber}
           />
@@ -111,6 +115,7 @@ interface ScenarioCardProps {
   icon: React.ElementType;
   selected: boolean;
   onSelect?: () => void;
+  onApprove?: () => void;
   formatCurrency: (amount: number) => string;
   formatNumber: (num: number) => string;
 }
@@ -121,6 +126,7 @@ function ScenarioCard({
   icon: Icon,
   selected,
   onSelect,
+  onApprove,
   formatCurrency,
   formatNumber,
 }: ScenarioCardProps) {
@@ -232,6 +238,11 @@ function ScenarioCard({
             data-testid={`button-select-scenario-${variant}`}
           >
             {selected ? "Selected" : `Select Scenario ${variant}`}
+          </Button>
+        )}
+        {selected && onApprove && (
+          <Button className="w-full mt-2" variant="secondary" onClick={onApprove}>
+            Approve & Learn
           </Button>
         )}
       </div>

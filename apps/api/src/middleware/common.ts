@@ -5,6 +5,13 @@ import fs from "fs";
 /**
  * Logs route usage in QA mode for instrumentation.
  */
+const qaDir = path.join(process.cwd(), "qa_results");
+if (!fs.existsSync(qaDir)) fs.mkdirSync(qaDir, { recursive: true });
+const logStream = fs.createWriteStream(path.join(qaDir, "route_logs.txt"), { flags: "a" });
+
+/**
+ * Logs route usage in QA mode for instrumentation.
+ */
 export const qaLogger = (req: Request, _res: Response, next: NextFunction) => {
   if (process.env.QA_MODE !== "true") return next();
 
@@ -12,10 +19,7 @@ export const qaLogger = (req: Request, _res: Response, next: NextFunction) => {
   const cleanPath = req.path.replace(paramRegex, "/:id");
   const logLine = `${new Date().toISOString()} | ${req.method} ${cleanPath}\n`;
 
-  const qaDir = path.join(process.cwd(), "qa_results");
-  if (!fs.existsSync(qaDir)) fs.mkdirSync(qaDir, { recursive: true });
-
-  fs.appendFile(path.join(qaDir, "route_logs.txt"), logLine, (err) => {
+  logStream.write(logLine, (err) => {
     if (err) console.error("Failed to log route usage:", err);
   });
   next();

@@ -80,3 +80,11 @@ export const useStartStage = () => {
     },
   });
 };
+
+export const useUser = () => {
+  return useQuery({
+    queryKey: ["user"],
+    queryFn: api.getUser,
+    retry: false,
+  });
+};

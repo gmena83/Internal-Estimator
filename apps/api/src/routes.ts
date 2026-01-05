@@ -12,6 +12,8 @@ import assetRouter from "./routes/asset-routes";
 import knowledgeRouter from "./routes/knowledge-routes";
 import diagnosticRouter from "./routes/diagnostic-routes";
 import emailRouter from "./routes/email-routes";
+import adminRouter from "./routes/admin-routes";
+import learningRouter from "./routes/learning-routes";
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
   // 1. Authentication Setup
@@ -30,6 +32,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.use("/api/knowledge-base", knowledgeRouter);
   app.use("/api/diagnostics", diagnosticRouter);
+  app.use("/api/admin", adminRouter);
+  app.use("/api/learn", learningRouter);
 
   // 4. Static Asset Serving
   const uploadsDir = path.join(process.cwd(), "uploads");

@@ -100,7 +100,7 @@ Be specific with numbers and cite your sources.`;
     const outputTokens = data.usage?.completion_tokens || 0;
 
     if (projectId) {
-      await logApiUsage({
+      logApiUsage({
         projectId,
         provider: "perplexity",
         model: "sonar-deep-research",

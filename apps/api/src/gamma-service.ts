@@ -106,7 +106,7 @@ ${selectedScenario?.features?.map((f: string) => `- ${f}`).join("\n") || "- Core
       latencyMs,
     });
 
-    await logApiUsage({
+    logApiUsage({
       projectId: project.id,
       provider: "gemini",
       model: "gamma-presentation",
