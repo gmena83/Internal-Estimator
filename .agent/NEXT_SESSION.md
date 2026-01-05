@@ -1,25 +1,27 @@
-# Next Session Handoff
+# NEXT_SESSION.md
 
-## 🌊 The Vibe Summary
+## The Vibe Summary
 
-The project has undergone a "Strategic Hard Fork" into a monorepo. We've moved away from the monolithic "Vite-wrapped-in-Express" pattern towards a decoupled, workspace-based architecture. This allows for independent scaling and development of the API and Web apps. The "Vibe" is now **High-Performance Monorepo**, leveraging Bun's speed and Turborepo's orchestration.
+We have successfully transitioned the project from a state of "Ghost Bug" uncertainty to a stable, forensically verified baseline. The architectural direction is now centered on standard Node/Express patterns within the Bun runtime to avoid immutable request conflicts. The AI layer is fully unblocked from model hallucinations.
 
-## 🛠 Active Workstreams
+## Active Workstreams
 
-- [x] **Monorepo Migration** (100%): All files moved, Turborepo configured.
-- [x] **Git Hooks & Commits** (100%): Restored `lint-staged` config and successfully committed 185 files.
-- [x] **Bun Transition** (100%): API running on `Bun.serve`.
-- [x] **Frontend Modernization** (100%): Vite 6 and Tailwind 4 integrated.
-- [/] **Refactoring & Cleanup** (80%): Many relative paths updated, but smaller, less-used files might still have legacy imports.
-- [ ] **Production Static Serving** (0%): The Bun API currently doesn't serve the frontend build in production.
+- **Forensic Fixes (100%)**: Bun/Express mismatch and gpt-5 hallucination are purged.
+- **Database Schema (100%)**: Synced with Supabase.
+- **Internal Web Types (80%)**: Type resolution between `@internal/web` and `@internal/shared` needs a `tsconfig` inclusion tweak to remove TS6307.
 
-## ⚠️ Unresolved Context / Hallucination Risks
+## Unresolved Context
 
-- **Static Files**: I removed the `setupVite` middleware. In production, `apps/api` will need a `Bun.serve` static file handler or a reverse proxy (like Nginx) to serve `dist/public`.
-- **Relative Imports**: While the main routes and services are fixed, check for deeper components in `apps/web` that might still be trying to import from the old `shared/` root.
+- **TS6307**: The web app builds but reports that `schema.ts` is outside the project root. This is a configuration ghost left from the monorepo migration.
+- **Portable Types**: `asset.service.ts` has an inferred type issue that might cause issues with library consumers (non-blocking for dev).
 
-## 🔗 Instructional Hook
+## Instructional Hook
 
-**Resume Command**:
+To resume the current flow and verify the web app's connection to the fixed API:
 
-> "Resume from `.agent/NEXT_SESSION.md`: Verify production static serving in `apps/api` and continue the transition of legacy relative imports to `@internal/shared` aliases."
+> **Resume Command**: `bun run dev` at root, then run `powershell ./repro_script.ps1` to confirm project-to-asset end-to-end stability.
+
+## Context Backup
+
+- **Artifacts Dir**: [586a45f3-c808-4f0c-96ad-c6193b296464]
+- **Key Files**: `apps/api/src/index.ts`, `apps/api/src/ai-service.ts`, `BUG_AUTOPSY.md`.

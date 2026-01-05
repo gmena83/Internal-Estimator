@@ -4,7 +4,7 @@ import { BaseAIProvider, AIResponseChunk } from "./base-provider";
 export class OpenAIProvider extends BaseAIProvider {
   private client: OpenAI | null = null;
   name = "openai";
-  model = "gpt-5";
+  model = "gpt-4o"; // Fixed hallucinated gpt-5
 
   constructor() {
     super();

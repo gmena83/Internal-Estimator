@@ -64,8 +64,9 @@ router.post("/", async (req, res) => {
       aiService.processRawInput(project.id, parsed.data.rawInput).catch(console.error);
     }
     res.status(201).json(project);
-  } catch {
-    res.status(500).json({ error: "Failed to create project" });
+  } catch (error) {
+    console.error("[Forensic] Project creation failed:", error);
+    res.status(500).json({ error: "Failed to create project", details: (error as any).message });
   }
 });
 

@@ -1,1 +1,12 @@
 $ tsc --noEmit
+src/components/features/chat/chat-interface.tsx(12,42): error TS6307: File 'D:/Menatech/Antigravity/Internal-Estimator/packages/shared/src/schema.ts' is not listed within the file list of project 'D:/Menatech/Antigravity/Internal-Estimator/apps/web/tsconfig.json'. Projects must list all files or use an 'include' pattern.
+  The file is in the program because:
+    Imported via "@shared/schema" from file 'D:/Menatech/Antigravity/Internal-Estimator/apps/web/src/components/features/chat/chat-interface.tsx'
+    Imported via "@shared/schema" from file 'D:/Menatech/Antigravity/Internal-Estimator/apps/web/src/components/features/estimate/scenario-comparison.tsx'
+    Imported via "@shared/schema" from file 'D:/Menatech/Antigravity/Internal-Estimator/apps/web/src/components/features/project/action-buttons.tsx'
+    Imported via "@shared/schema" from file 'D:/Menatech/Antigravity/Internal-Estimator/apps/web/src/components/features/project/documents-view.tsx'
+    Imported via "@shared/schema" from file 'D:/Menatech/Antigravity/Internal-Estimator/apps/web/src/components/features/project/pm-breakdown-view.tsx'
+    Imported via "@shared/schema" from file 'D:/Menatech/Antigravity/Internal-Estimator/apps/web/src/components/features/project/project-files-view.tsx'
+    Imported via "@shared/schema" from file 'D:/Menatech/Antigravity/Internal-Estimator/apps/web/src/components/layouts/main-workspace.tsx'
+    Imported via "@shared/schema" from file 'D:/Menatech/Antigravity/Internal-Estimator/apps/web/src/pages/diagnostician.tsx'
+error: script "check" exited with code 1

@@ -1,4 +1,1 @@
 $ bun x tsc --noEmit
-src/services/asset.service.ts(31,9): error TS4053: Return type of public method from exported class has or is using name 'GeneratedImage' from external module "D:/Menatech/Antigravity/Internal-Estimator/apps/api/src/image-service" but cannot be named.
-../../packages/shared/src/schema.ts(188,14): error TS2742: The inferred type of 'insertProjectSchema' cannot be named without a reference to '../../../node_modules/drizzle-zod/utils.d.mts'. This is likely not portable. A type annotation is necessary.
-../../packages/shared/src/schema.ts(199,14): error TS2742: The inferred type of 'insertKnowledgeEntrySchema' cannot be named without a reference to '../../../node_modules/drizzle-zod/utils.d.mts'. This is likely not portable. A type annotation is necessary.
