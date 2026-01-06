@@ -1,24 +1,24 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import request from "supertest";
 import express from "express";
-import { registerRoutes } from "../../server/routes";
-import { storage } from "../../server/storage";
-import { aiService } from "../../server/ai-service";
-import * as gammaService from "../../server/gamma-service";
+import { registerRoutes } from "../../apps/api/src/routes";
+import { storage } from "../../apps/api/src/storage";
+import { aiService } from "../../apps/api/src/ai-service";
+import * as gammaService from "../../apps/api/src/gamma-service";
 import { createServer } from "http";
 import { type Request, type Response, type NextFunction } from "express";
 
 // Mock all external dependencies
-vi.mock("../../server/storage");
-vi.mock("../../server/ai-service");
-vi.mock("../../server/pdf-service");
-vi.mock("../../server/email-service");
-vi.mock("../../server/image-service");
-vi.mock("../../server/gamma-service");
-vi.mock("../../server/diagnostics-service");
+vi.mock("../../apps/api/src/storage");
+vi.mock("../../apps/api/src/ai-service");
+vi.mock("../../apps/api/src/pdf-service");
+vi.mock("../../apps/api/src/email-service");
+vi.mock("../../apps/api/src/image-service");
+vi.mock("../../apps/api/src/gamma-service");
+vi.mock("../../apps/api/src/diagnostics-service");
 
 // Mocking the response validator middleware since it might require a real DB or more setup
-vi.mock("../../server/middleware/response-validator", () => ({
+vi.mock("../../apps/api/src/middleware/response-validator", () => ({
   responseValidator: (req: Request, res: Response, next: NextFunction) => next(),
 }));
 
@@ -33,7 +33,7 @@ describe("API Agent Battery - Logic, Consistency and Error Handling", () => {
     vi.mocked(aiService.processRawInput).mockResolvedValue(undefined);
     vi.mocked(aiService.processMessage).mockResolvedValue({ content: "test", stage: 1 });
     vi.mocked(aiService.generateEstimate).mockResolvedValue({} as any);
-    vi.mocked(aiService.generateEmail).mockResolvedValue("test");
+    vi.mocked(aiService.generateEmailContent).mockResolvedValue("test");
     vi.mocked(aiService.generateVibeGuides).mockResolvedValue({ guideA: "a", guideB: "b" });
     vi.mocked(aiService.generatePMBreakdown).mockResolvedValue({});
 
@@ -90,7 +90,7 @@ describe("API Agent Battery - Logic, Consistency and Error Handling", () => {
         .post("/api/projects")
         .send({ title: "E-commerce App", rawInput: "..." });
 
-      expect(createRes.status).toBe(200);
+      expect(createRes.status).toBe(201);
       expect(createRes.body.id).toBe(projectId);
 
       // 2. Add Message
@@ -128,7 +128,7 @@ describe("API Agent Battery - Logic, Consistency and Error Handling", () => {
         .post("/api/projects")
         .send({ title: longTitle, rawInput: longInput });
 
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(201);
       expect(res.body.title.length).toBe(255);
     });
 
@@ -140,7 +140,7 @@ describe("API Agent Battery - Logic, Consistency and Error Handling", () => {
       if (res.status === 400) {
         expect(res.body.error).toBeDefined();
       } else {
-        expect(res.status).toBe(200);
+        expect(res.status).toBe(201);
       }
     });
   });

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { exec, ChildProcess } from 'child_process';
 import { createMockProject, createMockInsertProject } from '../utils/test-helpers';
 
 // Note: These are integration tests that require a running server
@@ -8,6 +9,41 @@ const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:5000';
 
 describe('Multi-Stage Workflow Integration Tests', () => {
     let projectId: string;
+    let serverProcess: ChildProcess;
+
+    beforeAll(async () => {
+        serverProcess = exec('./node_modules/.bin/turbo dev', (error, stdout, stderr) => {
+            if (error) {
+                console.error(`exec error: ${error}`);
+                return;
+            }
+            console.log(`stdout: ${stdout}`);
+            console.error(`stderr: ${stderr}`);
+        });
+
+        await new Promise((resolve, reject) => {
+            const interval = setInterval(async () => {
+                try {
+                    const response = await fetch(`${BASE_URL}/ping`);
+                    if (response.ok) {
+                        clearInterval(interval);
+                        resolve(true);
+                    }
+                } catch (error) {
+                    // Ignore ECONNREFUSED errors
+                }
+            }, 500);
+
+            setTimeout(() => {
+                clearInterval(interval);
+                reject(new Error('Server did not start in time'));
+            }, 60000);
+        });
+    }, 60000);
+
+    afterAll(() => {
+        serverProcess.kill();
+    });
 
     describe('Stage 1: Project Creation', () => {
         it('should create a new project', async () => {

@@ -15,13 +15,17 @@
     "test": "turbo test",
     "lint": "turbo lint",
     "format": "prettier --write .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "start:api": "bun run --cwd apps/api start"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "prettier": "^3.7.4",
-    "turbo": "^2.0.0"
+    "supertest": "^7.2.2",
+    "turbo": "^2.0.0",
+    "vitest": "^4.0.16"
   },
   "lint-staged": {
     "**/*.{js,jsx,ts,tsx}": [
