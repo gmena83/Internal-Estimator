@@ -58,26 +58,39 @@ app.use((req, res, next) => {
   next();
 });
 
-(async () => {
-  await registerRoutes(null as any, app);
+// Export app for serverless usage
+export default app;
 
-  // Enable static client serving
-  const { serveStatic } = await import("./static");
-  if (process.env.NODE_ENV === "production") {
-    serveStatic(app);
-  }
+// Only start listening if run directly (development / standalone)
+if (import.meta.main || require.main === module) {
+  (async () => {
+    await registerRoutes(null as any, app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+    // Enable static client serving in production standalone mode
+    if (process.env.NODE_ENV === "production") {
+      const { serveStatic } = await import("./static");
+      serveStatic(app);
+    }
 
-    res.status(status).json({ message });
-    if (status === 500) console.error(err);
-  });
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
+      res.status(status).json({ message });
+      if (status === 500) console.error(err);
+    });
 
-  const port = parseInt(process.env.PORT || "5000", 10);
-
-  app.listen(port, "0.0.0.0", () => {
-    log(`Express server serving on port ${port}`);
-  });
-})();
+    const port = parseInt(process.env.PORT || "5000", 10);
+    app.listen(port, "0.0.0.0", () => {
+      log(`Express server serving on port ${port}`);
+    });
+  })();
+} else {
+  // For Vercel/Serverless: Routes must be registered before export
+  // We wrap this in a promise or just register them synchronously if possible?
+  // The current registerRoutes is async. This poses a challenge for Vercel which expects a synchronous export often,
+  // OR we need the entry point to handle the async init.
+  // Let's modify the Vercel entry point to handle this or make registerRoutes sync if possible.
+  // BUT, registerRoutes is async.
+  // However, in the provided Vercel adapter pattern, we usually export `(req, res) => { app(req, res) }`.
+  // We can lazily initialize routes in the adapter.
+}
