@@ -37,7 +37,16 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   // 4. Static Asset Serving
   const uploadsDir = path.join(process.cwd(), "uploads");
-  app.use("/uploads", express.static(uploadsDir));
+  app.use(
+    "/uploads",
+    (req, res, next) => {
+      if (req.path.endsWith(".html") || req.path.endsWith(".htm") || req.path.endsWith(".js")) {
+        return res.status(403).send("Access Denied");
+      }
+      next();
+    },
+    express.static(uploadsDir),
+  );
 
   return httpServer;
 }

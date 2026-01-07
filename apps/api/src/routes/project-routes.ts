@@ -127,7 +127,7 @@ router.post("/:id/reset", async (req, res) => {
 router.post("/:id/upload", upload.array("files", 10), async (req, res) => {
   try {
     const projectId = req.params.id;
-    const project = await storage.getProject(projectId);
+    const project = await storage.getProject(projectId, req.user?.id);
     if (!project) return res.status(404).json({ error: "Project not found" });
 
     const files = req.files as Express.Multer.File[];

@@ -14,7 +14,7 @@ export class ChatStrategy {
         title: project.title,
         currentStage: project.currentStage,
         status: project.status,
-      }) + `\n\nUser: ${userMessage}`;
+      }) + `\n\n<USER_MESSAGE>\n${userMessage}\n</USER_MESSAGE>`;
 
     try {
       yield* provider.streamContent(project.id, prompt, this.operation, project.currentStage);
@@ -42,7 +42,7 @@ export class ChatStrategy {
         title: project.title,
         currentStage: project.currentStage,
         status: project.status,
-      }) + `\n\nUser: ${userMessage}`;
+      }) + `\n\n<USER_MESSAGE>\n${userMessage}\n</USER_MESSAGE>`;
 
     try {
       const content = await provider.generateContent(

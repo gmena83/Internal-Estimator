@@ -27,7 +27,27 @@ export const upload = multer({
       "application/vnd.ms-powerpoint",
       "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     ];
-    if (allowedTypes.includes(file.mimetype)) {
+
+    const allowedExtensions = [
+      ".png",
+      ".jpg",
+      ".jpeg",
+      ".gif",
+      ".webp",
+      ".pdf",
+      ".md",
+      ".txt",
+      ".doc",
+      ".docx",
+      ".xls",
+      ".xlsx",
+      ".ppt",
+      ".pptx",
+    ];
+
+    const fileExt = file.originalname.toLowerCase().match(/\.[0-9a-z]+$/i)?.[0];
+
+    if (allowedTypes.includes(file.mimetype) && fileExt && allowedExtensions.includes(fileExt)) {
       cb(null, true);
     } else {
       cb(new Error("Invalid file type"));
