@@ -2,6 +2,7 @@ import { Router } from "express";
 import { storage } from "../storage";
 import { aiService } from "../ai-service";
 import { sendProposalEmail } from "../email-service";
+import { generateProposalPdf } from "../pdf-service";
 import { emailUpdateSchema } from "@shared/schema";
 
 const router = Router();
@@ -37,12 +38,33 @@ router.post("/:id/send-email", async (req, res) => {
       return res.status(400).json({ error: "Recipient, subject, and body are required" });
     }
 
-    const result = await sendProposalEmail(recipientEmail, emailSubject, emailBody, project as any);
+    let finalBody = emailBody;
+    if (project.presentationUrl) {
+      finalBody += `\n\nView Presentation: ${project.presentationUrl}`;
+    }
+
+    // Generate Proposal PDF
+    const pdfBuffer = await generateProposalPdf(project as any);
+    const attachments = [
+      {
+        filename: `${project.title.replace(/[^a-z0-9]/gi, "_")}_proposal.pdf`,
+        content: pdfBuffer,
+      },
+    ];
+
+    const result = await sendProposalEmail(
+      project as any,
+      finalBody,
+      recipientEmail,
+      emailSubject,
+      attachments,
+    );
     if (result.success) {
       const updated = await storage.updateProject(
         req.params.id,
         {
           status: "email_sent",
+          currentStage: 3, // Advance to Vibecoding Guide phase
           emailSentAt: new Date(),
         } as any,
         req.user?.id,

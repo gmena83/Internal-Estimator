@@ -108,6 +108,8 @@ export class ProjectService {
       );
     }
 
+    console.log(`[ProjectService] Approving draft for project ${projectId}`);
+
     // 2. Learning: Extract and save knowledge
     try {
       const selectedData = project.selectedScenario === "A" ? project.scenarioA : project.scenarioB;
@@ -137,7 +139,7 @@ TOTAL HOURS: ${totalHours}
             approvedAt: new Date().toISOString(),
           },
         });
-        // console.log(`[Learning] Captured knowledge from project ${projectId}`);
+        console.log(`[Learning] Captured knowledge from project ${projectId}`);
       }
     } catch (error) {
       // Non-blocking error for learning
@@ -146,8 +148,10 @@ TOTAL HOURS: ${totalHours}
 
     if (!project.estimateMarkdown) {
       try {
+        console.log(`[ProjectService] Generating missing estimate for project ${projectId}`);
         await aiService.generateEstimate(project);
-      } catch {
+      } catch (err) {
+        console.error(`[ProjectService] Estimate generation failed for project ${projectId}`, err);
         throw new ProjectServiceError(
           "Estimate generation failed during approval.",
           "Ensure the AI configuration is correct and retry the approval.",
@@ -156,6 +160,7 @@ TOTAL HOURS: ${totalHours}
       }
     }
 
+    console.log(`[ProjectService] Advancing stage for project ${projectId} to assets_ready`);
     return await this.advanceStage(projectId, 2, PROJECT_STATUS.ASSETS_READY, userId);
   }
 }

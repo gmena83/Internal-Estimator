@@ -114,7 +114,7 @@ export function MainWorkspace({ projectId }: MainWorkspaceProps) {
                   <span className="hidden sm:inline">Guides</span>
                 </TabsTrigger>
               )}
-              {!!project?.pmBreakdown && (
+              {currentStage >= 5 && !!project?.pmBreakdown && (
                 <TabsTrigger value="pm" className="gap-2" data-testid="tab-pm">
                   <ClipboardList className="h-4 w-4" />
                   <span className="hidden sm:inline">PM</span>

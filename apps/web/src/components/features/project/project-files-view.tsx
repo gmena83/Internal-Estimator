@@ -168,7 +168,7 @@ export function ProjectFilesView({ project }: ProjectFilesViewProps) {
             asChild
             data-testid="download-consolidated-pdf"
           >
-            <a href={`/api/projects/${project.id}/consolidated.pdf`} download>
+            <a href={`/api/projects/${project.id}/proposal.pdf`} download>
               <Download className="h-4 w-4" />
               Proposal (PDF)
             </a>

@@ -19,6 +19,7 @@ export async function sendProposalEmail(
   emailContent: string,
   recipientEmail?: string,
   emailSubject?: string,
+  attachments?: { filename: string; content: Buffer }[],
 ): Promise<EmailResult> {
   const resendApiKey = process.env.RESEND_API_KEY;
   const startTime = Date.now();
@@ -55,6 +56,10 @@ export async function sendProposalEmail(
         headers: {
           "X-Project-Id": project.id,
         },
+        attachments: attachments?.map((a) => ({
+          filename: a.filename,
+          content: a.content.toString("base64"), // Resend expects base64 for Buffer
+        })),
       }),
     });
 
