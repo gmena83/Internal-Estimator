@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { Switch, Route, useRoute } from "wouter";
+import { Switch, Route, useRoute, useLocation } from "wouter";
 import { LeftSidebar } from "./left-sidebar";
 import { RightSidebar } from "./right-sidebar";
 import { Dashboard } from "./dashboard";
 import { AdminDashboard } from "../../pages/admin-dashboard";
 import { ProjectView } from "./project-view";
 import { useProjects, useSystemHealth, useProjectUsage } from "../../lib/queries";
+import { NewProjectDialog } from "../features/project/new-project-dialog";
 
 export function MainLayout() {
   const [match, params] = useRoute<any>("/project/:id");
+  const [location, setLocation] = useLocation();
   const [isDark, setIsDark] = useState(true);
+  const [isCreateOpen, setCreateOpen] = useState(false);
 
   // Global Data Hooks
   const { data: projects } = useProjects();
@@ -35,7 +38,7 @@ export function MainLayout() {
       <LeftSidebar
         projects={projects || []}
         activeProjectId={match && params ? params.id : undefined}
-        onCreateProject={() => console.log("Open Create Dialog")}
+        onCreateProject={() => setCreateOpen(true)}
         isDark={isDark}
         onToggleTheme={toggleTheme}
       />
@@ -50,6 +53,12 @@ export function MainLayout() {
       </main>
 
       <RightSidebar health={health || []} usage={usage || { tokens: 0, cost: 0, storage: 0 }} />
+
+      <NewProjectDialog
+        open={isCreateOpen}
+        onOpenChange={setCreateOpen}
+        onProjectCreated={(id) => setLocation(`/project/${id}`)}
+      />
     </div>
   );
 }
