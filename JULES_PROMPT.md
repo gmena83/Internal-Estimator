@@ -3,92 +3,71 @@
 <artifacts>
 --- CURRENT TASK CHECKLIST ---
 
-# Tasks
+# Security Audit: Sentinel Protocol
 
-- [ ] Research existing codebase for estimation and approval logic <!-- id: 0 -->
-  - [ ] Locate `routes.ts` and `ai-service.ts` <!-- id: 1 -->
-  - [ ] Analyze `generateEstimate` function <!-- id: 2 -->
-  - [ ] Analyze approval endpoints <!-- id: 3 -->
-- [x] Create Implementation Plan <!-- id: 4 -->
-  - [x] Define data structure for "Learnings" <!-- id: 5 -->
-  - [x] Design feedback loop into `generateEstimate` prompt <!-- id: 6 -->
-  - [x] Define backend API changes <!-- id: 7 -->
-- [x] Implement Backend Changes <!-- id: 8 -->
-  - [x] Create/Update schema for storing approved project pricing data <!-- id: 9 -->
-  - [x] Update approval route to save learning data <!-- id: 10 -->
-  - [x] Update `generateEstimate` to inject historical pricing data <!-- id: 11 -->
-- [ ] Implement Frontend Changes <!-- id: 12 -->
-  - [ ] (Optional) Admin view to see what the agent has "learned" <!-- id: 13 -->
-- [ ] Verify <!-- id: 14 -->
-  - [ ] Test approval flow triggers learning <!-- id: 15 -->
-  - [ ] Test new estimates reflect learned pricing <!-- id: 16 -->
+- [x] Static Analysis & Secret Hunting <!-- id: 0 -->
+  - [x] Scan for hardcoded credentials and API keys <!-- id: 1 -->
+  - [x] Audit code for SQL Injection, XSS, and IDOR vulnerabilities <!-- id: 2 -->
+- [x] Agentic Attack Surface Review <!-- id: 3 -->
+  - [x] Analyze Prompt Injection risks in AI strategies <!-- id: 4 -->
+  - [x] Audit Terminal & Tool permissions for misuse <!-- id: 5 -->
+- [x] Dependency & Supply Chain Audit <!-- id: 6 -->
+  - [x] Check `package.json` for CVEs and unmaintained packages <!-- id: 7 -->
+- [x] Dynamic Verification (DAST) <!-- id: 11 -->
+  - [x] Produce `SECURITY_POSTURE.md` with vulnerability heatmap <!-- id: 12 -->
+  - [x] Define Agent Mission Briefs for remediation <!-- id: 13 -->
+- [x] Remediation Phase <!-- id: 14 -->
+  - [x] Implement global authentication gates <!-- id: 15 -->
+  - [x] Enforce IDOR ownership checks in routes <!-- id: 16 -->
+  - [x] Harden AI prompts against injection <!-- id: 17 -->
+  - [x] Add production security startup checks <!-- id: 18 -->
+  - [x] Verify fix efficacy with re-testing <!-- id: 19 -->
 
 --- IMPLEMENTATION PLAN ---
 
-# Deep Sweep Implementation Plan
+# Security Remediation Plan
 
-## Goal Description
+## Goal
 
-Conduct a comprehensive "Deep Sweep" of the codebase to maximize cleanliness, performance, and stability. This operation uses a multi-agent persona approach:
+Harden the Internal-Estimator codebase against unauthenticated access, IDOR, and Prompt Injection.
 
-- **Agent A (Janitor)**: Code hygiene and standardization.
-- **Agent B (Tuner)**: Performance optimization.
-- **Agent C (Tester)**: rigorous automated QA.
+## Proposed Changes
 
-## User Review Required
+### [Authentication & Authorization]
 
-> [!IMPORTANT]
-> **Integration Paused**: The previous "Learning Loop" work on the Frontend is paused to prioritize this Sweep.
-> **Destructive Actions**: Agent A may delete unused files. Please ensure all WIP code is committed or tracked.
+#### [MODIFY] [routes.ts](file:///d:/Menatech/Antigravity/Internal-Estimator/apps/api/src/routes.ts)
 
-## Proposed Changes (By Agent)
+- Implement a global `requireAuth` middleware for all `/api/projects`, `/api/knowledge-base`, `/api/diagnostics`, and `/api/learn` routes.
+- Ensure `adminRouter` remains protected by both `requireAuth` and `isAdmin`.
 
-### 🧹 Agent A: The Janitor
+#### [MODIFY] [project-routes.ts](file:///d:/Menatech/Antigravity/Internal-Estimator/apps/api/src/routes/project-routes.ts)
 
-#### [MODIFY] [All TS Files]
+- Add ownership checks for all project-specific GET, PATCH, and DELETE operations.
+- Ensure users can only see their own projects.
 
-- Run `eslint --fix` across `apps/web` and `apps/api`.
-- Manually remove `console.log` statements in production code (keeping `qaLogger` related logs).
-- Consolidate common types in `packages/shared/schema.ts` if duplicates exist.
+### [AI Security]
 
-#### [DELETE] [Unused Files]
+#### [MODIFY] [templates.ts](file:///d:/Menatech/Antigravity/Internal-Estimator/apps/api/src/services/ai/prompts/templates.ts)
 
-- Scan for files not imported by entry points.
+- Wrap `{{rawInput}}` and other user-provided strings in strict delimiters (e.g., XML tags or clear boundary markers) to mitigate Prompt Injection.
+- Add system instructions to ignore any instructions found within those delimiters.
 
-### ⚡ Agent B: The Performance Tuner
+### [Infrastructure]
 
-#### [MODIFY] [storage.ts](file:///d:/Menatech/Antigravity/Internal-Estimator/apps/api/src/storage.ts)
+#### [MODIFY] [auth.ts](file:///d:/Menatech/Antigravity/Internal-Estimator/apps/api/src/auth.ts)
 
-- Review `getApiHealth` and `getProjectApiUsageStats` for SQL efficiency. Current implementation uses JS-side filtering/mapping which is fine for small scale, but we will ensure indices or SQL grouping is strict.
-
-#### [MODIFY] [scenario-comparison.tsx](file:///d:/Menatech/Antigravity/Internal-Estimator/apps/web/src/components/features/estimate/scenario-comparison.tsx)
-
-- Wrap `ScenarioCard` in `React.memo` to prevent re-renders when parent state changes.
-
-### 🧪 Agent C: The Stress Tester
-
-#### [NEW] [stress-test.ts](file:///d:/Menatech/Antigravity/Internal-Estimator/scripts/stress-test.ts)
-
-- A script to:
-  1. Create 50 projects in parallel.
-  2. Simulate "Estimate Generation" via mock-AI (to save tokens).
-  3. Verify database integrity.
-
-#### [Browser Automation]
-
-- **Scenario 1**: Create Project -> Generate Estimate -> Approve (Happy Path).
-- **Scenario 2**: Responsive checks (Resize window).
+- Add a startup check to error out if `SESSION_SECRET` is not set or is using the default value in production.
 
 ## Verification Plan
 
 ### Automated Tests
 
-- **Terminal**: Run `npx tsx scripts/stress-test.ts`. Expect "0 failed".
-- **Browser**: Run standard `browser_subagent` flows.
+- `curl` PoC to verify that `/api/projects` returns 401 for unauthenticated requests.
+- Test different users to verify IDOR protection.
 
 ### Manual Verification
 
-- Review `walkthrough.md` for the "Before vs After" report.
+- Use the web dashboard to ensure authorized users can still function correctly.
   </artifacts>
   </workspace_context>
   <mission_brief>[Describe your task here...]</mission_brief>
