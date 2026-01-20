@@ -130,7 +130,7 @@ Be specific with numbers and cite your sources.`;
 }
 
 function parseMarketResearchResponse(content: string, citations: string[]): MarketResearchResult {
-  content.split(/\d+\.\s+/);
+  const _sections = content.split(/\d+\.\s+/);
 
   // Default values
   const result: MarketResearchResult = {

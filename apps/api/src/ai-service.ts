@@ -79,8 +79,41 @@ export const aiService = {
    * Note: generateEmail and other small helpers can be added here
    * or moved to CommunicationStrategy if they grow.
    */
-  async generateEmailContent(_project: Project): Promise<string> {
-    return "Email generation is being refactored into ExecutionStrategy delivery phase.";
+  async generateEmailContent(project: Project): Promise<string> {
+    const provider = new (await import("./services/ai/providers/openai-provider")).OpenAIProvider();
+    const scenario = project.selectedScenario === 'A' 
+      ? project.scenarioA as any
+      : project.scenarioB as any;
+    
+    const roiAnalysis = project.roiAnalysis as any;
+    
+    const { PromptBuilder } = await import("./services/ai/prompts/prompt-builder");
+    const prompt = PromptBuilder.build('EMAIL_CONTENT', {
+      title: project.title,
+      clientName: project.clientName || 'Valued Client',
+      selectedScenario: project.selectedScenario === 'A' ? 'High-Tech Custom Development' : 'No-Code MVP Solution',
+      totalCost: scenario?.totalCost?.toLocaleString() || 'To be discussed',
+      timeline: scenario?.timeline || 'To be discussed',
+      features: scenario?.features?.slice(0, 5)?.join(', ') || 'Tailored to your needs',
+      roiHighlights: roiAnalysis?.projectedSavings 
+        ? `Projected annual savings of $${roiAnalysis.projectedSavings.toLocaleString()} with a payback period of ${roiAnalysis.paybackPeriodMonths || 'N/A'} months`
+        : 'Significant efficiency improvements expected',
+    });
+    
+    try {
+      const content = await provider.generateContent(project.id, prompt, 'email', 3);
+      return content;
+    } catch (error) {
+      console.error('Email generation failed:', error);
+      // Return a sensible fallback
+      return `Thank you for considering us for your ${project.title} project.
+
+Based on our analysis, we've prepared a comprehensive proposal that outlines ${project.selectedScenario === 'A' ? 'a custom high-tech solution' : 'an efficient no-code approach'} tailored to your specific needs.
+
+The attached proposal includes detailed breakdowns of features, timeline, and investment. We believe this solution will deliver significant value to your organization.
+
+We would welcome the opportunity to discuss this proposal with you and answer any questions you may have.`;
+    }
   },
 };
 

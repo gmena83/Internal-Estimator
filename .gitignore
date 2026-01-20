@@ -4,3 +4,19 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Test outputs
+decathlon_results.json
+tsc_errors.txt
+qa_results/
+
+# Debug files
+*.log
+
+# Build artifacts
+tsconfig.tsbuildinfo
