@@ -2,95 +2,131 @@
 
 ## Overview
 
-This project, **Internal-Estimator** (also known as **ISI - Intelligent Strategy Interface**), is an AI-powered business development agent designed to automate project estimation, proposal generation, and technical planning.
+This project, **Internal-Estimator** (also known as **ISI - Intelligent Strategy Interface**), is an AI-powered business development agent designed to automate project estimation, proposal generation, and execution planning.
 
-## Directory Structure
+## Monorepo Architecture
+
+The project uses **Turborepo** with **pnpm** workspaces:
 
 ```
-├── client/                 # Frontend (React + Vite)
-│   ├── src/
-│   │   ├── components/     # UI Components (shadcn/ui based)
-│   │   ├── hooks/          # Custom React hooks
-│   │   ├── lib/            # Utilities (queryClient, utils)
-│   │   ├── pages/          # Route pages (Home, Diagnostician)
-│   │   └── App.tsx         # Main App component & Routing
-│   └── index.html          # Entry HTML
-│
-├── server/                 # Backend (Node.js + Express)
-│   ├── index.ts            # Server entry point
-│   ├── routes.ts           # API Route definitions
-│   ├── storage.ts          # Database Access Layer (Drizzle ORM)
-│   ├── ai-service.ts       # AI Integration (Gemini, Claude, OpenAI)
-│   ├── pdf-service.ts      # PDF Generation logic (pdfmake)
-│   ├── diagnostics-service.ts # GitHub Repo Analyzer
-│   ├── pricing-matrix.ts   # Logic for calculating estimates using Excel data
-│   └── vite.ts             # Vite middleware integration
-│
-├── shared/                 # Shared Code (Frontend <-> Backend)
-│   └── schema.ts           # Database Schema (Drizzle) & Types (Zod)
-│
-├── tests/                  # Test Suite (Vitest)
-│   ├── api/                # API Route tests
-│   ├── services/           # Service unit tests
-│   └── e2e/                # End-to-End workflow tests
-│
-├── drizzle.config.ts       # Drizzle Configuration
-├── postcss.config.js       # PostCSS Configuration
-├── tailwind.config.ts      # Tailwind CSS Configuration
-└── vite.config.ts          # Vite Configuration
+├── apps/
+│   ├── api/                    # Backend (Bun + Express + TypeScript)
+│   └── web/                    # Frontend (Vite + React + TypeScript)
+├── packages/
+│   └── shared/                 # Shared types & database schema (@internal/shared)
+├── scripts/                    # Build, seed, and utility scripts
+├── tests/                      # Test suites (Vitest)
+└── turbo.json                  # Monorepo orchestration
 ```
 
-## Key Technologies
+## Backend (`apps/api/`)
 
-### Frontend
+### Directory Structure
 
-- **React 18**: UI Library
-- **Vite**: Build Tool & Dev Server
-- **Tailwind CSS**: Styling
-- **shadcn/ui**: Component Library (Radix UI based)
-- **TanStack Query (React Query)**: Data Fetching
-- **wouter**: Lightweight Routing
+```
+apps/api/src/
+├── routes/                     # Express route handlers
+│   ├── project-routes.ts       # CRUD for projects
+│   ├── message-routes.ts       # Chat messages
+│   ├── asset-routes.ts         # PDF, image, export generation
+│   ├── email-routes.ts         # Email sending & drafts
+│   ├── knowledge-routes.ts     # RAG knowledge base
+│   └── admin-routes.ts         # Admin operations
+├── services/
+│   ├── ai/                     # AI orchestration layer
+│   │   ├── providers/          # AI provider implementations
+│   │   │   ├── base-provider.ts
+│   │   │   ├── openai-provider.ts
+│   │   │   └── gemini-provider.ts
+│   │   ├── strategies/         # Business logic strategies
+│   │   │   ├── chat-strategy.ts
+│   │   │   ├── estimate-strategy.ts
+│   │   │   ├── execution-strategy.ts
+│   │   │   └── input-strategy.ts
+│   │   ├── prompts/            # Prompt engineering
+│   │   │   ├── templates.ts
+│   │   │   └── prompt-builder.ts
+│   │   ├── fallbacks/          # Error handling
+│   │   └── orchestrator.ts     # Provider selection logic
+│   ├── asset.service.ts        # Image generation
+│   └── export-service.ts       # JSON/CSV exports
+├── ai-service.ts               # Main AI service facade
+├── storage.ts                  # Drizzle ORM database layer
+├── auth.ts                     # Passport.js authentication
+├── pdf-service.ts              # pdfmake PDF generation
+├── email-service.ts            # Resend email integration
+├── perplexity-service.ts       # Market research
+├── usage-tracker.ts            # API cost tracking
+└── index.ts                    # Express server entry point
+```
 
-### Backend
+### Key Technologies
 
-- **Node.js**: Runtime
-- **Express**: Web Framework
-- **Drizzle ORM**: Type-safe SQL ORM
-- **PostgreSQL**: Database (via `pg`)
-- **Zod**: Schema Validation
-- **Multer**: File Uploads (if applicable, or potential use)
+- **Runtime**: Bun 1.3+
+- **Framework**: Express.js
+- **Database**: PostgreSQL via Drizzle ORM
+- **Authentication**: Passport.js with session-based auth
+- **PDF Generation**: pdfmake
+- **Email**: Resend API
 
-### AI & Services
+## Frontend (`apps/web/`)
 
-- **Google Gemini**: Primary AI Model
-- **Anthropic Claude**: Secondary AI Model
-- **OpenAI**: Fallback AI Model
-- **Perplexity**: Market Research
+### Key Technologies
+
+- **Framework**: React 18
+- **Build Tool**: Vite 6
+- **Styling**: Tailwind CSS 4 (Native CSS)
+- **Components**: shadcn/ui + Radix UI
+- **State**: TanStack Query
+- **Routing**: Wouter
+
+## Shared Package (`packages/shared/`)
+
+Contains the Drizzle ORM schema and Zod validation schemas used by both frontend and backend:
+
+- `schema.ts` - Database tables and TypeScript types
+- Exported as `@internal/shared`
+
+## AI Integration Pattern
+
+The application uses a Strategy pattern for AI operations:
+
+1. **Orchestrator** (`orchestrator.ts`) - Selects the appropriate provider
+2. **Providers** - OpenAI, Gemini implementations
+3. **Strategies** - Chat, Estimate, Execution business logic
+4. **Prompts** - Template-based prompt engineering
 
 ## Data Flow
 
-1. **Input**: User enters project details (or Voice Input).
-2. **AI Analysis**: `ai-service.ts` processes input to extract mission, objectives, and constraints.
-3. **Estimation**: `pricing-matrix.ts` (using `xlsx` data) + AI logic estimates effort and cost for High-Code vs No-Code scenarios.
-4. **Storage**: `storage.ts` saves project state to PostgreSQL.
-5. **Generation**:
-    - **Proposal**: `pdf-service.ts` generates PDF proposals.
-    - **Vibe Guide**: AI generates technical implementation guides ("vibecoding").
-6. **Output**: User downloads PDFs, CSVs, or views reports in UI.
-
-## Security & Operations
-
-- **Environment Variables**: Managed via `.env` (not committed).
-- **Linting & Formatting**: ESLint (Flat Config) + Prettier.
-- **Type Safety**: Strict TypeScript configuration in `tsconfig.json`.
-- **Known Vulnerabilities**:
-  - `xlsx`: Used for pricing matrix. Contains known high-severity vulnerabilities. Recommendation: Migrate to `exceljs` or convert to JSON.
+1. **Input**: User pastes client email/notes
+2. **Processing**: `InputProcessingStrategy` extracts structured data
+3. **Estimation**: `EstimateStrategy` generates dual scenarios (A/B)
+4. **Assets**: PDF proposals, presentations, execution manuals
+5. **Delivery**: Email with attachments via Resend
 
 ## Development Workflow
 
-- `npm run dev`: Start backend + frontend dev server (concurrently).
-- `npm run build`: Build frontend for production.
-- `npm run check`: Type-check code.
-- `npm run lint`: Run ESLint.
-- `npm run format`: Format code with Prettier.
-- `npm test`: Run test suite.
+```bash
+# Install dependencies
+pnpm install
+
+# Start development (all workspaces)
+pnpm dev
+
+# Build for production
+pnpm build
+
+# Type checking
+pnpm check
+
+# Run tests
+pnpm test
+```
+
+## Security
+
+- Session-based authentication with secure cookies
+- IDOR protection on all project routes
+- Prompt injection mitigation via XML tags
+- Production startup checks for SESSION_SECRET
+

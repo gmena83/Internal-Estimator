@@ -190,33 +190,41 @@ npm run build
 npm start
 ```
 
-## Project Structure
+## Project Structure (Monorepo)
 
 ```
-├── client/                 # Frontend React app
-│   ├── src/
-│   │   ├── components/     # UI components
-│   │   │   ├── ui/         # shadcn/ui components
-│   │   │   ├── action-buttons.tsx
-│   │   │   ├── main-workspace.tsx
-│   │   │   ├── stage-progress.tsx
-│   │   │   └── ...
-│   │   ├── pages/          # Route pages
-│   │   ├── hooks/          # Custom hooks
-│   │   ├── lib/            # Utilities
-│   │   └── App.tsx         # Root component
-│   └── index.html
-├── server/                 # Backend Express app
-│   ├── routes.ts           # API endpoints
-│   ├── storage.ts          # Database operations
-│   ├── ai-service.ts       # AI orchestration
-│   ├── pdf-service.ts      # PDF generation
-│   ├── email-service.ts    # Email delivery
-│   └── index.ts            # Server entry
-├── shared/                 # Shared types
-│   └── schema.ts           # Drizzle schema
-├── tests/                  # Test suites
-└── package.json
+├── apps/
+│   ├── api/                    # Backend (Bun + Express)
+│   │   ├── src/
+│   │   │   ├── routes/         # API route handlers
+│   │   │   ├── services/       # Business logic & AI services
+│   │   │   │   └── ai/         # AI orchestration layer
+│   │   │   │       ├── providers/   # OpenAI, Gemini providers
+│   │   │   │       ├── strategies/  # Chat, Estimate, Execution strategies
+│   │   │   │       ├── prompts/     # Prompt templates
+│   │   │   │       └── fallbacks/   # Error handling & defaults
+│   │   │   ├── ai-service.ts   # Main AI orchestration
+│   │   │   ├── storage.ts      # Database operations
+│   │   │   ├── pdf-service.ts  # PDF generation
+│   │   │   └── index.ts        # Server entry point
+│   │   └── package.json
+│   └── web/                    # Frontend (Vite + React)
+│       ├── src/
+│       │   ├── components/     # UI components
+│       │   ├── pages/          # Route pages
+│       │   ├── hooks/          # Custom React hooks
+│       │   └── lib/            # Utilities
+│       └── package.json
+├── packages/
+│   └── shared/                 # Shared types & schema
+│       └── src/
+│           └── schema.ts       # Drizzle schema & Zod types
+├── scripts/                    # Build & utility scripts
+├── tests/                      # Test suites
+├── .docs/                      # Historical documentation
+├── turbo.json                  # Turborepo configuration
+├── pnpm-workspace.yaml         # PNPM workspace config
+└── package.json                # Root workspace
 ```
 
 ## API Endpoints
