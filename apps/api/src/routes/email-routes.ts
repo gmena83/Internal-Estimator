@@ -27,6 +27,33 @@ router.post("/:id/update-email", async (req, res) => {
   }
 });
 
+// Generate email draft using AI
+router.post("/:id/generate-email-draft", async (req, res) => {
+  try {
+    const project = await storage.getProject(req.params.id, req.user?.id);
+    if (!project) return res.status(404).json({ error: "Project not found" });
+
+    // Generate email content using AI
+    const emailContent = await aiService.generateEmailContent(project as any);
+    
+    // Save draft to project
+    const updated = await storage.updateProject(
+      req.params.id,
+      { emailContent } as any,
+      req.user?.id,
+    );
+    
+    res.json({ 
+      success: true, 
+      emailContent,
+      project: updated 
+    });
+  } catch (error) {
+    console.error("Email draft generation error:", error);
+    res.status(500).json({ error: "Failed to generate email draft" });
+  }
+});
+
 // Send proposal email
 router.post("/:id/send-email", async (req, res) => {
   try {
