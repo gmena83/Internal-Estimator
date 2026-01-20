@@ -1,10 +1,16 @@
 import "dotenv/config";
-import { storage } from "../server/storage";
-import { hashPassword } from "../server/auth";
+import { storage } from "../apps/api/src/storage";
+import { hashPassword } from "../apps/api/src/auth";
 
 async function main() {
-    const username = "gonzalo@menatech.cloud";
-    const password = "Phenom21!";
+    const username = process.env.ADMIN_USERNAME;
+    const password = process.env.ADMIN_PASSWORD;
+
+    if (!username || !password) {
+        console.error("Error: ADMIN_USERNAME and ADMIN_PASSWORD environment variables must be set.");
+        console.error("Usage: ADMIN_USERNAME=user@example.com ADMIN_PASSWORD=securepass pnpm run create-user");
+        process.exit(1);
+    }
 
     console.log(`Checking if user ${username} exists...`);
     const existingUser = await storage.getUserByUsername(username);
