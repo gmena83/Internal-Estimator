@@ -3,7 +3,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "forceConsistentCasingInFileNames": true,
-    "types": ["bun", "node"],
+    "types": ["node"],
     "paths": {
       "@shared/*": ["../../packages/shared/src/*"]
     }
