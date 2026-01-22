@@ -5,7 +5,7 @@ import { sendProposalEmail } from "../email-service";
 import { generateProposalPdf } from "../pdf-service";
 import { emailUpdateSchema } from "@shared/schema";
 
-const router = Router();
+const router: Router = Router();
 
 // Update email content
 router.post("/:id/update-email", async (req, res) => {

@@ -3,7 +3,7 @@ import { storage } from "../storage";
 import { aiService } from "../ai-service";
 import { insertMessageSchema } from "@internal/shared";
 
-const router = Router();
+const router: Router = Router();
 
 // Get messages for project
 router.get("/:projectId/messages", async (req, res) => {

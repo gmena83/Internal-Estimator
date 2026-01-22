@@ -4,7 +4,7 @@ import { storage } from "../storage";
 import { loadPricingMatrix, updatePricingMatrix } from "../pricing-matrix";
 import { Attachment } from "@shared/schema";
 
-const router = Router();
+const router: Router = Router();
 
 // Enforce Admin Access
 router.use(isAdmin);
@@ -12,7 +12,7 @@ router.use(isAdmin);
 // --- PROJECTS ---
 router.get("/projects", async (req, res) => {
   try {
-    const projects = await storage.getProjects(true); // true = includeDeleted
+    const projects = await storage.getProjects(undefined, true); // true = includeDeleted
     res.json(projects);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch projects" });
@@ -31,7 +31,7 @@ router.post("/projects/:id/restore", async (req, res) => {
 
 router.delete("/projects/:id/wipe", async (req, res) => {
   try {
-    await storage.deleteProject(req.params.id, true); // Permanent delete
+    await storage.deleteProject(req.params.id, undefined, true); // Permanent delete
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: "Failed to wipe project" });
@@ -40,7 +40,7 @@ router.delete("/projects/:id/wipe", async (req, res) => {
 
 router.delete("/projects/:id", async (req, res) => {
   try {
-    await storage.deleteProject(req.params.id, false); // Soft delete
+    await storage.deleteProject(req.params.id, undefined, false); // Soft delete
     res.json({ success: true });
   } catch {
     res.status(500).json({ error: "Failed to delete project" });

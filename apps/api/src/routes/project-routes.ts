@@ -9,7 +9,7 @@ import { insertProjectSchema, type Attachment } from "@shared/schema";
 import { Readable } from "stream";
 import path from "path";
 
-const router = Router();
+const router: Router = Router();
 
 // Get all projects
 router.get("/", async (req, res) => {

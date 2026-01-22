@@ -60,7 +60,7 @@ export function setupAuth(app: Express) {
       } catch (err) {
         return done(err);
       }
-    }),
+    }) as any,
   );
 
   passport.serializeUser((user, done) => done(null, user.id));

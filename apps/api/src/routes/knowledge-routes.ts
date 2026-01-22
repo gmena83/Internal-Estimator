@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { storage } from "../storage";
 
-const router = Router();
+const router: Router = Router();
 
 // Search Knowledge Base
 router.get("/", async (req, res) => {

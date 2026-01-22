@@ -10,7 +10,7 @@ import {
 } from "../pdf-service";
 import { imageApprovalSchema } from "@shared/schema";
 
-const router = Router();
+const router: Router = Router();
 
 // Proposal PDF
 router.get("/:projectId/proposal.pdf", async (req, res) => {

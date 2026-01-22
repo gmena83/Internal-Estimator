@@ -2,7 +2,7 @@ import { Router } from "express";
 import { storage } from "../storage";
 import { PROJECT_STATUS } from "@shared/schema";
 
-const router = Router();
+const router: Router = Router();
 
 // POST /api/learn/projects/:id
 // Triggered when a user approves an estimate.

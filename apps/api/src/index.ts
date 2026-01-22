@@ -1,7 +1,7 @@
-import express, { type Request, Response, NextFunction } from "express";
+import express, { type Request, Response, NextFunction, type Express } from "express";
 import { registerRoutes } from "./routes";
 
-const app = express();
+const app: Express = express();
 
 declare global {
   namespace Express {
@@ -32,15 +32,15 @@ export function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
   const path = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
   const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
+  res.json = function (bodyJson: any, ...args: any[]) {
     capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
+    return originalResJson.call(res, bodyJson);
   };
 
   res.on("finish", () => {
@@ -62,7 +62,10 @@ app.use((req, res, next) => {
 export default app;
 
 // Only start listening if run directly (development / standalone)
-if (import.meta.main || require.main === module) {
+// ESM compatible check for direct execution
+import { fileURLToPath } from "url";
+
+if (import.meta.url === `file://${process.argv[1]}`) {
   (async () => {
     await registerRoutes(null as any, app);
 

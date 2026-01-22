@@ -2,7 +2,7 @@ import { Router } from "express";
 import { storage } from "../storage";
 import { Worker } from "node:worker_threads";
 
-const router = Router();
+const router: Router = Router();
 
 // Create diagnostic report
 router.post("/", async (req, res) => {

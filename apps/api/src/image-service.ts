@@ -4,7 +4,7 @@ import { logApiUsage } from "./usage-tracker";
 const geminiApiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
 const geminiBaseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
 
-interface GeneratedImage {
+export interface GeneratedImage {
   id: string;
   imageData: string;
   prompt: string;

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { storage } from "../storage";
 
-const router = Router();
+const router: Router = Router();
 
 async function pingService(
   url: string,

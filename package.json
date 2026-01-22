@@ -14,14 +14,15 @@
     "prepare": "husky"
   },
   "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.24",
+    "@types/pg": "^8.16.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "prettier": "^3.7.4",
-    "turbo": "^2.0.0",
-    "typescript": "^5.3.3",
     "tsx": "^4.7.1",
-    "@types/node": "^20.11.24",
-    "@types/express": "^4.17.21"
+    "turbo": "^2.0.0",
+    "typescript": "^5.3.3"
   },
   "lint-staged": {
     "**/*.{js,jsx,ts,tsx}": [
