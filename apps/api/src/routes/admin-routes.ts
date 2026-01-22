@@ -107,6 +107,33 @@ router.post("/system/reset-health", async (req, res) => {
   }
 });
 
+router.post("/system/run-tests", async (req, res) => {
+  try {
+    const { exec } = await import("child_process");
+    // Run the existing run-tests.sh script or directly npm test
+    // Assuming windows given user OS, but script is .sh. Let's try to run the script if possible or fall back to npm test
+    // "npm test" maps to "turbo test" which maps to "vitest run" in subpackages usually.
+    // The root package.json has "test": "turbo test".
+
+    // Let's run the shell script for consistency if it works, or just npm test.
+    // Given we are in node, let's run "npm test" to be safe cross-platform.
+
+    // Set a timeout of 60 seconds
+    exec("npm test", { timeout: 60000, maxBuffer: 1024 * 1024 * 5 }, (error, stdout, stderr) => {
+      if (error) {
+        return res.json({
+          success: false,
+          output: stdout + "\n" + stderr,
+          error: error.message,
+        });
+      }
+      res.json({ success: true, output: stdout });
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to run tests" });
+  }
+});
+
 // --- USER MANAGEMENT ---
 router.get("/users", async (req, res) => {
   try {

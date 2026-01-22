@@ -64,8 +64,15 @@ export const DocTabs: React.FC<DocTabsProps> = ({ documents }) => {
               {documents[activeTab]}
             </pre>
           ) : (
-            <div className="flex items-center justify-center h-full text-muted-foreground italic">
-              No content generated for this section yet.
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground space-y-4">
+              <span className="italic">No content generated for this section yet.</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => alert("Regenerate triggered (Placeholder)")} // Ideally passed as prop
+              >
+                Regenerate Content
+              </Button>
             </div>
           )}
         </div>

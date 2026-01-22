@@ -87,14 +87,8 @@ export const api = {
         errorRate: item.errorRate ?? 0,
       }));
     } catch {
-      // Return mock data if API fails
-      return [
-        { provider: "Claude", status: "healthy", latency: 145, errorRate: 0 },
-        { provider: "OpenAI", status: "healthy", latency: 210, errorRate: 0 },
-        { provider: "Perplexity", status: "healthy", latency: 350, errorRate: 0 },
-        { provider: "Gamma", status: "degraded", latency: 120, errorRate: 0 },
-        { provider: "Resend", status: "healthy", latency: 80, errorRate: 0 },
-      ];
+      // Return single error state if API fails completely
+      return [{ provider: "API Server", status: "down", latency: 0, errorRate: 1 }];
     }
   },
   getUsage: () => fetchJson<ProjectUsage>("/usage"),
@@ -124,6 +118,10 @@ export const api = {
   wipeProject: (id: string) => fetchJson(`/admin/projects/${id}/wipe`, { method: "DELETE" }),
   softDeleteProject: (id: string) => fetchJson(`/admin/projects/${id}`, { method: "DELETE" }),
   resetSystemHealth: () => fetchJson("/admin/system/reset-health", { method: "POST" }),
+  runTests: () =>
+    fetchJson<{ success: boolean; output: string; error?: string }>("/admin/system/run-tests", {
+      method: "POST",
+    }),
   getUsers: () => fetchJson<{ id: string; username: string; role: string }[]>("/admin/users"),
   updateUserRole: (id: string, role: string) =>
     fetchJson(`/admin/users/${id}`, { method: "PATCH", body: JSON.stringify({ role }) }),

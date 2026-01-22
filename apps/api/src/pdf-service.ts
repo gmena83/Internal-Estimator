@@ -597,6 +597,41 @@ export async function generateProposalPdf(project: Project): Promise<Buffer> {
         ],
         margin: [0, 0, 0, 40] as [number, number, number, number],
       },
+      // Check for Alternative Scenario
+      selectedScenario?.name === (scenarioA?.name || "") && scenarioB
+        ? [
+            createSectionHeader("Alternative Methodology"),
+            {
+              text: `While we recommend ${scenarioA?.name}, we also considered ${scenarioB?.name}.`,
+              fontSize: 11,
+              color: COLORS.textSecondary,
+              margin: [0, 0, 0, 10] as [number, number, number, number],
+            },
+            {
+              text: `Total Cost: $${scenarioB?.totalCost?.toLocaleString() || "N/A"} | Timeline: ${scenarioB?.timeline || "N/A"}`,
+              fontSize: 11,
+              bold: true,
+              margin: [0, 0, 0, 20] as [number, number, number, number],
+            },
+          ]
+        : [],
+      selectedScenario?.name === (scenarioB?.name || "") && scenarioA
+        ? [
+            createSectionHeader("Alternative Methodology"),
+            {
+              text: `While we recommend ${scenarioB?.name}, we also considered ${scenarioA?.name}.`,
+              fontSize: 11,
+              color: COLORS.textSecondary,
+              margin: [0, 0, 0, 10] as [number, number, number, number],
+            },
+            {
+              text: `Total Cost: $${scenarioA?.totalCost?.toLocaleString() || "N/A"} | Timeline: ${scenarioA?.timeline || "N/A"}`,
+              fontSize: 11,
+              bold: true,
+              margin: [0, 0, 0, 20] as [number, number, number, number],
+            },
+          ]
+        : [],
       {
         canvas: [
           { type: "line", x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: COLORS.border },

@@ -40,7 +40,57 @@ export default function SystemTab() {
             <RotateCcw className="w-4 h-4 mr-2" /> Reset Logs
           </Button>
         </Card>
+
+        <Card className="p-6 flex flex-col items-start gap-4">
+          <div className="space-y-1">
+            <h3 className="font-semibold leading-none tracking-tight">System Tests</h3>
+            <p className="text-sm text-muted-foreground">Run the full test suite.</p>
+          </div>
+          <TestRunner />
+        </Card>
       </div>
+    </div>
+  );
+}
+
+function TestRunner() {
+  const [output, setOutput] = React.useState<string | null>(null);
+
+  const runTestsMutation = useMutation({
+    mutationFn: api.runTests,
+    onSuccess: (data) => {
+      setOutput(data.output || "Tests completed with no output.");
+      if (!data.success) {
+        alert("Tests failed! Check output.");
+      }
+    },
+    onError: (err) => {
+      setOutput(`Error running tests: ${err.message}`);
+    },
+  });
+
+  return (
+    <div className="w-full space-y-2">
+      <Button
+        variant="default"
+        onClick={() => runTestsMutation.mutate()}
+        isLoading={runTestsMutation.isPending}
+        className="w-full"
+      >
+        <Activity className="w-4 h-4 mr-2" /> Run Full Test
+      </Button>
+
+      {output && (
+        <div className="mt-4 p-2 bg-slate-950 text-slate-50 font-mono text-xs rounded h-48 overflow-auto whitespace-pre-wrap">
+          {output}
+        </div>
+      )}
+
+      {runTestsMutation.isPending && (
+        <div className="text-xs text-muted-foreground animate-pulse">
+          Running test suite (this may take a minute)...
+        </div>
+      )}
     </div>
   );
 }

@@ -3,6 +3,28 @@ import { aiOrchestrator } from "../orchestrator";
 import { PromptBuilder } from "../prompts/prompt-builder";
 import { DiagnosticErrorService } from "../fallbacks/diagnostics";
 
+const FALLBACK_GUIDE_A = `
+# High-Code Execution Guide (Fallback)
+## Overview
+This is a provisional guide generated because the AI service is currently unavailable.
+## Recommended Steps
+1. Initialize repository with TypeScript/Node.js
+2. Set up CI/CD pipelines
+3. Implement core features based on requirements
+4. Verify with tests
+`;
+
+const FALLBACK_GUIDE_B = `
+# No-Code Execution Guide (Fallback)
+## Overview
+This is a provisional guide generated because the AI service is currently unavailable.
+## Recommended Steps
+1. Select platform (Bubble/FlutterFlow)
+2. Set up database schema
+3. Build UI components
+4. Connect logic flows
+`;
+
 export class ExecutionStrategy {
   private operation = "execution";
 
@@ -27,14 +49,12 @@ export class ExecutionStrategy {
       const result = await provider.generateContent(project.id, prompt, this.operation, 4);
       return JSON.parse(result);
     } catch (error) {
-      const fix = DiagnosticErrorService.analyze(error, {
-        service: provider.name,
-        model: provider.model,
-        operation: this.operation,
-      });
+      console.warn("AI Execution Guide generation failed. Using fallback templates.");
+
+      // Fallback to basic templates
       return {
-        guideA: DiagnosticErrorService.formatAsSystemMessage(fix),
-        guideB: "Fix required in Guide A diagnostic.",
+        guideA: FALLBACK_GUIDE_A,
+        guideB: FALLBACK_GUIDE_B,
       };
     }
   }

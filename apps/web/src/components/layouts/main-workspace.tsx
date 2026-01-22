@@ -24,6 +24,7 @@ import { apiRequest, queryClient } from "../../lib/queryClient";
 import { api } from "../../lib/api";
 import { useToast } from "../../hooks/use-toast";
 import type { Project, Scenario, ROIAnalysis, Attachment } from "@shared/schema";
+import { ErrorBoundary } from "../ui/error-boundary";
 
 interface MainWorkspaceProps {
   projectId: string | null;
@@ -140,7 +141,9 @@ export function MainWorkspace({ projectId }: MainWorkspaceProps) {
       <div className="flex-1 overflow-hidden">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
           <TabsContent value="chat" className="h-full m-0 data-[state=inactive]:hidden">
-            <ChatInterface projectId={projectId} />
+            <ErrorBoundary name="Chat Interface">
+              <ChatInterface projectId={projectId} />
+            </ErrorBoundary>
           </TabsContent>
 
           <TabsContent

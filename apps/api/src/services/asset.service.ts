@@ -18,8 +18,10 @@ export class AssetService {
         if (result.success && result.embedUrl) {
           presentationUrl = result.embedUrl;
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Gamma presentation generation failed:", err);
+        // Throw proper error to be captured by UI
+        throw new Error(`Gamma Presentation Failed: ${err.message || "Unknown error"}`);
       }
     } else {
       presentationUrl = project.coverImageUrl ? `https://gamma.app/embed/demo-presentation` : null;

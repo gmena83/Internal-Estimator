@@ -15,6 +15,8 @@ import emailRouter from "./routes/email-routes";
 import adminRouter from "./routes/admin-routes";
 import learningRouter from "./routes/learning-routes";
 
+import healthRouter from "./routes/health-routes";
+
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
   // 1. Authentication Setup
   setupAuth(app);
@@ -34,6 +36,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.use("/api/diagnostics", requireAuth, diagnosticRouter);
   app.use("/api/admin", requireAuth, adminRouter);
   app.use("/api/learn", requireAuth, learningRouter);
+
+  // Health Check
+  app.use("/api/health", healthRouter);
 
   // 4. Static Asset Serving
   const uploadsDir = path.join(process.cwd(), "uploads");

@@ -109,7 +109,29 @@ router.post("/:id/approve-draft", async (req, res) => {
         recommendation: error.recommendation,
       });
     }
-    res.status(500).json({ error: "Failed to approve draft" });
+    res.status(500).json({ error: "Failed to approve draft", details: error.message });
+  }
+});
+
+// Final Project Approval (End of Stage 5)
+router.post("/:id/final-approval", async (req, res) => {
+  try {
+    // Stage 5 -> Completed
+    const updated = await projectService.advanceStage(
+      req.params.id,
+      5,
+      "completed" as any,
+      req.user?.id,
+    );
+    res.json(updated);
+  } catch (error: any) {
+    if (error.recommendation) {
+      return res.status(400).json({
+        error: error.message,
+        recommendation: error.recommendation,
+      });
+    }
+    res.status(500).json({ error: "Failed to finalize project" });
   }
 });
 
