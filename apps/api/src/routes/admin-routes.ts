@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { isAdmin } from "../middleware/admin";
-import { storage } from "../storage";
-import { loadPricingMatrix, updatePricingMatrix } from "../pricing-matrix";
-import { Attachment } from "@shared/schema";
+import { isAdmin } from "../middleware/admin.js";
+import { storage } from "../storage.js";
+import { loadPricingMatrix, updatePricingMatrix } from "../pricing-matrix.js";
+import { Attachment } from "@internal/shared";
 
 const router: Router = Router();
 

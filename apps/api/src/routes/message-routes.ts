@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { storage } from "../storage";
-import { aiService } from "../ai-service";
+import { storage } from "../storage.js";
+import { aiService } from "../ai-service.js";
 import { insertMessageSchema } from "@internal/shared";
 
 const router: Router = Router();

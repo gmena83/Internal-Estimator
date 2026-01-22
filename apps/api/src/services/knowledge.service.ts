@@ -1,5 +1,5 @@
-import { storage } from "../storage";
-import type { Project } from "@shared/schema";
+import { storage } from "../storage.js";
+import type { Project } from "@internal/shared";
 
 export class KnowledgeService {
   async indexProjectEstimate(project: Project) {

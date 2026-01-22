@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { storage } from "../storage";
-import { aiService } from "../ai-service";
-import { sendProposalEmail } from "../email-service";
-import { generateProposalPdf } from "../pdf-service";
-import { emailUpdateSchema } from "@shared/schema";
+import { storage } from "../storage.js";
+import { aiService } from "../ai-service.js";
+import { sendProposalEmail } from "../email-service.js";
+import { generateProposalPdf } from "../pdf-service.js";
+import { emailUpdateSchema } from "@internal/shared";
 
 const router: Router = Router();
 

@@ -1,5 +1,5 @@
 import { parentPort } from "node:worker_threads";
-import { runDiagnostics } from "../diagnostics-service";
+import { runDiagnostics } from "../diagnostics-service.js";
 
 if (!parentPort) {
   throw new Error("Worker not found");

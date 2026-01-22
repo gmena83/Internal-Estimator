@@ -1,4 +1,4 @@
-import type { Project } from "@shared/schema";
+import type { Project } from "@internal/shared";
 
 interface ExportConfig {
   label: string;

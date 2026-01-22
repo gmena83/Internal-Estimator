@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { storage } from "../storage";
-import { projectService } from "../services/project.service";
-import { assetService } from "../services/asset.service";
-import { aiService } from "../ai-service";
-import { upload } from "../middleware/upload";
-import { storageProvider } from "../services/storage/storage-provider";
-import { insertProjectSchema, type Attachment } from "@shared/schema";
+import { storage } from "../storage.js";
+import { projectService } from "../services/project.service.js";
+import { assetService } from "../services/asset.service.js";
+import { aiService } from "../ai-service.js";
+import { upload } from "../middleware/upload.js";
+import { storageProvider } from "../services/storage/storage-provider.js";
+import { insertProjectSchema, type Attachment } from "@internal/shared";
 import { Readable } from "stream";
 import path from "path";
 

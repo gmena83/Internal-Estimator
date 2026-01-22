@@ -1,7 +1,7 @@
-import { Project, Scenario } from "@shared/schema";
-import { aiOrchestrator } from "../orchestrator";
-import { PromptBuilder } from "../prompts/prompt-builder";
-import { DiagnosticErrorService } from "../fallbacks/diagnostics";
+import { Project, Scenario } from "@internal/shared";
+import { aiOrchestrator } from "../orchestrator.js";
+import { PromptBuilder } from "../prompts/prompt-builder.js";
+import { DiagnosticErrorService } from "../fallbacks/diagnostics.js";
 
 const FALLBACK_GUIDE_A = `
 # High-Code Execution Guide (Fallback)

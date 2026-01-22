@@ -1,5 +1,5 @@
 import express, { type Request, Response, NextFunction, type Express } from "express";
-import { registerRoutes } from "./routes";
+import { registerRoutes } from "./routes.js";
 
 const app: Express = express();
 
@@ -71,7 +71,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
     // Enable static client serving in production standalone mode
     if (process.env.NODE_ENV === "production") {
-      const { serveStatic } = await import("./static");
+      const { serveStatic } = await import("./static.js");
       serveStatic(app);
     }
 

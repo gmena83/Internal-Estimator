@@ -1,9 +1,9 @@
-import { OpenAIProvider } from "./providers/openai-provider";
-import { GeminiProvider } from "./providers/gemini-provider";
-import { IAIProvider } from "./providers/base-provider";
-import { conductMarketResearch, formatMarketResearchMarkdown } from "../../perplexity-service";
-import { storage } from "../../storage";
-import { Project } from "@shared/schema";
+import { OpenAIProvider } from "./providers/openai-provider.js";
+import { GeminiProvider } from "./providers/gemini-provider.js";
+import { IAIProvider } from "./providers/base-provider.js";
+import { conductMarketResearch, formatMarketResearchMarkdown } from "../../perplexity-service.js";
+import { storage } from "../../storage.js";
+import { Project } from "@internal/shared";
 
 export class AIOrchestrator {
   private openai = new OpenAIProvider();

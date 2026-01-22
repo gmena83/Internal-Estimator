@@ -1,6 +1,6 @@
-import { generatePresentation } from "../gamma-service";
-import { generateCoverImageWithApproval } from "../image-service";
-import type { Project } from "@shared/schema";
+import { generatePresentation } from "../gamma-service.js";
+import { generateCoverImageWithApproval } from "../image-service.js";
+import type { Project } from "@internal/shared";
 
 export class AssetService {
   async generateStage2Assets(project: Project): Promise<{

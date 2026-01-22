@@ -3,7 +3,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "forceConsistentCasingInFileNames": true,
-    "types": ["node"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "paths": {
       "@shared/*": ["../../packages/shared/src/*"]
     }

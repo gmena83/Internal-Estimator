@@ -21,8 +21,8 @@ import {
   users,
   type User,
   type InsertUser,
-} from "@shared/schema";
-import { db, pool } from "./db";
+} from "@internal/shared";
+import { db, pool } from "./db.js";
 import { eq, desc, sql, sum, count } from "drizzle-orm";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";

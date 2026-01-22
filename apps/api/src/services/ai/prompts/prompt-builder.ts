@@ -1,4 +1,4 @@
-import { PROMPTS } from "./templates";
+import { PROMPTS } from "./templates.js";
 
 export class PromptBuilder {
   /**

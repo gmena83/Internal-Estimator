@@ -1,7 +1,7 @@
-import { storage } from "../storage";
-import { PROJECT_STATUS, type Project, type ProjectStatus } from "@shared/schema";
-import { aiService } from "../ai-service";
-import { storageProvider, type IStorageProvider } from "./storage/storage-provider";
+import { storage } from "../storage.js";
+import { PROJECT_STATUS, type Project, type ProjectStatus } from "@internal/shared";
+import { aiService } from "../ai-service.js";
+import { storageProvider, type IStorageProvider } from "./storage/storage-provider.js";
 
 export class ProjectServiceError extends Error {
   constructor(

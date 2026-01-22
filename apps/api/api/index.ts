@@ -1,5 +1,5 @@
-import app from "../src/index";
-import { registerRoutes } from "../src/routes";
+import app from "../src/index.js";
+import { registerRoutes } from "../src/routes.js";
 
 // Initialize routes once
 let routesRegistered = false;

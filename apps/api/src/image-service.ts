@@ -1,5 +1,5 @@
-import { storage } from "./storage";
-import { logApiUsage } from "./usage-tracker";
+import { storage } from "./storage.js";
+import { logApiUsage } from "./usage-tracker.js";
 
 const geminiApiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
 const geminiBaseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;

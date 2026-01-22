@@ -1,6 +1,6 @@
 import PdfPrinter from "pdfmake";
 import type { TDocumentDefinitions, Content } from "pdfmake/interfaces";
-import type { Project } from "@shared/schema";
+import type { Project } from "@internal/shared";
 
 const fonts = {
   Helvetica: {

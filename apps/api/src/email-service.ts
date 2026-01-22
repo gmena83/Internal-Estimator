@@ -1,5 +1,5 @@
-import type { Project } from "@shared/schema";
-import { storage } from "./storage";
+import type { Project } from "@internal/shared";
+import { storage } from "./storage.js";
 
 interface EmailResult {
   success: boolean;

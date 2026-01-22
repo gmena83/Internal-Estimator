@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { BaseAIProvider, AIResponseChunk } from "./base-provider";
+import { BaseAIProvider, AIResponseChunk } from "./base-provider.js";
 
 export class OpenAIProvider extends BaseAIProvider {
   private client: OpenAI | null = null;

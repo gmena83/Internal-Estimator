@@ -1,4 +1,4 @@
-import { storage } from "./storage";
+import { storage } from "./storage.js";
 
 export type AIProvider = "gemini" | "claude" | "openai" | "perplexity";
 export type OperationType =

@@ -1,5 +1,5 @@
-import { aiOrchestrator } from "../orchestrator";
-import { PromptBuilder } from "../prompts/prompt-builder";
+import { aiOrchestrator } from "../orchestrator.js";
+import { PromptBuilder } from "../prompts/prompt-builder.js";
 
 export class InputProcessingStrategy {
   private operation = "input_processing";

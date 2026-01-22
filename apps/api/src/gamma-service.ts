@@ -1,6 +1,6 @@
-import { storage } from "./storage";
-import { logApiUsage } from "./usage-tracker";
-import type { Project } from "@shared/schema";
+import { storage } from "./storage.js";
+import { logApiUsage } from "./usage-tracker.js";
+import type { Project } from "@internal/shared";
 
 const gammaApiKey = process.env.GAMMA_API_KEY;
 

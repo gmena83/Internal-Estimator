@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { storage } from "../storage";
+import { storage } from "../storage.js";
 import { Worker } from "node:worker_threads";
 
 const router: Router = Router();

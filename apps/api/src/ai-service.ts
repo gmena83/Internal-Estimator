@@ -1,10 +1,10 @@
 import { Project } from "@internal/shared";
-import { storage } from "./storage";
-import { ChatStrategy } from "./services/ai/strategies/chat-strategy";
-import { EstimateStrategy } from "./services/ai/strategies/estimate-strategy";
-import { ExecutionStrategy } from "./services/ai/strategies/execution-strategy";
-import { InputProcessingStrategy } from "./services/ai/strategies/input-strategy";
-import { AIResponseChunk } from "./services/ai/providers/base-provider";
+import { storage } from "./storage.js";
+import { ChatStrategy } from "./services/ai/strategies/chat-strategy.js";
+import { EstimateStrategy } from "./services/ai/strategies/estimate-strategy.js";
+import { ExecutionStrategy } from "./services/ai/strategies/execution-strategy.js";
+import { InputProcessingStrategy } from "./services/ai/strategies/input-strategy.js";
+import { AIResponseChunk } from "./services/ai/providers/base-provider.js";
 
 // Instantiate strategies
 const chatStrategy = new ChatStrategy();
@@ -85,4 +85,4 @@ export const aiService = {
 };
 
 // Re-export fallback helpers if needed by other services
-export { getStageAwareResponse } from "./services/ai/fallbacks/defaults"; // Create this
+export { getStageAwareResponse } from "./services/ai/fallbacks/defaults.js"; // Create this

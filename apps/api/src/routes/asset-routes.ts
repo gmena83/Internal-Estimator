@@ -1,14 +1,14 @@
 import { Router } from "express";
-import { storage } from "../storage";
-import { assetService } from "../services/asset.service";
-import { exportService } from "../services/export-service";
-import { aiService } from "../ai-service";
+import { storage } from "../storage.js";
+import { assetService } from "../services/asset.service.js";
+import { exportService } from "../services/export-service.js";
+import { aiService } from "../ai-service.js";
 import {
   generateProposalPdf,
   generateInternalReportPdf,
   generateExecutionManualPdf,
-} from "../pdf-service";
-import { imageApprovalSchema } from "@shared/schema";
+} from "../pdf-service.js";
+import { imageApprovalSchema } from "@internal/shared";
 
 const router: Router = Router();
 

@@ -1,8 +1,8 @@
-import { Project } from "@shared/schema";
-import { aiOrchestrator } from "../orchestrator";
-import { PromptBuilder } from "../prompts/prompt-builder";
-import { DiagnosticErrorService } from "../fallbacks/diagnostics";
-import { storage } from "../../../storage";
+import { Project } from "@internal/shared";
+import { aiOrchestrator } from "../orchestrator.js";
+import { PromptBuilder } from "../prompts/prompt-builder.js";
+import { DiagnosticErrorService } from "../fallbacks/diagnostics.js";
+import { storage } from "../../../storage.js";
 
 export class EstimateStrategy {
   private operation = "estimate";

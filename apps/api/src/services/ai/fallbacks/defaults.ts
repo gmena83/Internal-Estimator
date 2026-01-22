@@ -1,4 +1,4 @@
-import { Project } from "@shared/schema";
+import { Project } from "@internal/shared";
 
 export function getStageAwareResponse(_project: Project, _userMessage: string): string {
   const stage = _project.currentStage;

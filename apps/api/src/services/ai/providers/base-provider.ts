@@ -1,5 +1,5 @@
-import { storage } from "../../../storage";
-import { logApiUsage } from "../../../usage-tracker";
+import { storage } from "../../../storage.js";
+import { logApiUsage } from "../../../usage-tracker.js";
 
 export interface AIResponseChunk {
   content: string;

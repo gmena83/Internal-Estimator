@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { storage } from "../storage";
-import { PROJECT_STATUS } from "@shared/schema";
+import { storage } from "../storage.js";
+import { PROJECT_STATUS } from "@internal/shared";
 
 const router: Router = Router();
 

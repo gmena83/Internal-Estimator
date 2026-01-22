@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { BaseAIProvider, AIResponseChunk } from "./base-provider";
+import { BaseAIProvider, AIResponseChunk } from "./base-provider.js";
 
 export class GeminiProvider extends BaseAIProvider {
   private client: GoogleGenAI | null = null;

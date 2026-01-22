@@ -1,4 +1,4 @@
-import { DiagnosticFinding, CorrectedSnippet } from "@shared/schema";
+import { DiagnosticFinding, CorrectedSnippet } from "@internal/shared";
 
 interface RepoFile {
   path: string;

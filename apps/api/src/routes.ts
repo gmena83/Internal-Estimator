@@ -2,20 +2,20 @@ import type { Express } from "express";
 import { type Server } from "http";
 import path from "path";
 import express from "express";
-import { setupAuth, requireAuth } from "./auth";
-import { qaLogger, responseNormalizer } from "./middleware/common";
+import { setupAuth, requireAuth } from "./auth.js";
+import { qaLogger, responseNormalizer } from "./middleware/common.js";
 
 // Domain Routers
-import projectRouter from "./routes/project-routes";
-import messageRouter from "./routes/message-routes";
-import assetRouter from "./routes/asset-routes";
-import knowledgeRouter from "./routes/knowledge-routes";
-import diagnosticRouter from "./routes/diagnostic-routes";
-import emailRouter from "./routes/email-routes";
-import adminRouter from "./routes/admin-routes";
-import learningRouter from "./routes/learning-routes";
+import projectRouter from "./routes/project-routes.js";
+import messageRouter from "./routes/message-routes.js";
+import assetRouter from "./routes/asset-routes.js";
+import knowledgeRouter from "./routes/knowledge-routes.js";
+import diagnosticRouter from "./routes/diagnostic-routes.js";
+import emailRouter from "./routes/email-routes.js";
+import adminRouter from "./routes/admin-routes.js";
+import learningRouter from "./routes/learning-routes.js";
 
-import healthRouter from "./routes/health-routes";
+import healthRouter from "./routes/health-routes.js";
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
   // 1. Authentication Setup

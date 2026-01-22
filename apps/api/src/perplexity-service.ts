@@ -1,5 +1,5 @@
-import { logApiUsage } from "./usage-tracker";
-import { storage } from "./storage";
+import { logApiUsage } from "./usage-tracker.js";
+import { storage } from "./storage.js";
 
 export interface MarketResearchResult {
   competitorPricing: {
