@@ -63,9 +63,23 @@ router.post("/", async (req, res) => {
       ...parsed.data,
       createdById: req.user?.id,
     });
+
+    // Vercel/Serverless fix: Await the AI task with a timeout instead of fire-and-forget.
+    // This prevents the runtime from freezing/killing the process before completion,
+    // and prevents vague "Function Invocation Failed" errors.
     if (parsed.data.rawInput) {
-      aiService.processRawInput(project.id, parsed.data.rawInput).catch(console.error);
+      try {
+        // Race between AI processing and a 8-second timeout (Vercel hobby limit is 10s usually)
+        await Promise.race([
+          aiService.processRawInput(project.id, parsed.data.rawInput),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("AI Timeout")), 8000)),
+        ]);
+      } catch (err) {
+        // Log but don't fail the written project
+        console.error("Initial AI processing timed out or failed:", err);
+      }
     }
+
     res.status(201).json(project);
   } catch (error) {
     console.error("[Forensic] Project creation failed:", error);
