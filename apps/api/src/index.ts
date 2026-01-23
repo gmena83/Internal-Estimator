@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express, { type Request, Response, NextFunction, type Express } from "express";
 import { registerRoutes } from "./routes.js";
 
@@ -65,7 +66,7 @@ export default app;
 // ESM compatible check for direct execution
 import { fileURLToPath } from "url";
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (fileURLToPath(import.meta.url) === process.argv[1]) {
   (async () => {
     await registerRoutes(null as any, app);
 

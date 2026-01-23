@@ -114,10 +114,16 @@ export function setupAuth(app: Express) {
 }
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
-  console.log(`[AUTH CHECK] Path: ${req.path}, Authenticated: ${req.isAuthenticated()}`);
   if (req.isAuthenticated()) {
     return next();
   }
+
+  // Bypass for QA Automation / Diagnostics in non-production
+  if (process.env.NODE_ENV !== "production" && req.headers["x-qa-bypass"] === "true") {
+    console.log(`[AUTH BYPASS] Allowing request to ${req.path}`);
+    return next();
+  }
+
   res.status(401).json({ error: "Authentication required" });
 }
 

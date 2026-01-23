@@ -60,16 +60,21 @@ router.get("/", async (req, res) => {
       const health = await pingService(url, method);
 
       // Log to DB
-      await storage.updateApiHealth({
-        service: s.name.toLowerCase(),
-        status:
-          health.status === "healthy"
-            ? "online"
-            : health.status === "degraded"
-              ? "degraded"
-              : "offline",
-        latencyMs: health.latency,
-      });
+      // Log to DB
+      try {
+        await storage.updateApiHealth({
+          service: s.name.toLowerCase(),
+          status:
+            health.status === "healthy"
+              ? "online"
+              : health.status === "degraded"
+                ? "degraded"
+                : "offline",
+          latencyMs: health.latency,
+        });
+      } catch (err) {
+        console.warn(`Failed to update API health for ${s.name}:`, err);
+      }
 
       return {
         provider: s.name,

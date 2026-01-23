@@ -12,4 +12,9 @@ export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined,
 });
+
+pool.on("error", (err) => {
+  console.error("Unexpected error on idle client", err);
+  // Don't exit process, just log
+});
 export const db = drizzle(pool, { schema });

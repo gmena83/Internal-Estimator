@@ -38,3 +38,28 @@
 [Run 18] Failed to parse URL from /api/projects/f17737a9-877e-4cb2-96cb-cc3369a52c50/proposal.pdf
 [Run 19] Failed to parse URL from /api/projects/2e30c42b-9c47-4e9d-893f-45611cac1030/proposal.pdf
 [Run 20] Failed to parse URL from /api/projects/02600982-f670-4edc-95ea-f87984d1244c/proposal.pdf
+[Run 1] Stage 1 Failed: 401 Unauthorized
+[Run 2] Stage 1 Failed: 401 Unauthorized
+[Run 3] Stage 1 Failed: 401 Unauthorized
+[Run 4] Stage 1 Failed: 401 Unauthorized
+[Run 5] Stage 1 Failed: 401 Unauthorized
+[Run 6] Stage 1 Failed: 401 Unauthorized
+[Run 7] Stage 1 Failed: 401 Unauthorized
+[Run 8] Stage 1 Failed: 401 Unauthorized
+[Run 9] fetch failed
+[Run 10] Stage 1 Failed: 401 Unauthorized
+[Run 11] Stage 1 Failed: 401 Unauthorized
+[Run 12] Stage 1 Failed: 401 Unauthorized
+[Run 13] Stage 1 Failed: 401 Unauthorized
+[Run 14] Stage 1 Failed: 401 Unauthorized
+[Run 1] Stage 1 Failed: 500 Internal Server Error
+[Run 15] Stage 1 Failed: 401 Unauthorized
+[Run 2] Stage 1 Failed: 500 Internal Server Error
+[Run 16] Stage 1 Failed: 401 Unauthorized
+[Run 3] Stage 1 Failed: 500 Internal Server Error
+[Run 17] Stage 1 Failed: 401 Unauthorized
+[Run 4] Stage 1 Failed: 500 Internal Server Error
+[Run 18] Stage 1 Failed: 401 Unauthorized
+[Run 5] Stage 1 Failed: 500 Internal Server Error
+[Run 19] fetch failed
+[Run 20] fetch failed

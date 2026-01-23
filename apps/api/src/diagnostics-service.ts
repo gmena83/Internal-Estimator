@@ -1,12 +1,12 @@
 import { DiagnosticFinding, CorrectedSnippet } from "@internal/shared";
 
-interface RepoFile {
+export interface RepoFile {
   path: string;
   content: string;
   size: number;
 }
 
-interface RepoAnalysis {
+export interface RepoAnalysis {
   files: RepoFile[];
   hasReplitConfig: boolean;
   hasNixConfig: boolean;
