@@ -5,7 +5,7 @@ import * as schema from "@internal/shared";
 const { Pool } = pg;
 
 if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL must be set. Did you forget to provision a database?");
+  console.error("DATABASE_URL is not set. Database connection will fail.");
 }
 
 export const pool = new Pool({
@@ -15,6 +15,6 @@ export const pool = new Pool({
 
 pool.on("error", (err) => {
   console.error("Unexpected error on idle client", err);
-  // Don't exit process, just log
 });
+
 export const db = drizzle(pool, { schema });
