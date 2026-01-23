@@ -328,6 +328,9 @@ export function analyzeSecurity(analysis: RepoAnalysis): DiagnosticFinding[] {
 
 export function analyzePerformance(analysis: RepoAnalysis): DiagnosticFinding[] {
   const findings: DiagnosticFinding[] = [];
+  const fileReadRegex = /\.read\(\)|readFileSync|json\.load\(open\(/;
+  const nestedLoopRegex =
+    /for\s+.*\s+in\s+.*:\s*\n\s*for\s+.*\s+in|\.forEach\([^)]*\)\s*{\s*[^}]*\.forEach/;
 
   for (const file of analysis.files) {
     if (file.size > 100000) {
@@ -335,18 +338,20 @@ export function analyzePerformance(analysis: RepoAnalysis): DiagnosticFinding[] 
         file: file.path,
         category: "Performance",
         severity: "Medium",
-        description: `Large file (${Math.round(file.size / 1024)}KB) in repository increases clone time.`,
+        description: `Large file (${Math.round(
+          file.size / 1024,
+        )}KB) in repository increases clone time.`,
         recommendation: "Consider using external storage or Git LFS for large files.",
       });
     }
 
     const content = file.content;
 
-    if (/\.read\(\)|readFileSync|json\.load\(open\(/.test(content)) {
+    if (fileReadRegex.test(content)) {
       if (file.path.endsWith(".py") || file.path.endsWith(".js") || file.path.endsWith(".ts")) {
         const lines = content.split("\n");
         for (let i = 0; i < lines.length; i++) {
-          if (/\.read\(\)|readFileSync|json\.load\(open\(/.test(lines[i])) {
+          if (fileReadRegex.test(lines[i])) {
             findings.push({
               file: file.path,
               line: i + 1,
@@ -361,10 +366,7 @@ export function analyzePerformance(analysis: RepoAnalysis): DiagnosticFinding[] 
       }
     }
 
-    if (
-      /for\s+.*\s+in\s+.*:\s*\n\s*for\s+.*\s+in/.test(content) ||
-      /\.forEach\([^)]*\)\s*{\s*[^}]*\.forEach/.test(content)
-    ) {
+    if (nestedLoopRegex.test(content)) {
       findings.push({
         file: file.path,
         category: "Performance",
