@@ -127,4 +127,6 @@ export const api = {
     fetchJson(`/admin/users/${id}`, { method: "PATCH", body: JSON.stringify({ role }) }),
   learnFromProject: (id: string) =>
     fetchJson<{ success: boolean; message: string }>(`/learn/projects/${id}`, { method: "POST" }),
+  runTestScenarios: () =>
+    fetchJson<{ success: boolean; results: any[] }>("/admin/test-scenarios", { method: "POST" }),
 };

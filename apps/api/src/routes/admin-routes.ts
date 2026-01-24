@@ -156,4 +156,73 @@ router.patch("/users/:id", async (req, res) => {
   }
 });
 
+// --- TEST SCENARIOS ---
+router.post("/test-scenarios", async (req, res) => {
+  try {
+    const fs = await import("fs/promises");
+    const path = await import("path");
+    const { aiService } = await import("../ai-service.js");
+
+    // 1. Load Scenarios
+    const scenariosPath = path.join(process.cwd(), "..", "..", "qa_scenarios.json");
+    let scenarios: string[] = [];
+    try {
+      const data = await fs.readFile(scenariosPath, "utf-8");
+      scenarios = JSON.parse(data);
+    } catch (e) {
+      console.error("Failed to load scenarios:", e);
+      return res.status(500).json({ error: "Failed to load qa_scenarios.json" });
+    }
+
+    // 2. Run each scenario
+    // We'll return a stream or just a summary for now. Since this is long running,
+    // ideally we should use a worker or return a job ID.
+    // For simplicity as per request, we'll try to process them serialy and return result,
+    // OR trigger them and return "Started".
+    // Given the user wants to "produce final set of documents", it implies full processing.
+    // Let's trigger them and return the list of created project IDs so the UI can track them?
+    // Or just run them and return a report.
+    // "Test Run ... trigger a workflow ... produce final set of documents"
+
+    const results = [];
+
+    // We will limit to first 5 for safety if list is huge, or run all?
+    // User said "test all instances".
+
+    for (const scenario of scenarios) {
+      try {
+        // Create Project
+        const project = await storage.createProject({
+          title: `Test Run: ${scenario.substring(0, 30)}...`,
+          clientName: "Test Suite",
+          rawInput: scenario,
+          status: "in_progress",
+        });
+
+        // Trigger AI
+        // We use processRawInput to simulate the full flow
+        await aiService.processRawInput(project.id, scenario);
+
+        results.push({
+          scenario,
+          projectId: project.id,
+          status: "success",
+        });
+      } catch (err) {
+        console.error(`Failed scenario: ${scenario}`, err);
+        results.push({
+          scenario,
+          status: "failed",
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
+    res.json({ success: true, results });
+  } catch (error) {
+    console.error("Test run error:", error);
+    res.status(500).json({ error: "Failed to run test scenarios" });
+  }
+});
+
 export default router;

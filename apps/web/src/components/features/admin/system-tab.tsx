@@ -48,6 +48,14 @@ export default function SystemTab() {
           </div>
           <TestRunner />
         </Card>
+
+        <Card className="p-6 flex flex-col items-start gap-4">
+          <div className="space-y-1">
+            <h3 className="font-semibold leading-none tracking-tight">AI Scenarios</h3>
+            <p className="text-sm text-muted-foreground">Run agent against all known scenarios.</p>
+          </div>
+          <TestScenariosRunner />
+        </Card>
       </div>
     </div>
   );
@@ -89,6 +97,60 @@ function TestRunner() {
       {runTestsMutation.isPending && (
         <div className="text-xs text-muted-foreground animate-pulse">
           Running test suite (this may take a minute)...
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TestScenariosRunner() {
+  const [output, setOutput] = React.useState<string | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: api.runTestScenarios,
+    onSuccess: (data) => {
+      if (data.results && data.results.length > 0) {
+        const formatted = data.results
+          .map(
+            (r) =>
+              `[${r.status.toUpperCase()}] ${r.scenario.substring(0, 50)}...\nProject ID: ${r.projectId || "N/A"}\n${r.error || ""}`,
+          )
+          .join("\n\n");
+        setOutput(formatted);
+      } else {
+        setOutput("No scenarios run or empty result.");
+      }
+      alert("Test Scenarios Completed!");
+    },
+    onError: (err) => {
+      setOutput(`Error running scenarios: ${err.message}`);
+    },
+  });
+
+  return (
+    <div className="w-full space-y-2">
+      <Button
+        variant="default"
+        onClick={() => {
+          if (confirm("This will create multiple projects and run AI generation. Continue?")) {
+            mutation.mutate();
+          }
+        }}
+        isLoading={mutation.isPending}
+        className="w-full"
+      >
+        <Activity className="w-4 h-4 mr-2" /> Run AI Scenarios
+      </Button>
+
+      {output && (
+        <div className="mt-4 p-2 bg-slate-950 text-slate-50 font-mono text-xs rounded h-48 overflow-auto whitespace-pre-wrap">
+          {output}
+        </div>
+      )}
+
+      {mutation.isPending && (
+        <div className="text-xs text-muted-foreground animate-pulse">
+          Running scenarios... Only patient waiters are rewarded.
         </div>
       )}
     </div>
