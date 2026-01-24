@@ -848,6 +848,28 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // API Health - Manual Check
+  app.post("/api/health/check/:service", async (req, res) => {
+    try {
+      const { service } = req.params;
+      const isHealthy = await aiService.checkServiceHealth(service);
+      const status = isHealthy ? "online" : "offline";
+
+      const healthLogs = await storage.getApiHealth();
+      const log = healthLogs.find((l) => l.service === service);
+
+      res.json({
+        service,
+        status,
+        success: isHealthy,
+        log,
+      });
+    } catch (error) {
+      console.error(`Error checking health for ${req.params.service}:`, error);
+      res.status(500).json({ error: "Failed to check service health" });
+    }
+  });
+
   // Project API Usage Stats
   app.get("/api/projects/:id/usage", async (req, res) => {
     try {

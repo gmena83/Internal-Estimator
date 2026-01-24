@@ -19,11 +19,7 @@ export default function Home() {
   return (
     <div className="flex h-screen w-full overflow-hidden">
       <div className="w-64 flex-shrink-0">
-        <LeftSidebar
-          selectedProjectId={selectedProjectId}
-          onSelectProject={setSelectedProjectId}
-          onNewProject={handleNewProject}
-        />
+        <LeftSidebar selectedProjectId={selectedProjectId} onNewProject={handleNewProject} />
       </div>
 
       <div className="flex-1 flex flex-col min-w-0 bg-background">
@@ -31,7 +27,7 @@ export default function Home() {
       </div>
 
       <div className="w-72 flex-shrink-0">
-        <RightSidebar projectId={selectedProjectId} />
+        <RightSidebar projectId={selectedProjectId} onSelectProject={setSelectedProjectId} />
       </div>
 
       <NewProjectDialog

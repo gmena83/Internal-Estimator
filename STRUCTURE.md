@@ -34,10 +34,12 @@ This project, **Internal-Estimator** (also known as **ISI - Intelligent Strategy
 │   ├── services/           # Service unit tests
 │   └── e2e/                # End-to-End workflow tests
 │
-├── drizzle.config.ts       # Drizzle Configuration
-├── postcss.config.js       # PostCSS Configuration
-├── tailwind.config.ts      # Tailwind CSS Configuration
-└── vite.config.ts          # Vite Configuration
+├── design_guidelines.md  # UI/UX Guidelines
+├── ai-logic.md         # AI Architecture & Prompting Logic
+├── drizzle.config.ts   # Drizzle Configuration
+├── postcss.config.js   # PostCSS Configuration
+├── tailwind.config.ts  # Tailwind CSS Configuration
+└── vite.config.ts      # Vite Configuration
 ```
 
 ## Key Technologies

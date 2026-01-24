@@ -29,7 +29,7 @@ The system orchestrates multiple AI services (Google Gemini, Anthropic Claude, O
 
 ### Command Center Interface
 
-- **Three-Panel Layout** - Left sidebar for project navigation, main workspace for chat/documents, right sidebar for API health
+- **Three-Panel Layout** - Left sidebar for quick actions, main workspace for chat/documents, right sidebar for project navigation and API health
 - **Glass Morphism UI** - Modern design with dark theme (#0E0F11 background, #1AD5E6 accent)
 - **Real-Time Monitoring** - Live API health status with latency tracking
 - **Dark/Light Theme** - Full theme support with consistent design tokens
@@ -108,12 +108,12 @@ The system orchestrates multiple AI services (Google Gemini, Anthropic Claude, O
 │   Left Sidebar  │      Main Workspace       │   Right Sidebar   │
 │   (w-64)        │      (flex-1)             │   (w-72)          │
 │                 │                           │                   │
-│ - Recent        │ - Chat Interface          │ - API Health      │
-│   Projects      │ - Markdown Viewer         │ - Project Stats   │
-│ - Project       │ - Stage Progress          │ - Usage Metrics   │
-│   History       │ - Action Buttons          │ - System Status   │
-│ - Quick         │ - Document Tabs           │                   │
-│   Actions       │ - File Management         │                   │
+│ - New Project   │ - Chat Interface          │ - Recent Projects │
+│ - Repo          │ - Markdown Viewer         │ - Project Search  │
+│   Diagnostician │ - Stage Progress          │ - API Health      │
+│                 │ - Action Buttons          │ - System Status   │
+│                 │ - Document Tabs           │                   │
+│                 │ - File Management         │                   │
 └─────────────────┴───────────────────────────┴───────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
