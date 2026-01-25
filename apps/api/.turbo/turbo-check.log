@@ -1,0 +1,4 @@
+
+> @internal/api@1.0.0 check D:\Menatech\Antigravity\Internal-Estimator\apps\api
+> tsc --noEmit
+

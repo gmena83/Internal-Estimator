@@ -1,0 +1,25 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "forceConsistentCasingInFileNames": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "esModuleInterop": true,
+    "types": [
+      "node",
+      "express",
+      "bun",
+      "multer",
+      "passport",
+      "passport-local",
+      "connect-pg-simple",
+      "ws"
+    ],
+    "paths": {
+      "@internal/shared": ["../../packages/shared/src/schema.ts"],
+      "@internal/shared/*": ["../../packages/shared/src/*"]
+    }
+  },
+  "include": ["src/**/*", "../../packages/shared/src/**/*"]
+}

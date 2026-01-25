@@ -68,18 +68,17 @@ This project, **Internal-Estimator** (also known as **ISI - Intelligent Strategy
 - **Anthropic Claude**: Secondary AI Model
 - **OpenAI**: Fallback AI Model
 - **Perplexity**: Market Research
-- **PDF.co**: PDF Operations (optional, largely replaced by local `pdfmake`)
 
 ## Data Flow
 
-1.  **Input**: User enters project details (or Voice Input).
-2.  **AI Analysis**: `ai-service.ts` processes input to extract mission, objectives, and constraints.
-3.  **Estimation**: `pricing-matrix.ts` (using `xlsx` data) + AI logic estimates effort and cost for High-Code vs No-Code scenarios.
-4.  **Storage**: `storage.ts` saves project state to PostgreSQL.
-5.  **Generation**:
-    - **Proposal**: `pdf-service.ts` generates PDF proposals.
-    - **Vibe Guide**: AI generates technical implementation guides ("vibecoding").
-6.  **Output**: User downloads PDFs, CSVs, or views reports in UI.
+1. **Input**: User enters project details (or Voice Input).
+2. **AI Analysis**: `ai-service.ts` processes input to extract mission, objectives, and constraints.
+3. **Estimation**: `pricing-matrix.ts` (using `xlsx` data) + AI logic estimates effort and cost for High-Code vs No-Code scenarios.
+4. **Storage**: `storage.ts` saves project state to PostgreSQL.
+5. **Generation**:
+   - **Proposal**: `pdf-service.ts` generates PDF proposals.
+   - **Vibe Guide**: AI generates technical implementation guides ("vibecoding").
+6. **Output**: User downloads PDFs, CSVs, or views reports in UI.
 
 ## Security & Operations
 
